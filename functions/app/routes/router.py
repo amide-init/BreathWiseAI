@@ -11,7 +11,9 @@ from typing import Any
 from firebase_functions import https_fn
 from pydantic import ValidationError as PydanticValidationError
 
+from app.routes.air_quality_routes import handle_get_air_quality
 from app.routes.health_routes import handle_health
+from app.routes.location_routes import handle_location_search
 from app.utils.errors import AppError, NotFoundError
 from app.utils.logger import log_event
 from app.utils.responses import error_response, ok_response
@@ -32,6 +34,10 @@ _ROUTES: dict[tuple[str, str], RouteHandler] = {
     ("GET", "/api/v1/health"): handle_health,
     ("GET", "/v1/health"): handle_health,
     ("GET", "/health"): handle_health,
+    ("GET", "/api/v1/locations/search"): handle_location_search,
+    ("GET", "/v1/locations/search"): handle_location_search,
+    ("GET", "/api/v1/air-quality"): handle_get_air_quality,
+    ("GET", "/v1/air-quality"): handle_get_air_quality,
 }
 
 
