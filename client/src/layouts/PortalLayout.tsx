@@ -2,6 +2,7 @@ import {
   CalendarCheck2,
   LayoutDashboard,
   Leaf,
+  LogOut,
   MapPin,
   MessageSquareText,
   Users,
@@ -9,8 +10,11 @@ import {
 } from 'lucide-react';
 import { NavLink, Outlet, useLocation } from 'react-router-dom';
 
+import { LocationPickerModal } from '@/components/shared/LocationPickerModal';
 import { getNavItemByPath, PRIMARY_NAV_ITEMS, type NavItemConfig } from '@/config/routes';
+import { useAuth } from '@/hooks/useAuth';
 import { useDocumentTitle } from '@/hooks/useDocumentTitle';
+import { useSelectedLocation } from '@/hooks/useSelectedLocation';
 import { cn } from '@/lib/cn';
 
 const NAV_ICONS: Record<NavItemConfig['iconKey'], typeof LayoutDashboard> = {
@@ -23,12 +27,14 @@ const NAV_ICONS: Record<NavItemConfig['iconKey'], typeof LayoutDashboard> = {
 
 /**
  * Responsive portal shell:
- * - Desktop (md+): Left sidebar + top contextual header
+ * - Desktop (md+): Left sidebar + top contextual header + sign out
  * - Mobile (<md): Compact top header + fixed 5-tab bottom navigation bar
  */
 export function PortalLayout() {
   const { pathname } = useLocation();
   const activeRoute = getNavItemByPath(pathname);
+  const { user, signOut } = useAuth();
+  const { selectedLocation, openPicker } = useSelectedLocation();
 
   useDocumentTitle(activeRoute.documentTitle);
 
@@ -70,14 +76,32 @@ export function PortalLayout() {
           })}
         </nav>
 
-        <div className="border-t border-slate-100 p-4 text-xs text-slate-500">
-          Know Your Air. Protect Your Family. Make Every Action Count.
+        <div className="border-t border-slate-100 p-4">
+          {user ? (
+            <div className="flex items-center justify-between gap-2">
+              <div className="min-w-0">
+                <p className="truncate text-xs font-semibold text-slate-800">
+                  {user.displayName || 'Family Account'}
+                </p>
+                <p className="truncate text-[11px] text-slate-500">{user.email}</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => void signOut()}
+                title="Sign out"
+                aria-label="Sign out"
+                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-slate-500 hover:bg-slate-100 hover:text-slate-900"
+              >
+                <LogOut className="h-4 w-4" aria-hidden="true" />
+              </button>
+            </div>
+          ) : null}
         </div>
       </aside>
 
       {/* Main Content Area */}
       <div className="flex min-h-screen flex-1 flex-col">
-        <header className="sticky top-0 z-20 flex items-center justify-between border-b border-slate-200/80 bg-white/95 px-4 py-3 backdrop-blur-xs md:px-8">
+        <header className="sticky top-0 z-20 flex items-center justify-between gap-2 border-b border-slate-200/80 bg-white/95 px-4 py-3 backdrop-blur-xs md:px-8">
           <div className="flex items-center gap-2 md:hidden">
             <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-teal-700 text-white">
               <Wind className="h-4 w-4" aria-hidden="true" />
@@ -89,9 +113,26 @@ export function PortalLayout() {
             <p className="text-xs font-medium text-slate-500">{activeRoute.subtitle}</p>
           </div>
 
-          <div className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-medium text-slate-700">
-            <MapPin className="h-3.5 w-3.5 text-teal-700" aria-hidden="true" />
-            <span>Select City (Phase 2)</span>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={openPicker}
+              className="inline-flex min-h-[36px] cursor-pointer items-center gap-1.5 rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-medium text-slate-700 transition-colors hover:border-teal-300 hover:bg-teal-50/50"
+            >
+              <MapPin className="h-3.5 w-3.5 text-teal-700" aria-hidden="true" />
+              <span className="max-w-[140px] truncate">{selectedLocation.city}</span>
+            </button>
+
+            {user ? (
+              <button
+                type="button"
+                onClick={() => void signOut()}
+                aria-label="Sign out"
+                className="flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 text-slate-600 hover:bg-slate-100 md:hidden"
+              >
+                <LogOut className="h-4 w-4" aria-hidden="true" />
+              </button>
+            ) : null}
           </div>
         </header>
 
@@ -125,6 +166,8 @@ export function PortalLayout() {
           );
         })}
       </nav>
+
+      <LocationPickerModal />
     </div>
   );
 }

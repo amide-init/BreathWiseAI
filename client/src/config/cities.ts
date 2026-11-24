@@ -1,0 +1,78 @@
+import type { LocationOption } from '@/types';
+
+export const QUICK_PICK_CITIES: readonly LocationOption[] = [
+  {
+    locationId: 'in-new-delhi-28.61-77.21',
+    city: 'New Delhi',
+    state: 'Delhi',
+    country: 'India',
+    label: 'New Delhi, Delhi, India',
+    lat: 28.6139,
+    lng: 77.209,
+  },
+  {
+    locationId: 'in-gurugram-28.46-77.03',
+    city: 'Gurugram',
+    state: 'Haryana',
+    country: 'India',
+    label: 'Gurugram, Haryana, India',
+    lat: 28.4595,
+    lng: 77.0266,
+  },
+  {
+    locationId: 'in-noida-28.54-77.39',
+    city: 'Noida',
+    state: 'Uttar Pradesh',
+    country: 'India',
+    label: 'Noida, Uttar Pradesh, India',
+    lat: 28.5355,
+    lng: 77.391,
+  },
+  {
+    locationId: 'in-mumbai-19.08-72.88',
+    city: 'Mumbai',
+    state: 'Maharashtra',
+    country: 'India',
+    label: 'Mumbai, Maharashtra, India',
+    lat: 19.076,
+    lng: 72.8777,
+  },
+  {
+    locationId: 'in-bengaluru-12.97-77.59',
+    city: 'Bengaluru',
+    state: 'Karnataka',
+    country: 'India',
+    label: 'Bengaluru, Karnataka, India',
+    lat: 12.9716,
+    lng: 77.5946,
+  },
+  {
+    locationId: 'in-kolkata-22.57-88.36',
+    city: 'Kolkata',
+    state: 'West Bengal',
+    country: 'India',
+    label: 'Kolkata, West Bengal, India',
+    lat: 22.5726,
+    lng: 88.3639,
+  },
+  {
+    locationId: 'in-lucknow-26.85-80.95',
+    city: 'Lucknow',
+    state: 'Uttar Pradesh',
+    country: 'India',
+    label: 'Lucknow, Uttar Pradesh, India',
+    lat: 26.8467,
+    lng: 80.9462,
+  },
+  {
+    locationId: 'in-hyderabad-17.39-78.49',
+    city: 'Hyderabad',
+    state: 'Telangana',
+    country: 'India',
+    label: 'Hyderabad, Telangana, India',
+    lat: 17.385,
+    lng: 78.4867,
+  },
+] as const;
+
+export const DEFAULT_CITY: LocationOption = QUICK_PICK_CITIES[0];
