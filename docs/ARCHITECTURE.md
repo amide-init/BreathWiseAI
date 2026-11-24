@@ -9,12 +9,12 @@
 ```mermaid
 flowchart TB
     subgraph Client["Client Layer (Mobile-First Web / PWA)"]
-        UI["Next.js App Router + React + TypeScript<br/>Tailwind CSS + Shadcn UI + Recharts"]
+        UI["Vite + React + TypeScript + React Router<br/>Tailwind CSS + Shadcn UI + Recharts"]
         FBClient["Firebase Client SDK<br/>(Auth + Firestore User Reads)"]
     end
 
-    subgraph Hosting["Firebase App Hosting"]
-        SSR["Next.js SSR Runtime"]
+    subgraph Hosting["Firebase Hosting"]
+        CDN["Static SPA & PWA CDN<br/>(client/dist)"]
     end
 
     subgraph Backend["Firebase Cloud Functions Gen 2 (Python 3.12)"]
@@ -37,7 +37,7 @@ flowchart TB
         Gemini["Google Gemini API<br/>(Structured LLM Generation)"]
     end
 
-    UI <--> SSR
+    UI <--> CDN
     UI --> FBClient
     FBClient --> FBAuth
     FBClient <-->|Own Profile / Plan Toggles| FS
@@ -69,15 +69,16 @@ BreathWiseAI/
 ├── PRD.md                           # Product Requirements Document
 ├── .agents/                         # Antigravity rules & skills
 ├── docs/                            # Engineering blueprints (this directory)
-├── firebase.json                    # Firebase Emulators, Functions, Firestore config
-├── apphosting.yaml                  # Firebase App Hosting config for Next.js SSR
+├── firebase.json                    # Firebase Emulators, Hosting, Functions, Firestore config
 ├── firestore.rules                  # Firestore security rules (via firestore-rules-author)
 ├── firestore.indexes.json           # Composite Firestore indexes
-├── client/                          # Next.js App Router (TypeScript)
+├── client/                          # Vite + React + TypeScript SPA / PWA
 │   ├── public/                      # PWA manifest, icons, static assets
 │   ├── src/
-│   │   ├── app/                     # App Router routes (/, /profile, /planner, /assistant, /impact, /login)
-│   │   ├── config/                  # Route constants, CPCB AQI visual token maps, app settings
+│   │   ├── pages/                   # Route screens (Home, Profile, Planner, Assistant, Impact, Login, Onboarding)
+│   │   ├── routes/                  # React Router configuration & auth guards
+│   │   ├── layouts/                 # Responsive app shell (Desktop sidebar + Mobile bottom tab bar)
+│   │   ├── config/                  # Route constants, CPCB AQI visual token maps, validated VITE_* env
 │   │   ├── services/                # Reusable typed API & Firestore client services
 │   │   ├── components/              # ui/ (Shadcn), shared/ (AQI badge, freshness/error states), feature components
 │   │   ├── lib/                     # Firebase client init, authenticated fetch wrapper, date/AQI utils
@@ -112,7 +113,7 @@ BreathWiseAI/
 | **Firebase Authentication** | Email/Password + Google Sign-In | P0 | ID tokens verified server-side on every protected Cloud Function |
 | **Cloud Firestore** | Primary NoSQL database & AQI cache | P0 | 7 collections per [DATA_MODEL.md](./DATA_MODEL.md) |
 | **Cloud Functions Gen 2** | Python REST/HTTPS APIs + LangGraph | P0 | Runs in `asia-south1` (or single chosen region close to users) with Secret Manager |
-| **Firebase App Hosting** | Next.js App Router SSR + PWA hosting | P0 | Native Next.js SSR support; auto-manages Cloud Run backend |
+| **Firebase Hosting** | Vite React SPA + PWA static CDN | P0 | Serves `client/dist` with SPA rewrite (`** -> /index.html`); fast global CDN |
 | **Firebase Cloud Messaging** | High-pollution push alerts (`FR-12`) | P2 | Deferred unless P0 + P1 are complete |
 | **Cloud Storage** | Optional report/document assets | P2 | Optional; not required for MVP core journey |
 
@@ -124,7 +125,7 @@ BreathWiseAI/
 
 ```mermaid
 sequenceDiagram
-    participant U as Next.js Dashboard
+    participant U as Vite React Dashboard
     participant CF as Cloud Function (EnvSvc)
     participant FS as Firestore (air_quality)
     participant P1 as WAQI / CPCB Primary
@@ -174,7 +175,7 @@ sequenceDiagram
 
 ### Security & Privacy
 - All API keys (`GEMINI_API_KEY`, `WAQI_API_TOKEN`, `CPCB_API_KEY`, `GOOGLE_MAPS_SERVER_KEY`) live exclusively in Firebase Functions secrets (Secret Manager).
-- Frontend uses only public Firebase web config (`NEXT_PUBLIC_FIREBASE_*`) and optional restricted client Maps key if needed (prefer server-side geocoding to keep keys minimal).
+- Client app uses only public Firebase web config (`VITE_FIREBASE_*`) and API base URL (`VITE_API_BASE_URL`); all sensitive API keys remain strictly server-side.
 - Structured server logs emit only request IDs, latencies, node outcomes, and `freshness_status` — never user names, emails, or optional health notes.
 
 ### Resilience & Graceful Degradation

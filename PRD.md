@@ -9,7 +9,7 @@
 | Project type | GenAI Hackathon MVP |
 | Development timeline | 10 days |
 | Platform | Responsive Web Application / PWA |
-| Frontend | Next.js + TypeScript |
+| Frontend | Vite + React + TypeScript |
 | Backend | Firebase Cloud Functions Gen 2 |
 | Database | Cloud Firestore |
 | AI orchestration | LangGraph |
@@ -358,7 +358,7 @@ Responsibilities:
 ### 8.1 Frontend
 
 **Technology:**
-- Next.js App Router.
+- Vite + React + React Router.
 - React.
 - TypeScript.
 - Tailwind CSS.
@@ -434,7 +434,7 @@ knowledge_base/
 | Firebase Authentication | User authentication |
 | Cloud Firestore | Application database |
 | Cloud Functions Gen 2 | Backend APIs and LangGraph |
-| Firebase Hosting / App Hosting | Frontend hosting |
+| Firebase Hosting | Frontend SPA & PWA hosting |
 | Firebase Cloud Messaging | Notifications |
 | Cloud Storage | Optional document storage |
 

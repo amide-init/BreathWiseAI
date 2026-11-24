@@ -17,10 +17,9 @@ BreathWiseAI/
 │   ├── rules/                 # Modular Antigravity rules (always_on, glob, model_decision)
 │   └── skills/                # On-demand Antigravity skills (SKILL.md runbooks)
 ├── docs/                      # Detailed engineering & UX blueprints
-├── client/                    # [Planned] Next.js App Router, React, TypeScript, Tailwind, Shadcn UI, Recharts (PWA)
+├── client/                    # [Planned] Vite, React, TypeScript, React Router, Tailwind, Shadcn UI, Recharts (PWA)
 ├── functions/                 # [Planned] Firebase Cloud Functions Gen 2 (Python), LangGraph, Gemini, Pydantic
-├── firebase.json              # [Planned] Firebase CLI & emulator configuration
-├── apphosting.yaml            # [Planned] Firebase App Hosting config (Next.js SSR)
+├── firebase.json              # Firebase CLI, Hosting, Functions, Firestore & emulator configuration
 ├── firestore.rules            # [Planned] Cloud Firestore security rules (author via firestore-rules-author)
 └── firestore.indexes.json     # [Planned] Composite Firestore indexes
 ```
@@ -29,7 +28,7 @@ BreathWiseAI/
 - **Auth & DB**: Firebase Authentication + Cloud Firestore (7 core collections; Firebase project: `agentora-ai-v2`).
 - **AI Orchestration**: 5-node LangGraph workflow (`context_agent` → `environment_agent` → `risk_assessment` → `recommendation_agent` → `validation_node`) using Google Gemini + Pydantic + verified RAG knowledge base.
 - **AQI & Weather Baseline**: India **CPCB NAQI (0–500)** primary scale (WAQI / data.gov.in CPCB primary source) + **Open-Meteo** for weather, AQ forecasts, and fallback + **Google Maps** for geocoding/location.
-- **Hosting**: Firebase App Hosting for Next.js SSR.
+- **Hosting**: Classic **Firebase Hosting** for the Vite + React SPA/PWA (`client/dist` with SPA rewrites).
 
 ---
 
@@ -50,7 +49,7 @@ BreathWiseAI/
    - Always surface observation timestamp, source, and freshness status (`fresh` / `stale` / `unavailable`).
    - Clearly separate **measured vs. estimated** indoor air quality, and **personal exposure reduction vs. CO2 emissions avoided**.
 2. **Security & Privacy**:
-   - Never put Gemini API keys or external AQI secrets in `client/` or `NEXT_PUBLIC_*` env vars.
+   - Never put Gemini API keys or external AQI secrets in `client/` or `VITE_*` env vars.
    - Verify Firebase Auth ID tokens on every protected Cloud Function endpoint.
    - Keep family profiles and optional health sensitivities strictly user-owned and excluded from server logs.
    - **Mandatory delegation**: Whenever creating or modifying `firestore.rules`, delegate to the `firestore-rules-author` subagent.
@@ -81,7 +80,7 @@ Read only the spec(s) relevant to your current task before writing code:
 
 - **Modular Rules**:
   - [.agents/rules/ai-safety-and-grounding.md](./.agents/rules/ai-safety-and-grounding.md) (`always_on`)
-  - [.agents/rules/client-nextjs.md](./.agents/rules/client-nextjs.md) (`glob: client/**/*`)
+  - [.agents/rules/client-vite-react.md](./.agents/rules/client-vite-react.md) (`glob: client/**/*`)
   - [.agents/rules/backend-python-langgraph.md](./.agents/rules/backend-python-langgraph.md) (`glob: functions/**/*`)
   - [.agents/rules/firestore-and-security.md](./.agents/rules/firestore-and-security.md) (`model_decision`)
 - **On-Demand Skills**:
@@ -89,4 +88,4 @@ Read only the spec(s) relevant to your current task before writing code:
   - `build-langgraph-node` — [.agents/skills/build-langgraph-node/SKILL.md](./.agents/skills/build-langgraph-node/SKILL.md)
   - `verify-ai-safety` — [.agents/skills/verify-ai-safety/SKILL.md](./.agents/skills/verify-ai-safety/SKILL.md)
   - `prepare-hackathon-demo` — [.agents/skills/prepare-hackathon-demo/SKILL.md](./.agents/skills/prepare-hackathon-demo/SKILL.md)
-- **Installed Platform Skills**: Use the installed Firebase skills (`firebase-basics`, `firebase-auth-basics`, `firebase-firestore`, `firebase-app-hosting-basics`, `firebase-security-rules-auditor`) when configuring or deploying Firebase services.
+- **Installed Platform Skills**: Use the installed Firebase skills (`firebase-basics`, `firebase-auth-basics`, `firebase-firestore`, `firebase-hosting-basics`, `firebase-security-rules-auditor`) when configuring or deploying Firebase services.

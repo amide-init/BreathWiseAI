@@ -27,9 +27,9 @@
 ## 2. Ten-Day Execution Plan (PRD §14)
 
 ### Day 1 — Project Setup, UI Design System & Firebase Configuration
-- [ ] Initialize `client/` (Next.js App Router, TypeScript, Tailwind CSS, Shadcn UI, Recharts, PWA manifest).
+- [ ] Initialize `client/` (Vite, React, TypeScript, React Router, Tailwind CSS, Shadcn UI, Recharts, PWA manifest via `pnpm`).
 - [ ] Initialize `functions/` (Python 3.12 Firebase Cloud Functions Gen 2 structure + `pytest`).
-- [ ] Configure Firebase project, local Emulators (`firebase.json`), `apphosting.yaml`, and `firestore.indexes.json`.
+- [ ] Configure Firebase project (`agentora-ai-v2`), local Emulators + Hosting SPA rewrites (`firebase.json`), and `firestore.indexes.json`.
 - [ ] Delegate initial `firestore.rules` creation to the `firestore-rules-author` subagent per [DATA_MODEL.md](./DATA_MODEL.md).
 - [ ] Build mobile-first app shell (bottom tab nav on mobile, sidebar on desktop) and CPCB NAQI visual token components.
 
@@ -78,7 +78,7 @@
 - [ ] Run full `pytest` suite and frontend lint/typecheck/build checks.
 - [ ] Execute [.agents/skills/verify-ai-safety/SKILL.md](../.agents/skills/verify-ai-safety/SKILL.md) red-team checklist.
 - [ ] Audit `firestore.rules` using `firebase-security-rules-auditor`.
-- [ ] Deploy Cloud Functions Gen 2, Firestore rules/indexes, seed `knowledge_base/`, and deploy Next.js frontend to Firebase App Hosting.
+- [ ] Deploy Cloud Functions Gen 2, Firestore rules/indexes, seed `knowledge_base/`, and deploy `client/dist` to Firebase Hosting.
 
 ### Day 10 — Demo Preparation, Documentation & Submission
 - [ ] Execute the 10-step dry run in [.agents/skills/prepare-hackathon-demo/SKILL.md](../.agents/skills/prepare-hackathon-demo/SKILL.md) with zero manual DB edits.

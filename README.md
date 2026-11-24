@@ -10,7 +10,7 @@ BreatheWise AI is a GenAI-powered personal clean-air assistant built as a 10-day
 
 ```mermaid
 flowchart LR
-    User["Family User<br/>(Web / PWA)"] --> FE["Next.js App Router<br/>(Firebase App Hosting)"]
+    User["Family User<br/>(Web / PWA)"] --> FE["Vite + React SPA<br/>(Firebase Hosting)"]
     FE -->|Firebase Auth| Auth["Firebase Auth"]
     FE -->|User & Profile Reads| FS["Cloud Firestore"]
     FE -->|Authenticated HTTPS| CF["Cloud Functions Gen 2<br/>(Python + LangGraph)"]
@@ -54,7 +54,7 @@ This repository ships pre-configured Antigravity rules and skills under `.agents
 
 - **Rules (`.agents/rules/`)**:
   - [ai-safety-and-grounding.md](./.agents/rules/ai-safety-and-grounding.md) — Always-on AI safety, grounding, and data honesty constraints.
-  - [client-nextjs.md](./.agents/rules/client-nextjs.md) — Scoped to `client/**/*` (Next.js App Router, Shadcn UI, Recharts, PWA).
+  - [client-vite-react.md](./.agents/rules/client-vite-react.md) — Scoped to `client/**/*` (Vite, React, TypeScript, React Router, Shadcn UI, Recharts, PWA, `pnpm`).
   - [backend-python-langgraph.md](./.agents/rules/backend-python-langgraph.md) — Scoped to `functions/**/*` (Cloud Functions Gen 2 Python, LangGraph, Gemini, Pydantic).
   - [firestore-and-security.md](./.agents/rules/firestore-and-security.md) — Loaded on demand for Firestore data modeling, rules, and auth security.
 - **Skills (`.agents/skills/`)**:
@@ -71,12 +71,11 @@ This repository ships pre-configured Antigravity rules and skills under `.agents
 
 ```text
 BreathWiseAI/
-├── client/                    # Next.js App Router + TypeScript + Tailwind + Shadcn UI + Recharts
+├── client/                    # Vite + React + TypeScript + React Router + Tailwind + Shadcn UI + Recharts
 ├── functions/                 # Firebase Cloud Functions Gen 2 (Python 3.12 + LangGraph + Gemini)
 ├── docs/                      # Architecture, Data Model, AI Workflow, API, UI/UX, Impact, Roadmap
 ├── .agents/                   # Antigravity workspace rules & skills
-├── firebase.json              # Firebase emulators, functions, firestore configuration
-├── apphosting.yaml            # Firebase App Hosting configuration
+├── firebase.json              # Firebase Emulators, Hosting, Functions, Firestore configuration
 ├── firestore.rules            # Firestore security rules
 └── firestore.indexes.json     # Firestore composite indexes
 ```

@@ -2,7 +2,7 @@
 name: implement-feature
 description: >-
   End-to-end procedure for implementing a BreatheWise AI functional requirement
-  (FR-01 through FR-11) across Firestore, Cloud Functions Gen 2, and Next.js.
+  (FR-01 through FR-11) across Firestore, Cloud Functions Gen 2, and Vite + React.
   Use when starting work on a new PRD module, screen, endpoint, or roadmap day task.
 ---
 
