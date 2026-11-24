@@ -27,11 +27,11 @@
 ## 2. Ten-Day Execution Plan (PRD §14)
 
 ### Day 1 — Project Setup, UI Design System & Firebase Configuration
-- [ ] Initialize `client/` (Vite, React, TypeScript, React Router, Tailwind CSS, Shadcn UI, Recharts, PWA manifest via `pnpm`).
-- [ ] Initialize `functions/` (Python 3.12 Firebase Cloud Functions Gen 2 structure + `pytest`).
-- [ ] Configure Firebase project (`agentora-ai-v2`), local Emulators + Hosting SPA rewrites (`firebase.json`), and `firestore.indexes.json`.
-- [ ] Delegate initial `firestore.rules` creation to the `firestore-rules-author` subagent per [DATA_MODEL.md](./DATA_MODEL.md).
-- [ ] Build mobile-first app shell (bottom tab nav on mobile, sidebar on desktop) and CPCB NAQI visual token components.
+- [x] Initialize `client/` (Vite, React, TypeScript, React Router, Tailwind CSS, Shadcn UI, Recharts, PWA manifest via `pnpm`).
+- [x] Initialize `functions/` (Python 3.12 Firebase Cloud Functions Gen 2 structure + `pytest`).
+- [x] Configure Firebase project (`agentora-ai-v2`), local Emulators + Hosting SPA rewrites (`firebase.json`), and `firestore.indexes.json`.
+- [x] Delegate initial `firestore.rules` creation to the `firestore-rules-author` subagent per [DATA_MODEL.md](./DATA_MODEL.md).
+- [x] Build mobile-first app shell (bottom tab nav on mobile, sidebar on desktop) and CPCB NAQI visual token components.
 
 ### Day 2 — Authentication, Firestore & AQI Integration (`FR-01`, `FR-02`, `FR-03`, `FR-04`)
 - [ ] Implement Firebase Auth (Email/Password + Google Sign-In) and user bootstrap (`users/{uid}`).
