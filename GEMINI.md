@@ -17,7 +17,7 @@ BreathWiseAI/
 │   ├── rules/                 # Modular Antigravity rules (always_on, glob, model_decision)
 │   └── skills/                # On-demand Antigravity skills (SKILL.md runbooks)
 ├── docs/                      # Detailed engineering & UX blueprints
-├── frontend/                  # [Planned] Next.js App Router, React, TypeScript, Tailwind, Shadcn UI, Recharts (PWA)
+├── client/                    # [Planned] Next.js App Router, React, TypeScript, Tailwind, Shadcn UI, Recharts (PWA)
 ├── functions/                 # [Planned] Firebase Cloud Functions Gen 2 (Python), LangGraph, Gemini, Pydantic
 ├── firebase.json              # [Planned] Firebase CLI & emulator configuration
 ├── apphosting.yaml            # [Planned] Firebase App Hosting config (Next.js SSR)
@@ -49,7 +49,7 @@ BreathWiseAI/
    - Always surface observation timestamp, source, and freshness status (`fresh` / `stale` / `unavailable`).
    - Clearly separate **measured vs. estimated** indoor air quality, and **personal exposure reduction vs. CO2 emissions avoided**.
 2. **Security & Privacy**:
-   - Never put Gemini API keys or external AQI secrets in `frontend/` or `NEXT_PUBLIC_*` env vars.
+   - Never put Gemini API keys or external AQI secrets in `client/` or `NEXT_PUBLIC_*` env vars.
    - Verify Firebase Auth ID tokens on every protected Cloud Function endpoint.
    - Keep family profiles and optional health sensitivities strictly user-owned and excluded from server logs.
    - **Mandatory delegation**: Whenever creating or modifying `firestore.rules`, delegate to the `firestore-rules-author` subagent.
@@ -80,7 +80,7 @@ Read only the spec(s) relevant to your current task before writing code:
 
 - **Modular Rules**:
   - [.agents/rules/ai-safety-and-grounding.md](./.agents/rules/ai-safety-and-grounding.md) (`always_on`)
-  - [.agents/rules/frontend-nextjs.md](./.agents/rules/frontend-nextjs.md) (`glob: frontend/**/*`)
+  - [.agents/rules/client-nextjs.md](./.agents/rules/client-nextjs.md) (`glob: client/**/*`)
   - [.agents/rules/backend-python-langgraph.md](./.agents/rules/backend-python-langgraph.md) (`glob: functions/**/*`)
   - [.agents/rules/firestore-and-security.md](./.agents/rules/firestore-and-security.md) (`model_decision`)
 - **On-Demand Skills**:

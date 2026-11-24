@@ -1,12 +1,12 @@
 ---
 trigger: glob
-globs: "frontend/**/*"
-description: "Next.js App Router, React, TypeScript, Tailwind CSS, Shadcn UI, Recharts, PWA, and client security rules for the BreatheWise AI frontend."
+globs: "client/**/*"
+description: "Next.js App Router, React, TypeScript, Tailwind CSS, Shadcn UI, Recharts, PWA, and client security rules for the BreatheWise AI client app."
 ---
 
-# Frontend Engineering Rules (`frontend/`)
+# Client App Engineering Rules (`client/`)
 
-Follow [docs/UI_UX_SPEC.md](../../docs/UI_UX_SPEC.md) and [docs/API_SPEC.md](../../docs/API_SPEC.md) whenever building or editing files in `frontend/`.
+Follow [docs/UI_UX_SPEC.md](../../docs/UI_UX_SPEC.md) and [docs/API_SPEC.md](../../docs/API_SPEC.md) whenever building or editing files in `client/`.
 
 ## 1. Architecture & Stack Conventions
 
@@ -18,7 +18,7 @@ Follow [docs/UI_UX_SPEC.md](../../docs/UI_UX_SPEC.md) and [docs/API_SPEC.md](../
 
 ## 2. Client Security & Secret Hygiene
 
-- **Zero server secrets in client code**: NEVER store or reference `GEMINI_API_KEY`, WAQI tokens, CPCB API keys, or Firebase Admin credentials in `frontend/` or any `NEXT_PUBLIC_*` variable.
+- **Zero server secrets in client code**: NEVER store or reference `GEMINI_API_KEY`, WAQI tokens, CPCB API keys, or Firebase Admin credentials in `client/` or any `NEXT_PUBLIC_*` variable.
 - **Authenticated API calls**: Attach the current Firebase Auth user's fresh ID token (`Authorization: Bearer <idToken>`) on every request to protected Cloud Functions endpoints.
 - **Privacy in UI**: Clearly mark health-related family profile fields as **Optional & Private**. Never dump family profile or health notes into `console.log` or URL query strings.
 

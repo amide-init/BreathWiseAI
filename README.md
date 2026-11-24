@@ -54,7 +54,7 @@ This repository ships pre-configured Antigravity rules and skills under `.agents
 
 - **Rules (`.agents/rules/`)**:
   - [ai-safety-and-grounding.md](./.agents/rules/ai-safety-and-grounding.md) — Always-on AI safety, grounding, and data honesty constraints.
-  - [frontend-nextjs.md](./.agents/rules/frontend-nextjs.md) — Scoped to `frontend/**/*` (Next.js App Router, Shadcn UI, Recharts, PWA).
+  - [client-nextjs.md](./.agents/rules/client-nextjs.md) — Scoped to `client/**/*` (Next.js App Router, Shadcn UI, Recharts, PWA).
   - [backend-python-langgraph.md](./.agents/rules/backend-python-langgraph.md) — Scoped to `functions/**/*` (Cloud Functions Gen 2 Python, LangGraph, Gemini, Pydantic).
   - [firestore-and-security.md](./.agents/rules/firestore-and-security.md) — Loaded on demand for Firestore data modeling, rules, and auth security.
 - **Skills (`.agents/skills/`)**:
@@ -71,7 +71,7 @@ This repository ships pre-configured Antigravity rules and skills under `.agents
 
 ```text
 BreathWiseAI/
-├── frontend/                  # Next.js App Router + TypeScript + Tailwind + Shadcn UI + Recharts
+├── client/                    # Next.js App Router + TypeScript + Tailwind + Shadcn UI + Recharts
 ├── functions/                 # Firebase Cloud Functions Gen 2 (Python 3.12 + LangGraph + Gemini)
 ├── docs/                      # Architecture, Data Model, AI Workflow, API, UI/UX, Impact, Roadmap
 ├── .agents/                   # Antigravity workspace rules & skills
@@ -83,6 +83,6 @@ BreathWiseAI/
 
 ### Planned Local Development Commands (Day 1+)
 
-- **Frontend (`frontend/`)**: `npm install && npm run dev`
+- **Client (`client/`)**: `npm install && npm run dev`
 - **Backend (`functions/`)**: Python virtualenv + `pip install -r requirements.txt` + `firebase emulators:start`
-- **Tests**: Frontend (`npm run lint && npm run typecheck && npm test`), Backend (`pytest`)
+- **Tests**: Client (`npm run lint && npm run typecheck && npm test`), Backend (`pytest`)

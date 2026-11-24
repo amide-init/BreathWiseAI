@@ -60,7 +60,7 @@ flowchart TB
 
 ## 2. Planned Monorepo Directory Structure
 
-> **Note**: Application directories (`frontend/`, `functions/`) and root Firebase configs are planned for Day 1 setup. No codebase files exist during the documentation phase.
+> **Note**: Application directories (`client/`, `functions/`) and root Firebase configs are planned for Day 1 setup. No codebase files exist during the documentation phase.
 
 ```text
 BreathWiseAI/
@@ -73,7 +73,7 @@ BreathWiseAI/
 ├── apphosting.yaml                  # Firebase App Hosting config for Next.js SSR
 ├── firestore.rules                  # Firestore security rules (via firestore-rules-author)
 ├── firestore.indexes.json           # Composite Firestore indexes
-├── frontend/                        # Next.js App Router (TypeScript)
+├── client/                          # Next.js App Router (TypeScript)
 │   ├── public/                      # PWA manifest, icons, static assets
 │   ├── src/
 │   │   ├── app/                     # App Router routes (/, /profile, /planner, /assistant, /impact, /login)

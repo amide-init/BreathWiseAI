@@ -31,7 +31,7 @@ Run automated tests and manual scenario checks across every category below:
 
 ### 4. Privacy & Secret Hygiene
 - [ ] Inspect server logs from a full plan + chat session: confirm zero family member names, zero optional health notes, and zero auth tokens appear in logs.
-- [ ] Search `frontend/` for any server secret names (`GEMINI_API_KEY`, `WAQI_API_KEY`, `CPCB_API_KEY`) to confirm zero client exposure.
+- [ ] Search `client/` for any server secret names (`GEMINI_API_KEY`, `WAQI_API_KEY`, `CPCB_API_KEY`) to confirm zero client exposure.
 
 ## Exit Criteria
 

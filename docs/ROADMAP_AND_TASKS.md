@@ -27,7 +27,7 @@
 ## 2. Ten-Day Execution Plan (PRD §14)
 
 ### Day 1 — Project Setup, UI Design System & Firebase Configuration
-- [ ] Initialize `frontend/` (Next.js App Router, TypeScript, Tailwind CSS, Shadcn UI, Recharts, PWA manifest).
+- [ ] Initialize `client/` (Next.js App Router, TypeScript, Tailwind CSS, Shadcn UI, Recharts, PWA manifest).
 - [ ] Initialize `functions/` (Python 3.12 Firebase Cloud Functions Gen 2 structure + `pytest`).
 - [ ] Configure Firebase project, local Emulators (`firebase.json`), `apphosting.yaml`, and `firestore.indexes.json`.
 - [ ] Delegate initial `firestore.rules` creation to the `firestore-rules-author` subagent per [DATA_MODEL.md](./DATA_MODEL.md).

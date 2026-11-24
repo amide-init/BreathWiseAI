@@ -113,5 +113,5 @@ Never rely on color alone: always render **Color + Category Label + Severity Ico
   - `Unavailable Data`: Neutral slate card explaining missing station/forecast data with a `Retry` button and zero fake values.
   - `Fallback Mode`: Subtle informational badge (*"Generated using verified safety guidelines while AI service reconnects"*).
 - **PWA Requirements**:
-  - `frontend/public/manifest.json` (name: `BreatheWise AI`, short_name: `BreatheWise`, `display: standalone`, theme color, 192px & 512px icons).
+  - `client/public/manifest.json` (name: `BreatheWise AI`, short_name: `BreatheWise`, `display: standalone`, theme color, 192px & 512px icons).
   - Responsive viewport meta tags and clean mobile touch targets (`≥ 44×44px`).
