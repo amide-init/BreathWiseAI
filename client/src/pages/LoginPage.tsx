@@ -4,8 +4,11 @@ import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { APP_ROUTES } from '@/config/routes';
+import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 
 export function LoginPage() {
+  useDocumentTitle('Sign In | BreatheWise AI');
+
   return (
     <div className="flex min-h-screen items-center justify-center bg-slate-50 px-4">
       <Card className="w-full max-w-md">
@@ -24,7 +27,7 @@ export function LoginPage() {
             project <code className="font-semibold">agentora-ai-v2</code>.
           </p>
           <Link to={APP_ROUTES.HOME} className="block">
-            <Button className="w-full">Continue to Dashboard Preview</Button>
+            <Button className="w-full">Continue to Dashboard</Button>
           </Link>
         </CardContent>
       </Card>

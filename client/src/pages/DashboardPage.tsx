@@ -19,14 +19,12 @@ const SCALE_PREVIEW: AqiCategory[] = [
   'Severe',
 ];
 
-export function HomePage() {
+export function DashboardPage() {
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-slate-900">
-            Air Quality Intelligence
-          </h1>
+          <h1 className="text-2xl font-bold tracking-tight text-slate-900">Dashboard</h1>
           <p className="text-sm text-slate-600">
             Real-time CPCB NAQI, pollutants, weather, and actionable family routines.
           </p>
@@ -70,12 +68,7 @@ export function HomePage() {
 
             <div className="flex flex-wrap gap-2 pt-1">
               {SCALE_PREVIEW.map((cat) => (
-                <AqiBadge
-                  key={cat}
-                  category={cat}
-                  className="text-[11px]"
-                  aqi={undefined}
-                />
+                <AqiBadge key={cat} category={cat} className="text-[11px]" aqi={undefined} />
               ))}
             </div>
             <p className="text-xs text-slate-500">
@@ -101,7 +94,7 @@ export function HomePage() {
             </Link>
             <Link to={APP_ROUTES.PLANNER}>
               <Button className="w-full justify-start" variant="outline">
-                Open Daily Clean-Air Planner
+                Open Daily Plan
               </Button>
             </Link>
             <Link to={APP_ROUTES.ASSISTANT}>

@@ -8,9 +8,7 @@ export function PlannerPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold tracking-tight text-slate-900">
-          Daily Clean-Air Planner
-        </h1>
+        <h1 className="text-2xl font-bold tracking-tight text-slate-900">Daily Plan</h1>
         <p className="text-sm text-slate-600">
           Morning, afternoon, and evening guidance plus the questionnaire-based Indoor Air Advisor.
         </p>

@@ -1,19 +1,20 @@
 import {
   CalendarCheck2,
-  Home,
+  LayoutDashboard,
   Leaf,
   MapPin,
   MessageSquareText,
   Users,
   Wind,
 } from 'lucide-react';
-import { NavLink, Outlet } from 'react-router-dom';
+import { NavLink, Outlet, useLocation } from 'react-router-dom';
 
-import { PRIMARY_NAV_ITEMS, type NavItemConfig } from '@/config/routes';
+import { getNavItemByPath, PRIMARY_NAV_ITEMS, type NavItemConfig } from '@/config/routes';
+import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import { cn } from '@/lib/cn';
 
-const NAV_ICONS: Record<NavItemConfig['iconKey'], typeof Home> = {
-  home: Home,
+const NAV_ICONS: Record<NavItemConfig['iconKey'], typeof LayoutDashboard> = {
+  dashboard: LayoutDashboard,
   planner: CalendarCheck2,
   assistant: MessageSquareText,
   impact: Leaf,
@@ -22,10 +23,15 @@ const NAV_ICONS: Record<NavItemConfig['iconKey'], typeof Home> = {
 
 /**
  * Responsive portal shell:
- * - Desktop (md+): Left sidebar + top location header
+ * - Desktop (md+): Left sidebar + top contextual header
  * - Mobile (<md): Compact top header + fixed 5-tab bottom navigation bar
  */
 export function PortalLayout() {
+  const { pathname } = useLocation();
+  const activeRoute = getNavItemByPath(pathname);
+
+  useDocumentTitle(activeRoute.documentTitle);
+
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 md:flex">
       {/* Desktop Sidebar */}
@@ -76,11 +82,11 @@ export function PortalLayout() {
             <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-teal-700 text-white">
               <Wind className="h-4 w-4" aria-hidden="true" />
             </div>
-            <span className="text-sm font-bold text-slate-900">BreatheWise AI</span>
+            <span className="text-sm font-bold text-slate-900">{activeRoute.label}</span>
           </div>
 
-          <div className="hidden text-sm font-medium text-slate-500 md:block">
-            India CPCB NAQI · Grounded Environmental Intelligence
+          <div className="hidden md:block">
+            <p className="text-xs font-medium text-slate-500">{activeRoute.subtitle}</p>
           </div>
 
           <div className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-medium text-slate-700">
