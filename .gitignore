@@ -1,0 +1,47 @@
+# OS & Editor
+.DS_Store
+Thumbs.db
+*.swp
+.vscode/*
+!.vscode/extensions.json
+.idea/
+
+# Environment & Secrets (NEVER commit secrets)
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+serviceAccountKey.json
+*firebase-adminsdk*.json
+
+# Node / pnpm / Vite (client/)
+node_modules/
+client/node_modules/
+client/dist/
+client/.vite/
+client/coverage/
+.pnpm-store/
+*.log
+npm-debug.log*
+pnpm-debug.log*
+
+# Python / Cloud Functions (functions/)
+functions/venv/
+functions/.venv/
+functions/**/__pycache__/
+functions/**/*.py[cod]
+functions/.pytest_cache/
+functions/.mypy_cache/
+functions/.ruff_cache/
+functions/htmlcov/
+functions/.coverage
+
+# Firebase Emulators & Debug Logs
+.firebase/
+firebase-debug.log
+firebase-debug.*.log
+firestore-debug.log
+ui-debug.log
+pubsub-debug.log
+emulator-data/
