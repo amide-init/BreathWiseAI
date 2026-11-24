@@ -83,6 +83,6 @@ BreathWiseAI/
 
 ### Planned Local Development Commands (Day 1+)
 
-- **Client (`client/`)**: `npm install && npm run dev`
-- **Backend (`functions/`)**: Python virtualenv + `pip install -r requirements.txt` + `firebase emulators:start`
-- **Tests**: Client (`npm run lint && npm run typecheck && npm test`), Backend (`pytest`)
+- **Client (`client/`)**: `pnpm install && pnpm dev`
+- **Backend (`functions/`)**: Python virtualenv + `pip install -r requirements.txt` + `npx -y firebase-tools@latest emulators:start`
+- **Tests**: Client (`pnpm lint && pnpm typecheck && pnpm test`), Backend (`pytest`)

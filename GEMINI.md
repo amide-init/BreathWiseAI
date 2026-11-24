@@ -25,7 +25,8 @@ BreathWiseAI/
 └── firestore.indexes.json     # [Planned] Composite Firestore indexes
 ```
 
-- **Auth & DB**: Firebase Authentication + Cloud Firestore (7 core collections).
+- **Package Manager (`client/`)**: Always use **`pnpm`** (never `npm` or `yarn`).
+- **Auth & DB**: Firebase Authentication + Cloud Firestore (7 core collections; Firebase project: `agentora-ai-v2`).
 - **AI Orchestration**: 5-node LangGraph workflow (`context_agent` → `environment_agent` → `risk_assessment` → `recommendation_agent` → `validation_node`) using Google Gemini + Pydantic + verified RAG knowledge base.
 - **AQI & Weather Baseline**: India **CPCB NAQI (0–500)** primary scale (WAQI / data.gov.in CPCB primary source) + **Open-Meteo** for weather, AQ forecasts, and fallback + **Google Maps** for geocoding/location.
 - **Hosting**: Firebase App Hosting for Next.js SSR.

@@ -32,6 +32,6 @@ Use this runbook whenever building a functional requirement (`FR-01`–`FR-11`) 
    - **Client (`client/`)**: Define matching TypeScript DTOs, build mobile-first Shadcn UI components, implement all five required UI states (`loading`, `fresh`, `stale`, `unavailable`, `error`), and wire authenticated API calls.
 
 5. **Verify Before Completing**:
-   - Run backend tests (`pytest` in `functions/`) and client checks (`npm run lint && npm run typecheck && npm test` in `client/`).
+   - Run backend tests (`pytest` in `functions/`) and client checks (`pnpm lint && pnpm typecheck && pnpm test` in `client/`).
    - If the feature touches AI prompts, recommendations, or AQI display, run the checks in [verify-ai-safety](../verify-ai-safety/SKILL.md).
    - Update the checkbox status in [docs/ROADMAP_AND_TASKS.md](../../../docs/ROADMAP_AND_TASKS.md).

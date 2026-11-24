@@ -10,6 +10,7 @@ Follow [docs/UI_UX_SPEC.md](../../docs/UI_UX_SPEC.md) and [docs/API_SPEC.md](../
 
 ## 1. Architecture & Stack Conventions
 
+- **Package Manager (`pnpm` only)**: Always use **`pnpm`** (`pnpm install`, `pnpm add`, `pnpm dev`, `pnpm lint`, `pnpm typecheck`, `pnpm test`, `pnpm build`) in `client/`. Never use `npm` or `yarn`, and never commit `package-lock.json` or `yarn.lock` (keep `pnpm-lock.yaml` only).
 - **Next.js App Router**: Use Server Components by default; add `'use client'` only for interactive components (forms, Recharts charts, chat composer, Auth listeners, tabs).
 - **Senior Clean Structure & Reusability**: Organize code cleanly into `config/` (app routes, AQI visual token maps, constants), `lib/` (Firebase init, reusable authenticated API client, date/AQI formatters), `services/` (typed API & Firestore client functions), `hooks/` (reusable stateful hooks), `components/ui/` (Shadcn primitives), `components/shared/` (reusable AQI badge, freshness banner, error/empty/loading states), and `types/` (shared DTOs). Avoid duplicating fetch logic or formatting helpers across pages.
 - **Strict TypeScript**: No `any` types. Define shared domain DTOs (AQI readings, FamilyProfile, DailyPlan, ChatMessage, ImpactSummary) matching [docs/API_SPEC.md](../../docs/API_SPEC.md) and [docs/DATA_MODEL.md](../../docs/DATA_MODEL.md).
