@@ -33,3 +33,13 @@ export function formatCo2Kg(value: number | null | undefined): string {
   }
   return `${value.toFixed(2)} kg CO2e`;
 }
+
+const COMPASS_POINTS = ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'] as const;
+
+export function formatWindDirection(degrees: number | null | undefined): string {
+  if (degrees === null || degrees === undefined || Number.isNaN(degrees)) {
+    return '';
+  }
+  const normalized = ((degrees % 360) + 360) % 360;
+  return COMPASS_POINTS[Math.round(normalized / 45) % 8];
+}

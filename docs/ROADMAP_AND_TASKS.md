@@ -8,10 +8,10 @@
 
 | ID | Requirement | Priority | Primary Screen / Module | Backend / Firestore Touchpoints | Status |
 |---|---|---|---|---|---|
-| `FR-01` | User registration and login | **P0** | `/login`, Auth Guard | Firebase Auth, `users/{uid}` | [ ] |
-| `FR-02` | Location selection | **P0** | Onboarding, Home top bar, `/profile` | `GET /api/v1/locations/search`, `users/{uid}` | [ ] |
-| `FR-03` | Retrieve real-time AQI | **P0** | Home Dashboard (`/`) | `GET /api/v1/air-quality`, `air_quality/{locationId}` | [ ] |
-| `FR-04` | Display pollutant measurements (PM2.5, PM10, weather, freshness) | **P0** | Home Dashboard (`/`) | `GET /api/v1/air-quality` | [ ] |
+| `FR-01` | User registration and login | **P0** | `/login`, Auth Guard | Firebase Auth, `users/{uid}` | [x] |
+| `FR-02` | Location selection | **P0** | Onboarding, Home top bar, `/profile` | `GET /api/v1/locations/search`, `users/{uid}` | [x] |
+| `FR-03` | Retrieve real-time AQI | **P0** | Home Dashboard (`/`) | `GET /api/v1/air-quality`, `air_quality/{locationId}` | [x] |
+| `FR-04` | Display pollutant measurements (PM2.5, PM10, weather, freshness) | **P0** | Home Dashboard (`/`) | `GET /api/v1/air-quality` | [x] |
 | `FR-05` | Family profile management | **P0** | Family Profile (`/profile`) | `families/{familyId}`, `members/{memberId}` | [ ] |
 | `FR-06` | Generate AI daily planner (4-part recommendations) | **P0** | Daily Planner (`/planner`) | `POST /api/v1/daily-plan/generate`, `daily_plans/` | [ ] |
 | `FR-07` | Generate indoor air recommendations (estimated) | **P0** | Indoor Air Advisor (`/planner?tab=indoor`) | `POST /api/v1/indoor-advisor/assess`, `families/` | [ ] |
@@ -34,11 +34,11 @@
 - [x] Build mobile-first app shell (bottom tab nav on mobile, sidebar on desktop) and CPCB NAQI visual token components.
 
 ### Day 2 — Authentication, Firestore & AQI Integration (`FR-01`, `FR-02`, `FR-03`, `FR-04`)
-- [ ] Implement Firebase Auth (Email/Password + Google Sign-In) and user bootstrap (`users/{uid}`).
-- [ ] Implement server-side Firebase ID token verification middleware in `functions/`.
-- [ ] Implement `GET /api/v1/locations/search` (Google Maps + curated fallback cities).
-- [ ] Implement `GET /api/v1/air-quality` with WAQI/CPCB primary, Open-Meteo weather & AQ forecast/fallback, Firestore caching (30 min / 3 hr TTL), and explicit `freshnessStatus`.
-- [ ] Build Screen 1 (Home Dashboard) with loading, fresh, stale-warning, and unavailable states.
+- [x] Implement Firebase Auth (Email/Password + Google Sign-In) and user bootstrap (`users/{uid}`).
+- [x] Implement server-side Firebase ID token verification middleware in `functions/`.
+- [x] Implement `GET /api/v1/locations/search` (Google Maps + curated fallback cities).
+- [x] Implement `GET /api/v1/air-quality` with WAQI/CPCB primary, Open-Meteo weather & AQ forecast/fallback, Firestore caching (30 min / 3 hr TTL), and explicit `freshnessStatus`.
+- [x] Build Screen 1 (Home Dashboard) with loading, fresh, stale-warning, and unavailable states.
 
 ### Day 3 — Family Profile & Personalization (`FR-05`)
 - [ ] Implement Family Profile onboarding & Screen 2 (`/profile`) CRUD for `families/{familyId}` and `members/{memberId}`.
