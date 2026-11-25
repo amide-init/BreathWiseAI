@@ -1,12 +1,16 @@
 import { INSTANT_GLOSSARY } from './instant-glossary';
 import type { SupportedLanguage } from './languages';
 
-const CACHE_STORAGE_PREFIX = 'breathewise:rt-translate:v3:';
-const MAX_CACHE_ENTRIES = 800;
-const MAX_BATCH_SIZE = 45;
+const CACHE_STORAGE_PREFIX = 'breathewise:rt-translate:v4:';
+const MAX_CACHE_ENTRIES = 1_000;
+// Small batches (12 items) return from Gemini Flash in ~2-4s and never hit the 20s timeout.
+const MAX_BATCH_SIZE = 12;
+const MAX_CONCURRENT_BATCHES = 3;
 const MAX_TEXT_LENGTH = 900;
-const DEBOUNCE_MS = 80;
-const FAILURE_COOLDOWN_MS = 30_000;
+const DEBOUNCE_MS = 70;
+const FAILURE_COOLDOWN_MS = 12_000;
+// Periodic lightweight rescan catches async Firestore / lazy-route / modal updates reliably.
+const RESCAN_INTERVAL_MS = 1_200;
 
 const SKIP_TAGS = new Set([
   'SCRIPT',
@@ -61,10 +65,15 @@ const NUMBER_TOKEN_RE = /\d+(?:\.\d+)?/g;
 const PURE_CLOCK_RE = /^\d{1,2}:\d{2}(\s*(AM|PM))?$/i;
 const EMAIL_OR_URL_RE = /^(https?:\/\/|www\.|[^\s@]+@[^\s@]+\.[^\s@]+$)/i;
 
+export interface BatchTranslateResponse {
+  translations: string[];
+  fallbackUsed: boolean;
+}
+
 export type BatchTranslateFn = (
   language: SupportedLanguage,
   texts: string[],
-) => Promise<string[]>;
+) => Promise<BatchTranslateResponse>;
 
 interface TrackedNode {
   original: string;
@@ -72,12 +81,13 @@ interface TrackedNode {
 }
 
 /**
- * Verifies that every numeric token in the original string is preserved in order.
- * Prevents any LLM translation glitch from altering AQI, PM2.5, or CO2 readings.
+ * Verifies that every numeric token in the original string is preserved (order-independent
+ * multiset comparison so natural Indian-language SOV grammar can reorder clauses safely
+ * without dropping, altering, or fabricating any AQI, PM2.5, or CO2 figure).
  */
 export function numbersPreserved(original: string, translated: string): boolean {
-  const origNums = original.match(NUMBER_TOKEN_RE) ?? [];
-  const nextNums = translated.match(NUMBER_TOKEN_RE) ?? [];
+  const origNums = (original.match(NUMBER_TOKEN_RE) ?? []).sort();
+  const nextNums = (translated.match(NUMBER_TOKEN_RE) ?? []).sort();
   if (origNums.length !== nextNums.length) {
     return false;
   }
@@ -140,7 +150,7 @@ function readLangCache(lang: SupportedLanguage): Map<string, string> {
     }
     const parsed = JSON.parse(raw) as Record<string, unknown>;
     for (const [k, v] of Object.entries(parsed)) {
-      if (typeof v === 'string' && v.trim()) {
+      if (typeof v === 'string' && v.trim() && v !== k) {
         map.set(k, v);
       }
     }
@@ -155,7 +165,6 @@ function writeLangCache(lang: SupportedLanguage, cache: Map<string, string>): vo
     return;
   }
   try {
-    // LRU trim from oldest entries
     while (cache.size > MAX_CACHE_ENTRIES) {
       const oldestKey = cache.keys().next().value;
       if (oldestKey === undefined) {
@@ -174,11 +183,13 @@ function writeLangCache(lang: SupportedLanguage, cache: Map<string, string>): vo
 }
 
 /**
- * React-safe real-time DOM translator:
- * - Mutates `Text.nodeValue` and `placeholder` strictly in place (never wraps/inserts DOM nodes)
- *   so React reconciliation never throws `removeChild` errors.
+ * React-safe real-time frontend view translator:
+ * - Firestore data and React state remain 100% English; ONLY visual DOM text nodes and
+ *   input placeholders are translated in place (never wrapping/inserting DOM nodes).
  * - Tracks original English strings in WeakMaps so switching back to `'en'` is instant (0ms).
- * - Resolves Tier 1 (instant glossary) -> Tier 2 (localStorage cache) -> Tier 3 (batched Gemini Flash).
+ * - Resolves Tier 1 (0ms glossary) -> Tier 2 (0ms localStorage cache) -> Tier 3 (small
+ *   parallel 12-item batches via `translate_texts` so long pages & Firestore cards translate
+ *   fast without ever timing out or poisoning cache on fallback).
  */
 export class RealTimeDomTranslator {
   private readonly root: HTMLElement;
@@ -187,7 +198,7 @@ export class RealTimeDomTranslator {
 
   private language: SupportedLanguage = 'en';
   private observer: MutationObserver | null = null;
-  private isApplying = false;
+  private rescanTimer: ReturnType<typeof setInterval> | null = null;
 
   private readonly trackedTexts = new WeakMap<Text, TrackedNode>();
   private readonly activeTextNodes = new Set<Text>();
@@ -228,6 +239,7 @@ export class RealTimeDomTranslator {
 
     if (nextLang === 'en') {
       this.disconnectObserver();
+      this.stopRescanTimer();
       this.restoreAllToEnglish();
       this.emitTranslatingState();
       return;
@@ -237,6 +249,7 @@ export class RealTimeDomTranslator {
     // so every node is re-translated cleanly from its true English source.
     this.restoreAllToEnglish();
     this.ensureObserver();
+    this.startRescanTimer();
     this.scanSubtree(this.root);
     this.scheduleBatchFlush();
   }
@@ -244,6 +257,7 @@ export class RealTimeDomTranslator {
   public destroy(): void {
     this.clearPendingBatch();
     this.disconnectObserver();
+    this.stopRescanTimer();
     this.restoreAllToEnglish();
     this.activeTextNodes.clear();
     this.activePlaceholderEls.clear();
@@ -278,7 +292,7 @@ export class RealTimeDomTranslator {
       return;
     }
     this.observer = new MutationObserver((mutations) => {
-      if (this.isApplying || this.language === 'en') {
+      if (this.language === 'en') {
         return;
       }
 
@@ -322,6 +336,27 @@ export class RealTimeDomTranslator {
     }
   }
 
+  private startRescanTimer(): void {
+    if (this.rescanTimer !== null) {
+      return;
+    }
+    this.rescanTimer = setInterval(() => {
+      if (this.language === 'en') {
+        return;
+      }
+      if (this.scanSubtree(this.root)) {
+        this.scheduleBatchFlush();
+      }
+    }, RESCAN_INTERVAL_MS);
+  }
+
+  private stopRescanTimer(): void {
+    if (this.rescanTimer !== null) {
+      clearInterval(this.rescanTimer);
+      this.rescanTimer = null;
+    }
+  }
+
   private scanSubtree(container: Element): boolean {
     if (isInsideSkippedElement(container)) {
       return false;
@@ -338,7 +373,6 @@ export class RealTimeDomTranslator {
       current = walker.nextNode();
     }
 
-    // Also process input/textarea placeholders safely without touching `.value`
     const inputs = container.querySelectorAll<HTMLInputElement | HTMLTextAreaElement>(
       'input[placeholder], textarea[placeholder]',
     );
@@ -360,7 +394,7 @@ export class RealTimeDomTranslator {
     let tracked = this.trackedTexts.get(node);
 
     if (tracked) {
-      // If React updated this Text node to new content, refresh its English source.
+      // If React/Firestore updated this Text node to new content, refresh its English source.
       if (raw !== tracked.applied) {
         tracked.original = raw;
         tracked.applied = raw;
@@ -419,13 +453,8 @@ export class RealTimeDomTranslator {
     const instant = this.lookupInstant(this.language, core);
     if (instant !== null) {
       if (el.getAttribute('placeholder') !== instant) {
-        this.isApplying = true;
-        try {
-          el.setAttribute('placeholder', instant);
-          tracked.applied = instant;
-        } finally {
-          this.isApplying = false;
-        }
+        el.setAttribute('placeholder', instant);
+        tracked.applied = instant;
       }
       return false;
     }
@@ -447,47 +476,37 @@ export class RealTimeDomTranslator {
   }
 
   private applyTextValue(node: Text, tracked: TrackedNode, nextValue: string): void {
-    this.isApplying = true;
-    try {
-      node.nodeValue = nextValue;
-      tracked.applied = nextValue;
-    } finally {
-      this.isApplying = false;
-    }
+    tracked.applied = nextValue;
+    node.nodeValue = nextValue;
   }
 
   private restoreAllToEnglish(): void {
-    this.isApplying = true;
-    try {
-      for (const node of Array.from(this.activeTextNodes)) {
-        if (!node.isConnected) {
-          this.activeTextNodes.delete(node);
-          continue;
-        }
-        const tracked = this.trackedTexts.get(node);
-        if (tracked && node.nodeValue === tracked.applied && node.nodeValue !== tracked.original) {
-          node.nodeValue = tracked.original;
-          tracked.applied = tracked.original;
-        }
+    for (const node of Array.from(this.activeTextNodes)) {
+      if (!node.isConnected) {
+        this.activeTextNodes.delete(node);
+        continue;
       }
+      const tracked = this.trackedTexts.get(node);
+      if (tracked && node.nodeValue === tracked.applied && node.nodeValue !== tracked.original) {
+        tracked.applied = tracked.original;
+        node.nodeValue = tracked.original;
+      }
+    }
 
-      for (const el of Array.from(this.activePlaceholderEls)) {
-        if (!el.isConnected) {
-          this.activePlaceholderEls.delete(el);
-          continue;
-        }
-        const tracked = this.trackedPlaceholders.get(el);
-        if (
-          tracked &&
-          el.getAttribute('placeholder') === tracked.applied &&
-          tracked.applied !== tracked.original
-        ) {
-          el.setAttribute('placeholder', tracked.original);
-          tracked.applied = tracked.original;
-        }
+    for (const el of Array.from(this.activePlaceholderEls)) {
+      if (!el.isConnected) {
+        this.activePlaceholderEls.delete(el);
+        continue;
       }
-    } finally {
-      this.isApplying = false;
+      const tracked = this.trackedPlaceholders.get(el);
+      if (
+        tracked &&
+        el.getAttribute('placeholder') === tracked.applied &&
+        tracked.applied !== tracked.original
+      ) {
+        tracked.applied = tracked.original;
+        el.setAttribute('placeholder', tracked.original);
+      }
     }
   }
 
@@ -525,54 +544,79 @@ export class RealTimeDomTranslator {
     const allQueued = Array.from(this.pendingStrings);
     this.pendingStrings.clear();
 
-    // Chunk into bounded batches of MAX_BATCH_SIZE
+    // Split into small fast batches (12 items each) and process up to 3 concurrently.
     const chunks: string[][] = [];
     for (let i = 0; i < allQueued.length; i += MAX_BATCH_SIZE) {
       chunks.push(allQueued.slice(i, i + MAX_BATCH_SIZE));
     }
 
-    for (const batch of chunks) {
+    let cursor = 0;
+    const runWorker = async (): Promise<void> => {
+      while (cursor < chunks.length) {
+        const batch = chunks[cursor++];
+        if (!batch || this.language !== targetLang) {
+          return;
+        }
+        await this.processSingleBatch(targetLang, batch);
+      }
+    };
+
+    const workers = Array.from({ length: Math.min(MAX_CONCURRENT_BATCHES, chunks.length) }, () =>
+      runWorker(),
+    );
+    await Promise.all(workers);
+
+    // If more Firestore/lazy nodes mounted while batches were running, flush them next.
+    if (this.language === targetLang && this.pendingStrings.size > 0) {
+      this.scheduleBatchFlush();
+    }
+  }
+
+  private async processSingleBatch(targetLang: SupportedLanguage, batch: string[]): Promise<void> {
+    batch.forEach((item) => this.inFlightStrings.add(`${targetLang}::${item}`));
+    this.activeRequestCount += 1;
+    this.emitTranslatingState();
+
+    try {
+      const { translations, fallbackUsed } = await this.translateBatch(targetLang, batch);
+
       if (this.language !== targetLang) {
         return;
       }
 
-      batch.forEach((item) => this.inFlightStrings.add(`${targetLang}::${item}`));
-      this.activeRequestCount += 1;
-      this.emitTranslatingState();
-
-      try {
-        const translatedList = await this.translateBatch(targetLang, batch);
-
-        if (this.language !== targetLang) {
-          return;
-        }
-
-        const cache = this.getCache(targetLang);
-        let cacheUpdated = false;
-
-        batch.forEach((orig, idx) => {
-          const candidate = translatedList[idx]?.trim();
-          if (candidate && numbersPreserved(orig, candidate)) {
-            cache.set(orig, candidate);
-            cacheUpdated = true;
-          } else {
-            cache.set(orig, orig);
-            cacheUpdated = true;
-          }
-        });
-
-        if (cacheUpdated) {
-          writeLangCache(targetLang, cache);
-          this.applyCachedTranslationsToTrackedNodes(targetLang);
-        }
-      } catch {
+      // Never poison localStorage cache if backend returned a fallback English response.
+      if (fallbackUsed) {
         const until = Date.now() + FAILURE_COOLDOWN_MS;
         batch.forEach((item) => this.failedUntil.set(`${targetLang}::${item}`, until));
-      } finally {
-        batch.forEach((item) => this.inFlightStrings.delete(`${targetLang}::${item}`));
-        this.activeRequestCount = Math.max(0, this.activeRequestCount - 1);
-        this.emitTranslatingState();
+        return;
       }
+
+      const cache = this.getCache(targetLang);
+      let cacheUpdated = false;
+      const until = Date.now() + FAILURE_COOLDOWN_MS;
+
+      batch.forEach((orig, idx) => {
+        const candidate = translations[idx]?.trim();
+        if (candidate && candidate !== orig && numbersPreserved(orig, candidate)) {
+          cache.set(orig, candidate);
+          cacheUpdated = true;
+        } else {
+          // Do NOT permanently cache untranslated English; allow retry after cooldown.
+          this.failedUntil.set(`${targetLang}::${orig}`, until);
+        }
+      });
+
+      if (cacheUpdated) {
+        writeLangCache(targetLang, cache);
+        this.applyCachedTranslationsToTrackedNodes(targetLang);
+      }
+    } catch {
+      const until = Date.now() + FAILURE_COOLDOWN_MS;
+      batch.forEach((item) => this.failedUntil.set(`${targetLang}::${item}`, until));
+    } finally {
+      batch.forEach((item) => this.inFlightStrings.delete(`${targetLang}::${item}`));
+      this.activeRequestCount = Math.max(0, this.activeRequestCount - 1);
+      this.emitTranslatingState();
     }
   }
 
@@ -610,13 +654,8 @@ export class RealTimeDomTranslator {
       }
       const hit = this.lookupInstant(targetLang, tracked.original.trim());
       if (hit !== null && el.getAttribute('placeholder') !== hit) {
-        this.isApplying = true;
-        try {
-          el.setAttribute('placeholder', hit);
-          tracked.applied = hit;
-        } finally {
-          this.isApplying = false;
-        }
+        tracked.applied = hit;
+        el.setAttribute('placeholder', hit);
       }
     }
   }

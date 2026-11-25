@@ -20,8 +20,14 @@ MAX_TEXTS_PER_BATCH = 60
 MAX_CHARS_PER_TEXT = 1_000
 MAX_TOTAL_CHARS = 20_000
 
-# Matches numeric tokens (integers/decimals) so we can verify no reading or figure is altered.
+# Matches ASCII numeric tokens (integers/decimals) so we can verify no reading is altered.
 _NUMBER_TOKEN_RE = re.compile(r"\d+(?:\.\d+)?")
+
+# Maps native Indian script numerals to ASCII 0-9 before checking numeric integrity.
+_NATIVE_DIGIT_TRANS = str.maketrans(
+    "०१२३४५६७८९০১২৩৪৫৬৭৮৯௦௧௨௩௪௫௬௭௮௯౦౧౨౩౪౫౬౭౮౯",
+    "0123456789012345678901234567890123456789",
+)
 
 
 class StructuredTranslatorProvider(Protocol):
@@ -43,9 +49,20 @@ def normalize_language(raw: str | None) -> str:
     return code
 
 
+def normalize_digits(text: str) -> str:
+    """Normalize any native Indian numerals back to standard ASCII digits 0-9."""
+    return text.translate(_NATIVE_DIGIT_TRANS)
+
+
 def numbers_preserved(original: str, translated: str) -> bool:
-    """Ensure translation did not alter, drop, or fabricate any numeric measurement."""
-    return _NUMBER_TOKEN_RE.findall(original) == _NUMBER_TOKEN_RE.findall(translated)
+    """Ensure translation did not alter, drop, or fabricate any numeric measurement.
+
+    Compares sorted multisets so natural Indian-language grammar (SOV clause order)
+    can reorder two numbers in a sentence without losing or altering any figure.
+    """
+    orig_nums = sorted(_NUMBER_TOKEN_RE.findall(normalize_digits(original)))
+    next_nums = sorted(_NUMBER_TOKEN_RE.findall(normalize_digits(translated)))
+    return orig_nums == next_nums
 
 
 class TranslationService:
@@ -143,7 +160,7 @@ class TranslationService:
         for item in llm_output.items:
             if 0 <= item.index < len(unique_texts):
                 original = unique_texts[item.index]
-                candidate = item.text.strip()
+                candidate = normalize_digits(item.text.strip())
                 if candidate and numbers_preserved(original, candidate):
                     translated_by_idx[item.index] = candidate
                 else:

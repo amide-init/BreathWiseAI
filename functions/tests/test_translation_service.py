@@ -68,10 +68,12 @@ def test_hindi_with_english_terms_batch_translation_deduplicates_and_aligns() ->
 
 def test_numeric_safety_guard_rejects_altered_aqi_reading() -> None:
     # LLM hallucinates AQI 120 instead of 245 -> service MUST reject and keep original English.
+    # Reordered clauses with exact numbers (Hindi SOV order) and native digits normalized -> allowed.
     provider = _FakeTranslatorProvider(
         {
             0: "आज AQI 120 है, सब ठीक है",
             1: "PM2.5 85.4 µg/m³ है, N95 mask पहनें",
+            2: "15 मिनट बाद तक चलाएं और खाना बनाने से 5 मिनट पहले एग्जॉस्ट चालू करें।",
         }
     )
     service = TranslationService(llm_provider=provider)
@@ -81,11 +83,13 @@ def test_numeric_safety_guard_rejects_altered_aqi_reading() -> None:
         texts=[
             "Today AQI is 245, avoid outdoor jogging",
             "PM2.5 is 85.4 µg/m³, wear an N95 mask",
+            "Turn on exhaust 5 minutes before cooking and keep on for 15 minutes afterward.",
         ],
     )
 
     assert resp.translations[0] == "Today AQI is 245, avoid outdoor jogging"
     assert resp.translations[1] == "PM2.5 85.4 µg/m³ है, N95 mask पहनें"
+    assert resp.translations[2] == "15 मिनट बाद तक चलाएं और खाना बनाने से 5 मिनट पहले एग्जॉस्ट चालू करें।"
 
 
 def test_upstream_failure_falls_back_cleanly_to_english() -> None:

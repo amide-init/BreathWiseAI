@@ -38,11 +38,19 @@ describe('Real-time frontend translator safety & glossary', () => {
     expect(shouldSkipText('Outdoor air is poor — wear an N95 mask')).toBe(false);
   });
 
-  it('enforces strict numeric preservation on translated outputs', () => {
+  it('enforces strict numeric preservation while allowing natural SOV clause reordering', () => {
     expect(
       numbersPreserved(
         'AQI is 245 and PM2.5 is 88.5 µg/m³.',
         'आज AQI 245 और PM2.5 88.5 µg/m³ है।',
+      ),
+    ).toBe(true);
+
+    // Reordered clauses in Hindi SOV grammar preserve exact same numeric multiset -> allowed
+    expect(
+      numbersPreserved(
+        'Turn on exhaust 5 minutes before cooking and keep on for 15 minutes afterward.',
+        '15 मिनट बाद तक चलाएं और खाना बनाने से 5 मिनट पहले एग्जॉस्ट चालू करें।',
       ),
     ).toBe(true);
 
