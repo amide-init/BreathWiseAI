@@ -15,6 +15,7 @@ from app.config.settings import get_settings
 from app.routes.air_quality_routes import handle_get_air_quality_callable
 from app.routes.health_routes import handle_health
 from app.routes.location_routes import handle_location_search_callable
+from app.routes.planner_routes import handle_generate_daily_plan_callable
 from app.utils.callable_utils import run_callable
 
 _settings = get_settings()
@@ -48,3 +49,15 @@ def search_locations(req: https_fn.CallableRequest[Any]) -> Any:
 def get_air_quality(req: https_fn.CallableRequest[Any]) -> Any:
     """Authenticated callable returning cache-first CPCB NAQI, weather & forecasts (FR-03/04)."""
     return run_callable("get_air_quality", req, handle_get_air_quality_callable, require_auth=True)
+
+
+@https_fn.on_call(
+    region=_settings.region,
+    memory=options.MemoryOption.MB_512,
+    timeout_sec=60,
+)
+def generate_daily_plan(req: https_fn.CallableRequest[Any]) -> Any:
+    """Authenticated callable running the 5-node LangGraph Daily Planner (FR-06)."""
+    return run_callable(
+        "generate_daily_plan", req, handle_generate_daily_plan_callable, require_auth=True
+    )

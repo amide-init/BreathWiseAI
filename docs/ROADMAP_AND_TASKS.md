@@ -12,13 +12,13 @@
 | `FR-02` | Location selection | **P0** | Onboarding, Home top bar, `/profile` | `GET /api/v1/locations/search`, `users/{uid}` | [x] |
 | `FR-03` | Retrieve real-time AQI | **P0** | Home Dashboard (`/`) | `GET /api/v1/air-quality`, `air_quality/{locationId}` | [x] |
 | `FR-04` | Display pollutant measurements (PM2.5, PM10, weather, freshness) | **P0** | Home Dashboard (`/`) | `GET /api/v1/air-quality` | [x] |
-| `FR-05` | Family profile management | **P0** | Family Profile (`/profile`) | `families/{familyId}`, `members/{memberId}` | [ ] |
-| `FR-06` | Generate AI daily planner (4-part recommendations) | **P0** | Daily Planner (`/planner`) | `POST /api/v1/daily-plan/generate`, `daily_plans/` | [ ] |
-| `FR-07` | Generate indoor air recommendations (estimated) | **P0** | Indoor Air Advisor (`/planner?tab=indoor`) | `POST /api/v1/indoor-advisor/assess`, `families/` | [ ] |
-| `FR-08` | Conversational AI assistant | **P0** | AI Assistant (`/assistant`) | `POST /api/v1/chat/message`, `chat_sessions/` | [ ] |
-| `FR-09` | Sustainable alternatives | **P0** | Daily Planner, Assistant, `/impact` | LangGraph Node 4 + `POST /api/v1/impact/log` | [ ] |
-| `FR-10` | Environmental impact calculation (separate exposure vs CO2) | **P1** | My Impact (`/impact`) | `POST /api/v1/impact/log`, `GET /api/v1/impact/summary`, `impact_logs/` | [ ] |
-| `FR-11` | Retrieve supporting knowledge (RAG) | **P1** | Planner, Indoor Advisor, Assistant | `knowledge_base/` seed + Node 4 RAG | [ ] |
+| `FR-05` | Family profile management | **P0** | Family Profile (`/profile`) | `families/{familyId}`, `members/{memberId}` | [x] |
+| `FR-06` | Generate AI daily planner (4-part recommendations) | **P0** | Daily Planner (`/planner`) | `generate_daily_plan` (`on_call`), `daily_plans/` | [x] |
+| `FR-07` | Generate indoor air recommendations (estimated) | **P0** | Indoor Air Advisor (`/planner?tab=indoor`) | `assess_indoor_air` (`on_call`), `families/` | [ ] |
+| `FR-08` | Conversational AI assistant | **P0** | AI Assistant (`/assistant`) | `send_chat_message` (`on_call`), `chat_sessions/` | [ ] |
+| `FR-09` | Sustainable alternatives | **P0** | Daily Planner, Assistant, `/impact` | LangGraph Node 4 + `log_impact_action` (`on_call`) | [ ] |
+| `FR-10` | Environmental impact calculation (separate exposure vs CO2) | **P1** | My Impact (`/impact`) | `log_impact_action`, `get_impact_summary`, `impact_logs/` | [ ] |
+| `FR-11` | Retrieve supporting knowledge (RAG) | **P1** | Planner, Indoor Advisor, Assistant | `knowledge_base/` seed + Node 4 RAG | [x] |
 | `FR-12` | Pollution notifications (FCM) | **P2** | Optional / Post-MVP | Firebase Cloud Messaging | [ ] |
 | `FR-13` | Community challenges | **P2** | Optional / Post-MVP | Deferred out of core 10-day MVP | [ ] |
 
@@ -41,24 +41,24 @@
 - [x] Build Screen 1 (Home Dashboard) with loading, fresh, stale-warning, and unavailable states.
 
 ### Day 3 — Family Profile & Personalization (`FR-05`)
-- [ ] Implement Family Profile onboarding & Screen 2 (`/profile`) CRUD for `families/{familyId}` and `members/{memberId}`.
-- [ ] Add schedules, commute habits, exercise preferences, indoor equipment toggles, and clearly labeled Optional & Private health sensitivity fields.
-- [ ] Verify Firestore security rules enforce strict owner-only access.
+- [x] Implement Family Profile onboarding & Screen 2 (`/profile`) CRUD for `families/{familyId}` and `members/{memberId}`.
+- [x] Add schedules, commute habits, exercise preferences, indoor equipment toggles, and clearly labeled Optional & Private health sensitivity fields.
+- [x] Verify Firestore security rules enforce strict owner-only access.
 
 ### Day 4 — LangGraph Workflow, RAG Seed & Gemini Integration (`FR-11`)
-- [ ] Seed verified `knowledge_base/` documents in Firestore per [IMPACT_AND_KNOWLEDGE.md](./IMPACT_AND_KNOWLEDGE.md).
-- [ ] Implement all 5 LangGraph nodes in `functions/app/graph/` per [AI_WORKFLOW.md](./AI_WORKFLOW.md):
+- [x] Seed verified `knowledge_base/` documents in Firestore per [IMPACT_AND_KNOWLEDGE.md](./IMPACT_AND_KNOWLEDGE.md).
+- [x] Implement all 5 LangGraph nodes in `functions/app/graph/` per [AI_WORKFLOW.md](./AI_WORKFLOW.md):
   - Node 1 `context_agent` (with PII sanitization)
   - Node 2 `environment_agent`
   - Node 3 `risk_assessment` (100% deterministic CPCB NAQI engine)
   - Node 4 `recommendation_agent` (RAG + Gemini structured output)
   - Node 5 `validation_node` (schema, numeric grounding, contradiction & medical checks + deterministic fallback)
-- [ ] Write unit tests covering deterministic risk rules, missing/stale data, and validation rejection.
+- [x] Write unit tests covering deterministic risk rules, missing/stale data, and validation rejection.
 
 ### Day 5 — AI Personalized Daily Planner (`FR-06`, `FR-09`)
-- [ ] Implement `POST /api/v1/daily-plan/generate` backed by the 5-node LangGraph workflow.
-- [ ] Build Screen 3 (`/planner`) displaying Morning / Afternoon / Evening 4-part recommendation cards, priority badges, citations, and completion toggles persisted to `daily_plans/`.
-- [ ] Connect Today's Top Actions preview on Home Dashboard.
+- [x] Implement `generate_daily_plan` (`on_call`) backed by the 5-node LangGraph workflow.
+- [x] Build Screen 3 (`/planner`) displaying Morning / Afternoon / Evening 4-part recommendation cards, priority badges, citations, and completion toggles persisted to `daily_plans/`.
+- [x] Connect Today's Top Actions preview on Home Dashboard.
 
 ### Day 6 — Indoor Air Quality Advisor & Conversational Assistant (`FR-07`, `FR-08`)
 - [ ] Implement `POST /api/v1/indoor-advisor/assess` and Indoor Air Questionnaire UI with explicit **"Estimated (questionnaire-based)"** labeling.

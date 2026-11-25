@@ -22,18 +22,23 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { getAqiToken } from '@/config/aqi-tokens';
 import { APP_ROUTES } from '@/config/routes';
 import { useAirQuality } from '@/hooks/useAirQuality';
+import { useDailyPlan } from '@/hooks/useDailyPlan';
 import { useSelectedLocation } from '@/hooks/useSelectedLocation';
 import { formatMeasurement, formatWindDirection } from '@/lib/formatters';
 
 export function DashboardPage() {
   const { selectedLocation, openPicker } = useSelectedLocation();
   const { data, isLoading, isRefreshing, error, refresh } = useAirQuality();
+  const { plan } = useDailyPlan();
 
   const current = data?.current;
   const weather = data?.weather;
   const token = getAqiToken(current?.category ?? 'Unavailable');
   const pm25Reading = current?.readings.find((r) => r.pollutant === 'PM2.5');
   const pm10Reading = current?.readings.find((r) => r.pollutant === 'PM10');
+  const topActions = plan
+    ? [...plan.sections.morning, ...plan.sections.afternoon, ...plan.sections.evening].slice(0, 3)
+    : [];
 
   return (
     <div className="space-y-6">
@@ -207,6 +212,56 @@ export function DashboardPage() {
             </div>
 
             <ForecastChart forecasts={data.forecasts} />
+
+            {/* Today's Top Recommended Actions Preview */}
+            <Card>
+              <CardHeader>
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <div>
+                    <CardTitle className="text-base">Today’s Recommended Actions</CardTitle>
+                    <CardDescription>
+                      Top clean-air actions from your personalized Daily Plan.
+                    </CardDescription>
+                  </div>
+                  <Link to={APP_ROUTES.PLANNER}>
+                    <Button variant="outline" size="sm">
+                      {topActions.length > 0 ? 'View Full Plan' : "Generate Today's Plan"}
+                    </Button>
+                  </Link>
+                </div>
+              </CardHeader>
+              <CardContent>
+                {topActions.length === 0 ? (
+                  <p className="text-sm text-slate-600">
+                    Generate your personalized Morning, Afternoon & Evening plan based on live{' '}
+                    {selectedLocation.city} AQI and your family profile.
+                  </p>
+                ) : (
+                  <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
+                    {topActions.map((item) => (
+                      <div
+                        key={item.itemId}
+                        className="rounded-xl border border-slate-200 bg-slate-50/60 p-3.5"
+                      >
+                        <Badge
+                          variant={
+                            item.priority === 'high'
+                              ? 'danger'
+                              : item.priority === 'medium'
+                                ? 'warning'
+                                : 'neutral'
+                          }
+                        >
+                          {item.priority.toUpperCase()}
+                        </Badge>
+                        <p className="mt-2 text-sm font-semibold text-slate-900">{item.title}</p>
+                        <p className="mt-1 line-clamp-2 text-xs text-slate-600">{item.whatToDo}</p>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
           </div>
         ) : null}
       </DataStateWrapper>
