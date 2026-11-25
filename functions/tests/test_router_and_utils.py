@@ -57,6 +57,15 @@ def test_extract_bearer_token_valid_and_invalid() -> None:
         extract_bearer_token(None)
 
 
+def test_importing_main_initializes_default_firebase_app() -> None:
+    import firebase_admin
+
+    import main as functions_main  # noqa: F401
+
+    app = firebase_admin.get_app()
+    assert app.project_id == "agentora-ai-v2"
+
+
 def test_logger_redacts_sensitive_pii_fields() -> None:
     sanitized = _sanitize_value(
         "payload",

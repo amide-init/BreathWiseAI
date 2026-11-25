@@ -12,6 +12,7 @@ from typing import Any
 from firebase_functions import https_fn, options
 
 from app.config.settings import get_settings
+from app.repositories.base_repo import ensure_firebase_app
 from app.routes.air_quality_routes import handle_get_air_quality_callable
 from app.routes.health_routes import handle_health
 from app.routes.location_routes import handle_location_search_callable
@@ -19,6 +20,9 @@ from app.routes.planner_routes import handle_generate_daily_plan_callable
 from app.utils.callable_utils import run_callable
 
 _settings = get_settings()
+# Required at import time so firebase-functions' built-in on_call token verifier
+# has an initialized default firebase_admin app before any handler runs.
+ensure_firebase_app()
 
 
 @https_fn.on_call(
