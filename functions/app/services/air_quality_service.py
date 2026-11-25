@@ -15,11 +15,12 @@ from datetime import datetime
 
 from app.config.settings import AppSettings, get_settings
 from app.domain.aqi_calculator import get_default_health_guidance
+from app.domain.risk_engine import assess_risk
 from app.providers.base import AirQualityProvider, WeatherAndForecastProvider
 from app.providers.open_meteo_provider import OpenMeteoProvider
 from app.providers.waqi_provider import WaqiAirQualityProvider
 from app.repositories.air_quality_repo import AirQualityRepository, CachedAirQualityRecord
-from app.schemas.common import AqiCategory, FreshnessStatus
+from app.schemas.common import AqiCategory, FreshnessStatus, QuickDecision
 from app.schemas.environment import (
     AirQualityResponse,
     CurrentAirQuality,
@@ -27,6 +28,7 @@ from app.schemas.environment import (
     PollutantReading,
     WeatherSnapshot,
 )
+from app.schemas.profile import SanitizedContext
 from app.utils.datetime_utils import is_cache_valid, utc_now
 from app.utils.errors import UpstreamProviderError
 from app.utils.logger import log_event
@@ -80,6 +82,7 @@ class AirQualityService:
                 weather=cached.weather,
                 forecasts=cached.forecasts,
                 fallback_provider_used=cached.fallback_provider_used,
+                quick_decisions=_baseline_quick_decisions(cached.current, cached.forecasts),
             )
 
         current_aqi, fallback_used = self._fetch_live_aqi(
@@ -113,6 +116,7 @@ class AirQualityService:
                 weather=weather,
                 forecasts=forecasts,
                 fallback_provider_used=fallback_used,
+                quick_decisions=_baseline_quick_decisions(current_aqi, forecasts),
             )
 
         # All live AQI providers failed: serve stale cache if available (explicitly marked STALE)
@@ -130,16 +134,21 @@ class AirQualityService:
                 weather=stale_weather,
                 forecasts=forecasts or cached.forecasts,
                 fallback_provider_used=cached.fallback_provider_used,
+                quick_decisions=_baseline_quick_decisions(
+                    stale_current, forecasts or cached.forecasts
+                ),
             )
 
         # No live data and no cache: return honest UNAVAILABLE state (zero fabricated readings)
+        unavailable_aqi = _build_unavailable_aqi(location_label)
         return AirQualityResponse(
             location_id=location_id,
             location_name=location_label,
-            current=_build_unavailable_aqi(location_label),
+            current=unavailable_aqi,
             weather=weather,
             forecasts=forecasts,
             fallback_provider_used=False,
+            quick_decisions=_baseline_quick_decisions(unavailable_aqi, forecasts),
         )
 
     def _fetch_live_aqi(
@@ -216,6 +225,17 @@ class AirQualityService:
                 ),
                 [],
             )
+
+
+def _baseline_quick_decisions(
+    current: CurrentAirQuality,
+    forecasts: list[ForecastPoint],
+) -> list[QuickDecision]:
+    return assess_risk(
+        current_aqi=current,
+        context=SanitizedContext(),
+        forecasts=forecasts,
+    ).quick_decisions
 
 
 def _mark_current_stale(current: CurrentAirQuality) -> CurrentAirQuality:

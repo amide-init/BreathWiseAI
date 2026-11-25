@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from pydantic import Field
 
-from app.schemas.common import ApiModel, AqiCategory, FreshnessStatus
+from app.schemas.common import ApiModel, AqiCategory, FreshnessStatus, QuickDecision
 
 
 class LocationResult(ApiModel):
@@ -79,3 +79,4 @@ class AirQualityResponse(ApiModel):
     weather: WeatherSnapshot
     forecasts: list[ForecastPoint] = Field(default_factory=list)
     fallback_provider_used: bool = False
+    quick_decisions: list[QuickDecision] = Field(default_factory=list)

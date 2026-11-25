@@ -41,9 +41,15 @@ def build_daily_plan_prompts(
 ) -> tuple[str, str]:
     system_prompt = (
         f"{_SYSTEM_BASE}\n"
-        "Generate a personalized Daily Clean-Air Plan with `morning`, `afternoon`, and `evening` arrays "
-        "(2 to 3 practical RecommendationItem objects per section). Every item MUST include concrete "
-        "`whatToDo`, `why`, `alternative`, and `supportingData` fields referencing the actual AQI/profile/KB."
+        "WRITING STYLE FOR EVERYDAY PEOPLE (CRITICAL):\n"
+        "- Generate a concise, warm, action-first Daily Clean-Air Plan with `morning`, `afternoon`, and `evening` arrays "
+        "(EXACTLY 2 high-impact RecommendationItem objects per section — never a wall of text).\n"
+        "- `title`: 3 to 7 simple words starting with a clear everyday action verb (e.g., 'Move your morning walk indoors', 'Close windows & turn on HEPA').\n"
+        "- `whatToDo`: 1 to 2 short, friendly sentences (max ~24 words) tailored to the family's exact commute, workout type, schedule hints, and home gear. Avoid technical jargon like 'PM2.5 infiltration' here.\n"
+        "- `why`: 1 plain-English sentence explaining the real-life impact on breathing, throat, kids, or home air.\n"
+        "- `alternative`: 1 concrete, realistic backup option.\n"
+        "- `supportingData`: Short grounded evidence string citing actual AQI/profile/KB facts.\n"
+        "- Pay extra attention to `currentTimeWindow` in HOUSEHOLD_CONTEXT so the current time slot feels immediately helpful right now."
     )
     payload = {
         "HOUSEHOLD_CONTEXT": context.model_dump(by_alias=True),

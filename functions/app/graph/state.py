@@ -24,6 +24,7 @@ class BreatheWiseState(TypedDict, total=False):
     lng: float
     location_label: str
     force_refresh_aqi: bool
+    current_time_window: str | None
     user_query: str | None
     chat_history: list[dict[str, str]]
     indoor_answers: IndoorQuestionnaire | None

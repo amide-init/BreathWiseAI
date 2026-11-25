@@ -6,7 +6,7 @@ from typing import Literal
 
 from pydantic import Field
 
-from app.schemas.common import ApiModel, AqiCategory, Citation
+from app.schemas.common import ApiModel, AqiCategory, Citation, QuickDecision
 
 
 class RiskConstraints(ApiModel):
@@ -32,6 +32,7 @@ class RiskAssessmentResult(ApiModel):
     constraints: RiskConstraints
     safe_forecast_windows: list[str] = Field(default_factory=list)
     summary_guidance: str
+    quick_decisions: list[QuickDecision] = Field(default_factory=list)
 
 
 class RecommendationItem(ApiModel):

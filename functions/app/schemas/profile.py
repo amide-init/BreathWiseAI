@@ -78,4 +78,7 @@ class SanitizedContext(ApiModel):
     daily_commute_km: float = 15.0
     prefers_outdoor_exercise: bool = True
     exercise_window: str = "morning"
+    exercise_activity_type: str = "walk"
+    member_schedule_hints: list[str] = Field(default_factory=list)
+    current_time_window: str | None = None
     indoor_equipment: IndoorEquipment = Field(default_factory=IndoorEquipment)

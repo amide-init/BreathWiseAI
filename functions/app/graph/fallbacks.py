@@ -46,23 +46,18 @@ def build_fallback_daily_plan(
 
     # Morning items
     morning: list[RecommendationItem] = []
+    activity = context.exercise_activity_type or "walk"
     if not c.allow_strenuous_outdoor:
         morning.append(
             RecommendationItem(
                 item_id="m_exercise",
-                title="Shift Morning Exercise Indoors",
+                title=f"Move your morning {activity} indoors",
                 priority="high",
                 category="outdoor_activity",
                 target_members=["Adults"] + (["Children"] if context.has_children else []),
-                what_to_do=(
-                    "Avoid strenuous outdoor jogging or brisk walking this morning and complete "
-                    "a low-emission workout indoors."
-                ),
-                why=(
-                    f"Air quality is currently {risk.severity_tier.value}, and vigorous outdoor "
-                    "breathing increases inhaled PM2.5 exposure."
-                ),
-                alternative="Try 20–30 minutes of indoor stretching, yoga, or bodyweight mobility.",
+                what_to_do=f"Skip the outdoor {activity} today and do a light workout inside instead.",
+                why=f"Air quality is {risk.severity_tier.value}, and heavy outdoor breathing pulls extra fine dust deep into lungs.",
+                alternative="Try 20 minutes of indoor stretching, yoga, or home bodyweight exercises.",
                 supporting_data=supporting,
             )
         )
@@ -70,13 +65,13 @@ def build_fallback_daily_plan(
         morning.append(
             RecommendationItem(
                 item_id="m_exercise",
-                title="Enjoy Outdoor Activity with Live AQI Check",
+                title=f"Enjoy your morning {activity} outside",
                 priority="medium",
                 category="outdoor_activity",
                 target_members=["Household"],
-                what_to_do="Outdoor morning walking or light exercise is suitable under current conditions.",
-                why=f"Current CPCB NAQI falls in the {risk.severity_tier.value} range.",
-                alternative="Move indoors if local visibility drops or anyone feels throat irritation.",
+                what_to_do=f"Outdoor air looks good for your morning {activity} today.",
+                why=f"Current air quality is in the {risk.severity_tier.value} range.",
+                alternative="Head indoors if the air turns hazy or anyone feels throat irritation.",
                 supporting_data=supporting,
             )
         )
@@ -84,30 +79,25 @@ def build_fallback_daily_plan(
     # Commute / Sustainability item
     if context.primary_commute_mode in ("personal_car", "two_wheeler"):
         commute_action = (
-            "Consider carpooling with colleagues or using metro/public transit for today's "
-            f"{round(context.daily_commute_km)} km commute."
+            f"Carpool or take metro/bus for today's {round(context.daily_commute_km)} km commute."
         )
-        commute_alt = (
-            "Combine errands into a single trip, avoid idling, or work from home if permitted."
-        )
+        commute_alt = "Combine errands into one trip or work from home if you can."
     else:
-        commute_action = "Continue using lower-emission commuting and keep vehicle windows closed in heavy traffic."
-        commute_alt = (
-            "Wear a well-fitted N95 mask while walking to transit stops if pollution is elevated."
-        )
+        commute_action = "Keep vehicle windows shut in heavy traffic during your commute."
+        commute_alt = "Wear a snug N95 mask while walking to transit stops."
 
     if c.recommend_mask_outdoors:
-        commute_action += " Wear a well-fitted N95/KN95 mask during unavoidable outdoor transit."
+        commute_action += " Wear a snug N95/KN95 mask outdoors."
 
     morning.append(
         RecommendationItem(
             item_id="m_commute",
-            title="Lower-Emission & Lower-Exposure Commute",
+            title="Switch to a cleaner commute",
             priority="high" if c.recommend_mask_outdoors else "medium",
             category="commute",
             target_members=["Commuters"] + (["School commute"] if context.has_children else []),
             what_to_do=commute_action,
-            why="Tailpipe exhaust adds to urban PM2.5, and keeping commutes lower-emission helps both exposure and local air.",
+            why="Fewer solo trips cut roadside exhaust and reduce what you breathe in traffic.",
             alternative=commute_alt,
             supporting_data=supporting,
         )
@@ -120,13 +110,13 @@ def build_fallback_daily_plan(
             afternoon.append(
                 RecommendationItem(
                     item_id="a_children",
-                    title="Keep Children's Afternoon Play Indoors",
+                    title="Keep kids' afternoon play indoors",
                     priority="high",
                     category="outdoor_activity",
                     target_members=["Children"],
-                    what_to_do="Replace outdoor park or playground time with engaging indoor play activities today.",
-                    why="Children breathe faster per body weight and face higher particulate intake during elevated AQI.",
-                    alternative="Plan indoor crafts, board games, reading, or active indoor play away from open windows.",
+                    what_to_do="Swap park or playground time for indoor games away from open windows.",
+                    why="Children breathe faster than adults and absorb more tiny dust particles outside.",
+                    alternative="Set up indoor crafts, board games, reading, or active living-room play.",
                     supporting_data=supporting,
                 )
             )
@@ -134,36 +124,36 @@ def build_fallback_daily_plan(
             afternoon.append(
                 RecommendationItem(
                     item_id="a_children",
-                    title="Monitor Outdoor Play Duration for Children",
+                    title="Keep kids' outdoor play short & watched",
                     priority="medium",
                     category="outdoor_activity",
                     target_members=["Children"],
-                    what_to_do="Keep outdoor play moderate and re-check live local AQI before heading out.",
-                    why="Checking live readings ensures children avoid sudden afternoon dust or traffic spikes.",
-                    alternative="Switch to indoor play if pollution rises or visibility worsens.",
+                    what_to_do="Outdoor play is fine—take water breaks and check live air before going out.",
+                    why="Afternoon traffic or dust can change local air quickly.",
+                    alternative="Move games indoors if haze builds up.",
                     supporting_data=supporting,
                 )
             )
 
     hepa_text = (
-        "Run your True-HEPA air purifier in the main living room and bedrooms with windows closed."
+        "Keep windows closed and run your HEPA air purifier in occupied rooms."
         if context.indoor_equipment.has_hepa_purifier
-        else "Keep exterior windows and doors tightly closed to limit outdoor smog infiltration."
+        else "Keep windows and exterior doors closed to block outside smog."
     )
     afternoon.append(
         RecommendationItem(
             item_id="a_indoor",
-            title="Protect Indoor Air Quality",
+            title="Keep your home air clean",
             priority="high" if c.recommend_windows_closed else "medium",
             category="indoor_air",
             target_members=["Whole family"],
             what_to_do=(
                 hepa_text
                 if c.recommend_windows_closed
-                else "Ventilate briefly using cross-ventilation while outdoor air quality remains favorable."
+                else "Open opposite windows briefly to bring fresh air through your home."
             ),
-            why="Controlling outdoor infiltration and indoor combustion keeps home air cleaner (estimated guidance).",
-            alternative="Use wet mopping instead of dry sweeping and run the kitchen exhaust while cooking.",
+            why="Blocking outdoor haze and indoor dust keeps bedrooms easier to breathe in.",
+            alternative="Wet-mop floors instead of dry sweeping so dust does not kick back up.",
             supporting_data=supporting,
         )
     )
@@ -172,16 +162,13 @@ def build_fallback_daily_plan(
     evening: list[RecommendationItem] = [
         RecommendationItem(
             item_id="e_cooking",
-            title="Minimize Evening Cooking & Indoor Combustion Smoke",
+            title="Run exhaust & skip indoor smoke",
             priority="high" if c.recommend_windows_closed else "medium",
             category="cooking_ventilation",
             target_members=["Whole family"],
-            what_to_do=(
-                "Use the kitchen exhaust fan during dinner preparation and avoid indoor smoking, "
-                "incense sticks, or unnecessary candles."
-            ),
-            why="Indoor combustion generates fine PM2.5 that accumulates quickly when windows stay closed.",
-            alternative="Cook with lids on pots, prefer electric appliances where available, and keep bedrooms closed off from kitchen fumes.",
+            what_to_do="Switch on your kitchen exhaust while cooking dinner and skip incense or candles tonight.",
+            why="Cooking fumes and incense trap tiny smoke particles indoors when windows stay closed.",
+            alternative="Cover pots with lids and keep bedroom doors shut while cooking.",
             supporting_data=supporting,
         )
     ]
@@ -190,17 +177,16 @@ def build_fallback_daily_plan(
         evening.append(
             RecommendationItem(
                 item_id="e_medical",
-                title="Severe Pollution Precaution & Medical Escalation",
+                title="Severe smog: watch symptoms closely",
                 priority="high",
                 category="health_precaution",
                 target_members=["Whole family"],
                 what_to_do=(
-                    "Follow official local public-health advisories closely. If anyone experiences "
-                    "wheezing, chest tightness, or shortness of breath, seek qualified medical care "
-                    "or local emergency services promptly."
+                    "Follow local health advisories. Seek qualified medical care or emergency help "
+                    "right away for wheezing, chest tightness, or trouble breathing."
                 ),
-                why="Severe pollution poses heightened risk; an AI assistant cannot diagnose or replace medical care.",
-                alternative="Keep clinician-prescribed action plans ready and contact your doctor early if symptoms appear.",
+                why="Severe pollution puts extra strain on lungs and heart; an AI app cannot replace a doctor.",
+                alternative="Keep any doctor-prescribed action plan handy and check in with your clinician early.",
                 supporting_data=supporting,
             )
         )
@@ -208,16 +194,13 @@ def build_fallback_daily_plan(
         evening.append(
             RecommendationItem(
                 item_id="e_family",
-                title="Plan Low-Exposure Evening Family Routine",
+                title="Unwind indoors & prep for tomorrow",
                 priority="low",
                 category="indoor_air",
                 target_members=["Whole family"],
-                what_to_do=(
-                    "Prefer indoor family time tonight and check live morning AQI before tomorrow's "
-                    "school and office departures."
-                ),
-                why="Evening temperature inversions often trap urban pollution near ground level.",
-                alternative="Log today's sustainable commute or protective indoor actions in My Impact.",
+                what_to_do="Enjoy a calm evening indoors and glance at morning air before school or office runs.",
+                why="Cooler evening air traps city smoke closer to the ground.",
+                alternative="Log today's carpool or indoor swap in My Impact to track your streak.",
                 supporting_data=supporting,
             )
         )

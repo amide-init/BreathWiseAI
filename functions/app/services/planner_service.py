@@ -33,6 +33,7 @@ class PlannerService:
         family_id: str | None = None,
         plan_date: str | None = None,
         force_refresh: bool = False,
+        current_time_window: str | None = None,
     ) -> dict[str, Any]:
         target_date = plan_date or utc_now().strftime("%Y-%m-%d")
 
@@ -54,6 +55,7 @@ class PlannerService:
                 "lng": lng,
                 "location_label": location_label,
                 "force_refresh_aqi": force_refresh,
+                "current_time_window": current_time_window,
                 "retry_count": 0,
             }
         )

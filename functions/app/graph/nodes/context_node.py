@@ -11,6 +11,7 @@ def sanitize_family_aggregate(
     family: FamilyAggregate | None,
     *,
     fallback_location_label: str = "",
+    current_time_window: str | None = None,
 ) -> SanitizedContext:
     """Project Firestore family & member records into a strictly PII-free context object.
 
@@ -22,16 +23,23 @@ def sanitize_family_aggregate(
         return SanitizedContext(
             profile_complete=False,
             location_label=fallback_location_label,
+            current_time_window=current_time_window,
         )
 
     descriptors: list[str] = []
+    schedule_hints: list[str] = []
     has_children = False
     has_toddlers = False
     has_elderly = False
     has_sensitivity = False
 
     for member in family.members:
+        role_label = member.role.replace("_", " ")
         descriptors.append(f"{member.role} ({member.age_group})")
+        if member.schedule.leave_home_time or member.schedule.return_home_time:
+            leave = member.schedule.leave_home_time or "unspecified"
+            ret = member.schedule.return_home_time or "unspecified"
+            schedule_hints.append(f"{role_label}: leaves ~{leave}, returns ~{ret}")
         if member.role == "child_toddler" or member.age_group == "0_5":
             has_toddlers = True
             has_children = True
@@ -56,6 +64,9 @@ def sanitize_family_aggregate(
         daily_commute_km=family.transportation.daily_commute_km,
         prefers_outdoor_exercise=family.exercise.prefers_outdoor,
         exercise_window=family.exercise.preferred_window,
+        exercise_activity_type=family.exercise.activity_type,
+        member_schedule_hints=schedule_hints[:6],
+        current_time_window=current_time_window,
         indoor_equipment=family.indoor_equipment,
     )
 
@@ -72,6 +83,7 @@ def build_context_node(family_repo: FamilyRepository | None = None):
         sanitized = sanitize_family_aggregate(
             family,
             fallback_location_label=state.get("location_label", ""),
+            current_time_window=state.get("current_time_window"),
         )
         return {
             "resolved_family_id": family.family_id if family else state.get("family_id"),

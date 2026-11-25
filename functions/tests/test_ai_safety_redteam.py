@@ -290,3 +290,31 @@ def test_redteam_zero_pii_or_health_notes_emitted_in_server_logs(
     assert "Aarav Secret Name" not in all_logs
     assert "Private doctor note" not in all_logs
     assert "Sharma Family" not in all_logs
+
+
+def test_quick_decisions_reflect_good_severe_and_unavailable_states() -> None:
+    """Deterministic everyday verdicts stay honest across Good, Severe, and Unavailable AQI."""
+    sanitized = sanitize_family_aggregate(_sample_family(), current_time_window="evening")
+    assert sanitized.current_time_window == "evening"
+    assert sanitized.exercise_activity_type == "walk"
+
+    good_risk = assess_risk(
+        current_aqi=_sample_env(aqi=42, category=AqiCategory.GOOD).current,
+        context=sanitized,
+    )
+    assert len(good_risk.quick_decisions) == 4
+    assert all(d.status in ("good", "caution") for d in good_risk.quick_decisions)
+
+    severe_risk = assess_risk(
+        current_aqi=_sample_env(aqi=430, category=AqiCategory.SEVERE).current,
+        context=sanitized,
+    )
+    assert all(d.status == "avoid" for d in severe_risk.quick_decisions)
+
+    unavail_risk = assess_risk(
+        current_aqi=_sample_env(
+            aqi=None, category=AqiCategory.UNAVAILABLE, freshness=FreshnessStatus.UNAVAILABLE
+        ).current,
+        context=sanitized,
+    )
+    assert all(d.status == "unknown" for d in unavail_risk.quick_decisions)

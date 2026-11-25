@@ -53,6 +53,13 @@ def handle_generate_daily_plan_callable(req: Any) -> dict[str, Any]:
         else None
     )
     force_refresh = bool(data.get("forceRefresh", False))
+    raw_window = data.get("currentTimeWindow")
+    current_time_window = (
+        str(raw_window).strip().lower()
+        if isinstance(raw_window, str)
+        and str(raw_window).strip().lower() in {"morning", "afternoon", "evening"}
+        else None
+    )
 
     return PlannerService().generate_daily_plan(
         user_id=auth_user.uid,
@@ -63,4 +70,5 @@ def handle_generate_daily_plan_callable(req: Any) -> dict[str, Any]:
         family_id=family_id,
         plan_date=plan_date,
         force_refresh=force_refresh,
+        current_time_window=current_time_window,
     )

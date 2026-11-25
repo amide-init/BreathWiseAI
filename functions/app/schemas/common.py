@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from enum import StrEnum
+from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -50,6 +51,16 @@ class Citation(ApiModel):
     title: str
     source_authority: str
     source_url: str | None = None
+
+
+class QuickDecision(ApiModel):
+    """Plain-human everyday verdict derived deterministically from CPCB NAQI & profile."""
+
+    id: Literal["exercise", "kids_play", "windows", "mask"]
+    label: str
+    status: Literal["good", "caution", "avoid", "unknown"]
+    verdict: str
+    short_reason: str
 
 
 class HealthCheckResponse(ApiModel):

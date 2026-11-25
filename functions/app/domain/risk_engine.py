@@ -8,10 +8,163 @@ from __future__ import annotations
 
 from app.config.constants import ACUTE_SYMPTOM_KEYWORDS
 from app.domain.aqi_calculator import classify_cpcb_naqi, get_default_health_guidance
-from app.schemas.common import AqiCategory, FreshnessStatus
+from app.schemas.common import AqiCategory, FreshnessStatus, QuickDecision
 from app.schemas.environment import CurrentAirQuality, ForecastPoint
 from app.schemas.planner import RiskAssessmentResult, RiskConstraints
 from app.schemas.profile import SanitizedContext
+
+
+def build_quick_decisions(
+    *,
+    category: AqiCategory,
+    constraints: RiskConstraints,
+    sensitive_present: bool = False,
+    has_hepa: bool = False,
+) -> list[QuickDecision]:
+    """Deterministically translate CPCB NAQI + constraints into 4 everyday human verdicts."""
+    if category == AqiCategory.UNAVAILABLE:
+        return [
+            QuickDecision(
+                id="exercise",
+                label="Outdoor Exercise",
+                status="unknown",
+                verdict="Check local air first",
+                short_reason="Live station data is temporarily unavailable.",
+            ),
+            QuickDecision(
+                id="kids_play",
+                label="Kids Play",
+                status="unknown",
+                verdict="Play it safe",
+                short_reason="Wait for fresh readings or stay indoors if hazy.",
+            ),
+            QuickDecision(
+                id="windows",
+                label="Home Windows",
+                status="unknown",
+                verdict="Check outside haze",
+                short_reason="Keep shut if air looks smoggy or smells smoky.",
+            ),
+            QuickDecision(
+                id="mask",
+                label="Outdoor Mask",
+                status="unknown",
+                verdict="Keep one handy",
+                short_reason="Carry an N95 mask if visibility is low.",
+            ),
+        ]
+
+    # 1. Outdoor Exercise
+    if constraints.allow_strenuous_outdoor:
+        if category == AqiCategory.MODERATE:
+            exercise = QuickDecision(
+                id="exercise",
+                label="Outdoor Exercise",
+                status="caution",
+                verdict="Light workout OK",
+                short_reason="Keep runs moderate and avoid busy traffic roads.",
+            )
+        else:
+            exercise = QuickDecision(
+                id="exercise",
+                label="Outdoor Exercise",
+                status="good",
+                verdict="Good to go out",
+                short_reason="Air is clean enough for normal walks and runs.",
+            )
+    else:
+        exercise = QuickDecision(
+            id="exercise",
+            label="Outdoor Exercise",
+            status="avoid",
+            verdict="Exercise indoors",
+            short_reason="Heavy breathing pulls extra fine dust deep into lungs.",
+        )
+
+    # 2. Kids Play
+    if constraints.allow_child_outdoor_play:
+        if category == AqiCategory.MODERATE or sensitive_present:
+            kids = QuickDecision(
+                id="kids_play",
+                label="Kids Play",
+                status="caution",
+                verdict="Short outdoor play",
+                short_reason="Take breaks indoors and watch for coughing.",
+            )
+        else:
+            kids = QuickDecision(
+                id="kids_play",
+                label="Kids Play",
+                status="good",
+                verdict="Safe to play out",
+                short_reason="Outdoor park and school play look good right now.",
+            )
+    else:
+        kids = QuickDecision(
+            id="kids_play",
+            label="Kids Play",
+            status="avoid",
+            verdict="Keep play indoors",
+            short_reason="Growing lungs absorb more pollution when active outside.",
+        )
+
+    # 3. Home Windows
+    if constraints.recommend_windows_closed:
+        windows = QuickDecision(
+            id="windows",
+            label="Home Windows",
+            status="avoid",
+            verdict="Keep windows shut",
+            short_reason=(
+                "Close gaps and run your HEPA purifier indoors."
+                if has_hepa
+                else "Keep outdoor smog out; use kitchen exhaust when cooking."
+            ),
+        )
+    elif category == AqiCategory.MODERATE:
+        windows = QuickDecision(
+            id="windows",
+            label="Home Windows",
+            status="caution",
+            verdict="Brief airing only",
+            short_reason="Open briefly away from peak traffic hours.",
+        )
+    else:
+        windows = QuickDecision(
+            id="windows",
+            label="Home Windows",
+            status="good",
+            verdict="Open for fresh air",
+            short_reason="Great time to cross-ventilate bedrooms and kitchen.",
+        )
+
+    # 4. Outdoor Mask
+    if constraints.recommend_mask_outdoors:
+        mask = QuickDecision(
+            id="mask",
+            label="Outdoor Mask",
+            status="avoid",
+            verdict="Wear N95 outdoors",
+            short_reason="A snug N95/KN95 filters tiny particles during commutes.",
+        )
+    elif category == AqiCategory.MODERATE and sensitive_present:
+        mask = QuickDecision(
+            id="mask",
+            label="Outdoor Mask",
+            status="caution",
+            verdict="Optional on busy roads",
+            short_reason="Helpful for sensitive family members in heavy traffic.",
+        )
+    else:
+        mask = QuickDecision(
+            id="mask",
+            label="Outdoor Mask",
+            status="good",
+            verdict="No mask needed",
+            short_reason="Air quality does not require particulate masks now.",
+        )
+
+    return [exercise, kids, windows, mask]
 
 
 def detect_medical_escalation_query(user_query: str | None) -> bool:
@@ -101,6 +254,13 @@ def assess_risk(
         medical_escalation_required=medical_escalation,
     )
 
+    quick_decisions = build_quick_decisions(
+        category=category,
+        constraints=constraints,
+        sensitive_present=sensitive_present,
+        has_hepa=context.indoor_equipment.has_hepa_purifier,
+    )
+
     return RiskAssessmentResult(
         severity_tier=category,
         aqi_value=current_aqi.aqi,
@@ -109,4 +269,5 @@ def assess_risk(
         constraints=constraints,
         safe_forecast_windows=safe_windows,
         summary_guidance=get_default_health_guidance(category),
+        quick_decisions=quick_decisions,
     )
