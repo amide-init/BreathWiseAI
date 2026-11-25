@@ -2,6 +2,7 @@ import type { User } from 'firebase/auth';
 import { doc, getDoc, setDoc, updateDoc } from 'firebase/firestore';
 
 import { getFirebaseDb } from '@/lib/firebase';
+import { getDocFromLocalCache } from '@/lib/firestore-cache';
 import {
   buildUserCreatePayload,
   buildUserUpdatePayload,
@@ -12,6 +13,18 @@ import {
 import type { LocationOption } from '@/types';
 
 const USERS_COLLECTION = 'users';
+
+export async function getCachedUserById(uid: string): Promise<UserModel | null> {
+  const db = getFirebaseDb();
+  if (!db) {
+    return null;
+  }
+  const snap = await getDocFromLocalCache(doc(db, USERS_COLLECTION, uid));
+  if (!snap || !snap.exists()) {
+    return null;
+  }
+  return mapFirestoreDocToUserModel(uid, snap.data());
+}
 
 export async function getUserById(uid: string): Promise<UserModel | null> {
   const db = getFirebaseDb();

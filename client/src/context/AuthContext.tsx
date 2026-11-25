@@ -11,10 +11,12 @@ import {
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
 
 import { AuthContext, type AuthContextValue } from '@/context/auth-context';
+import { clearAllCaches } from '@/lib/client-cache';
 import { getFirebaseAuth } from '@/lib/firebase';
 import type { UpdateUserInput, UserModel } from '@/models/user.model';
 import {
   ensureUserDocument,
+  getCachedUserById,
   getUserById,
   updateUserProfile,
 } from '@/services/user.service';
@@ -31,16 +33,34 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return;
     }
 
+    let previousUid: string | null = null;
     const unsubscribe = onAuthStateChanged(auth, async (nextUser) => {
+      const nextUid = nextUser?.uid ?? null;
+      if (previousUid && previousUid !== nextUid) {
+        clearAllCaches();
+      }
+      previousUid = nextUid;
+
       setUser(nextUser);
       if (nextUser) {
+        // Hydrate immediately from Firestore's local IndexedDB cache to unblock UI paint
+        const cachedProfile = await getCachedUserById(nextUser.uid);
+        if (cachedProfile) {
+          setUserProfile(cachedProfile);
+          setIsLoading(false);
+        }
+
+        // Revalidate / ensure document in background (or foreground on first ever sign-in)
         try {
           const profile = await ensureUserDocument(nextUser);
           setUserProfile(profile);
         } catch {
-          setUserProfile(null);
+          if (!cachedProfile) {
+            setUserProfile(null);
+          }
         }
       } else {
+        clearAllCaches();
         setUserProfile(null);
       }
       setIsLoading(false);
@@ -89,6 +109,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const signOut = useCallback(async () => {
+    clearAllCaches();
     const auth = getFirebaseAuth();
     if (!auth) {
       return;

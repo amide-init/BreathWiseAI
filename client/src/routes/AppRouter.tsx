@@ -1,15 +1,38 @@
+import { lazy, Suspense } from 'react';
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 
+import { Skeleton } from '@/components/ui/skeleton';
 import { APP_ROUTES } from '@/config/routes';
 import { PortalLayout } from '@/layouts/PortalLayout';
-import { AssistantPage } from '@/pages/AssistantPage';
 import { DashboardPage } from '@/pages/DashboardPage';
-import { ImpactPage } from '@/pages/ImpactPage';
 import { LoginPage } from '@/pages/LoginPage';
-import { PlannerPage } from '@/pages/PlannerPage';
-import { ProfilePage } from '@/pages/ProfilePage';
-import { SettingsPage } from '@/pages/SettingsPage';
 import { ProtectedRoute } from '@/routes/ProtectedRoute';
+
+const PlannerPage = lazy(() =>
+  import('@/pages/PlannerPage').then((m) => ({ default: m.PlannerPage })),
+);
+const AssistantPage = lazy(() =>
+  import('@/pages/AssistantPage').then((m) => ({ default: m.AssistantPage })),
+);
+const ImpactPage = lazy(() =>
+  import('@/pages/ImpactPage').then((m) => ({ default: m.ImpactPage })),
+);
+const ProfilePage = lazy(() =>
+  import('@/pages/ProfilePage').then((m) => ({ default: m.ProfilePage })),
+);
+const SettingsPage = lazy(() =>
+  import('@/pages/SettingsPage').then((m) => ({ default: m.SettingsPage })),
+);
+
+function RouteFallback() {
+  return (
+    <div className="space-y-4">
+      <Skeleton className="h-8 w-48" />
+      <Skeleton className="h-36 w-full" />
+      <Skeleton className="h-44 w-full" />
+    </div>
+  );
+}
 
 export function AppRouter() {
   return (
@@ -19,11 +42,46 @@ export function AppRouter() {
         <Route element={<ProtectedRoute />}>
           <Route element={<PortalLayout />}>
             <Route path={APP_ROUTES.HOME} element={<DashboardPage />} />
-            <Route path={APP_ROUTES.PLANNER} element={<PlannerPage />} />
-            <Route path={APP_ROUTES.ASSISTANT} element={<AssistantPage />} />
-            <Route path={APP_ROUTES.IMPACT} element={<ImpactPage />} />
-            <Route path={APP_ROUTES.PROFILE} element={<ProfilePage />} />
-            <Route path={APP_ROUTES.SETTINGS} element={<SettingsPage />} />
+            <Route
+              path={APP_ROUTES.PLANNER}
+              element={
+                <Suspense fallback={<RouteFallback />}>
+                  <PlannerPage />
+                </Suspense>
+              }
+            />
+            <Route
+              path={APP_ROUTES.ASSISTANT}
+              element={
+                <Suspense fallback={<RouteFallback />}>
+                  <AssistantPage />
+                </Suspense>
+              }
+            />
+            <Route
+              path={APP_ROUTES.IMPACT}
+              element={
+                <Suspense fallback={<RouteFallback />}>
+                  <ImpactPage />
+                </Suspense>
+              }
+            />
+            <Route
+              path={APP_ROUTES.PROFILE}
+              element={
+                <Suspense fallback={<RouteFallback />}>
+                  <ProfilePage />
+                </Suspense>
+              }
+            />
+            <Route
+              path={APP_ROUTES.SETTINGS}
+              element={
+                <Suspense fallback={<RouteFallback />}>
+                  <SettingsPage />
+                </Suspense>
+              }
+            />
           </Route>
         </Route>
         <Route path="*" element={<Navigate to={APP_ROUTES.HOME} replace />} />

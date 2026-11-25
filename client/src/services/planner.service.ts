@@ -11,6 +11,7 @@ import {
 
 import { callFunction } from '@/lib/callable-client';
 import { getFirebaseDb } from '@/lib/firebase';
+import { getDocsFromLocalCache } from '@/lib/firestore-cache';
 import { getCurrentTimeWindow, type TimeWindowKey } from '@/lib/time-window';
 import { getTodayLocalDateKey, type DailyPlanModel } from '@/models/planner.model';
 import type { LocationOption } from '@/types';
@@ -26,6 +27,34 @@ interface GenerateDailyPlanPayload {
   planDate: string;
   forceRefresh?: boolean;
   currentTimeWindow: TimeWindowKey;
+}
+
+export async function getCachedTodayDailyPlan(
+  uid: string,
+  planDate = getTodayLocalDateKey(),
+): Promise<DailyPlanModel | null> {
+  const db = getFirebaseDb();
+  if (!db) {
+    return null;
+  }
+  const q = query(
+    collection(db, DAILY_PLANS_COLLECTION),
+    where('userId', '==', uid),
+    where('planDate', '==', planDate),
+    orderBy('createdAt', 'desc'),
+    limit(1),
+  );
+  const snaps = await getDocsFromLocalCache(q);
+  const first = snaps?.docs[0];
+  if (!first) {
+    return null;
+  }
+  const data = first.data() as DailyPlanModel;
+  return {
+    ...data,
+    planId: first.id,
+    completedItemIds: Array.isArray(data.completedItemIds) ? data.completedItemIds : [],
+  };
 }
 
 export async function getTodayDailyPlan(

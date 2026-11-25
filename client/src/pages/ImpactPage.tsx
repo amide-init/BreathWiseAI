@@ -17,7 +17,9 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAirQuality } from '@/hooks/useAirQuality';
+import { useAuth } from '@/hooks/useAuth';
 import { useFamilyProfile } from '@/hooks/useFamilyProfile';
+import { dedupeFetch, getCached, invalidateCached, setCached } from '@/lib/client-cache';
 import { formatCo2Kg } from '@/lib/formatters';
 import type {
   ImpactDomain,
@@ -139,44 +141,79 @@ function ImpactLogRow({
   );
 }
 
+const IMPACT_CACHE_TTL_MS = 5 * 60 * 1000;
+
 export function ImpactPage() {
+  const { user } = useAuth();
   const { data: aqData } = useAirQuality();
   const { family } = useFamilyProfile();
 
-  const [summary, setSummary] = useState<ImpactSummaryResponse | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const cacheKey = user ? `impact:${user.uid}:14` : null;
+  const initialHit = cacheKey ? getCached<ImpactSummaryResponse>(cacheKey) : null;
+
+  const [summary, setSummary] = useState<ImpactSummaryResponse | null>(initialHit?.value ?? null);
+  const [isLoading, setIsLoading] = useState<boolean>(!initialHit);
   const [error, setError] = useState<string | null>(null);
   const [filter, setFilter] = useState<LogFilter>('all');
   const [modalDomain, setModalDomain] = useState<ImpactDomain | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
-  const loadSummary = useCallback(async () => {
-    setIsLoading(true);
-    setError(null);
-    try {
-      const res = await getImpactSummary(14);
-      setSummary(res);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Unable to load impact summary.');
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
+  const loadSummary = useCallback(
+    async (force = false) => {
+      const key = user ? `impact:${user.uid}:14` : null;
+      const memHit = key && !force ? getCached<ImpactSummaryResponse>(key) : null;
+
+      if (memHit) {
+        setSummary(memHit.value);
+        setIsLoading(false);
+        setError(null);
+        if (memHit.isFresh) {
+          return;
+        }
+      } else if (!force) {
+        setIsLoading(true);
+      }
+
+      setError(null);
+      try {
+        const res = key
+          ? await dedupeFetch(`fetch:${key}`, () => getImpactSummary(14))
+          : await getImpactSummary(14);
+        if (key) {
+          setCached(key, res, IMPACT_CACHE_TTL_MS);
+        }
+        setSummary(res);
+      } catch (err) {
+        if (!memHit) {
+          setError(err instanceof Error ? err.message : 'Unable to load impact summary.');
+        }
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [user],
+  );
 
   useEffect(() => {
-    void loadSummary();
+    void loadSummary(false);
   }, [loadSummary]);
 
   async function handleLogSubmit(input: LogImpactInput) {
     await logImpactAction(input);
-    await loadSummary();
+    if (cacheKey) {
+      invalidateCached(cacheKey);
+    }
+    await loadSummary(true);
   }
 
   async function handleDelete(logId: string) {
     setDeletingId(logId);
     try {
       await deleteImpactAction(logId);
-      await loadSummary();
+      if (cacheKey) {
+        invalidateCached(cacheKey);
+      }
+      await loadSummary(true);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unable to delete action.');
     } finally {

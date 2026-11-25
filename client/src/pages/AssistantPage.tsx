@@ -21,6 +21,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { useAuth } from '@/hooks/useAuth';
 import { useFamilyProfile } from '@/hooks/useFamilyProfile';
 import { useSelectedLocation } from '@/hooks/useSelectedLocation';
+import { getCached, invalidateCached, setCached } from '@/lib/client-cache';
 import {
   STARTER_PROMPTS,
   type ChatMessageItem,
@@ -28,10 +29,14 @@ import {
 } from '@/models/chat.model';
 import {
   deleteChatSession,
+  listCachedSessionMessages,
+  listCachedUserChatSessions,
   listSessionMessages,
   listUserChatSessions,
   sendChatMessage,
 } from '@/services/chat.service';
+
+const CHAT_CACHE_TTL_MS = 5 * 60 * 1000;
 
 function AssistantMessageCard({
   msg,
@@ -136,9 +141,20 @@ export function AssistantPage() {
   const { family } = useFamilyProfile();
   const [searchParams, setSearchParams] = useSearchParams();
 
-  const [sessions, setSessions] = useState<ChatSessionSummary[]>([]);
-  const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
-  const [messages, setMessages] = useState<ChatMessageItem[]>([]);
+  const initialSessions = user
+    ? (getCached<ChatSessionSummary[]>(`chat_sessions:${user.uid}`)?.value ?? [])
+    : [];
+  const initialActiveId = user
+    ? (getCached<string | null>(`chat_active:${user.uid}`)?.value ?? null)
+    : null;
+  const initialMessages =
+    user && initialActiveId
+      ? (getCached<ChatMessageItem[]>(`chat_msgs:${user.uid}:${initialActiveId}`)?.value ?? [])
+      : [];
+
+  const [sessions, setSessions] = useState<ChatSessionSummary[]>(initialSessions);
+  const [activeSessionId, setActiveSessionId] = useState<string | null>(initialActiveId);
+  const [messages, setMessages] = useState<ChatMessageItem[]>(initialMessages);
   const [input, setInput] = useState('');
   const [sending, setSending] = useState(false);
   const [loadingThread, setLoadingThread] = useState(false);
@@ -154,20 +170,37 @@ export function AssistantPage() {
     }
   }, [searchParams, setSearchParams]);
 
-  const refreshSessions = useCallback(async () => {
-    if (!user) {
-      return;
-    }
-    try {
-      const list = await listUserChatSessions(user.uid);
-      setSessions(list);
-    } catch {
-      // Non-blocking: user can still start a new conversation even if history read fails
-    }
-  }, [user]);
+  const refreshSessions = useCallback(
+    async (forceServer = false) => {
+      if (!user) {
+        return;
+      }
+      const key = `chat_sessions:${user.uid}`;
+      const memHit = !forceServer ? getCached<ChatSessionSummary[]>(key) : null;
+      if (memHit) {
+        setSessions(memHit.value);
+        if (memHit.isFresh) {
+          return;
+        }
+      } else if (!forceServer) {
+        const localSessions = await listCachedUserChatSessions(user.uid);
+        if (localSessions) {
+          setSessions(localSessions);
+        }
+      }
+      try {
+        const list = await listUserChatSessions(user.uid);
+        setCached(key, list, CHAT_CACHE_TTL_MS);
+        setSessions(list);
+      } catch {
+        // Non-blocking: user can still start a new conversation even if history read fails
+      }
+    },
+    [user],
+  );
 
   useEffect(() => {
-    void refreshSessions();
+    void refreshSessions(false);
   }, [refreshSessions]);
 
   useEffect(() => {
@@ -179,13 +212,34 @@ export function AssistantPage() {
       return;
     }
     setActiveSessionId(sessionId);
-    setLoadingThread(true);
+    setCached(`chat_active:${user.uid}`, sessionId, CHAT_CACHE_TTL_MS);
     setError(null);
+
+    const msgKey = `chat_msgs:${user.uid}:${sessionId}`;
+    const memHit = getCached<ChatMessageItem[]>(msgKey);
+    if (memHit) {
+      setMessages(memHit.value);
+      setLoadingThread(false);
+      if (memHit.isFresh) {
+        return;
+      }
+    } else {
+      setLoadingThread(true);
+      const localThread = await listCachedSessionMessages(user.uid, sessionId);
+      if (localThread) {
+        setMessages(localThread);
+        setLoadingThread(false);
+      }
+    }
+
     try {
       const thread = await listSessionMessages(user.uid, sessionId);
+      setCached(msgKey, thread, CHAT_CACHE_TTL_MS);
       setMessages(thread);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Unable to load conversation history.');
+      if (!memHit) {
+        setError(err instanceof Error ? err.message : 'Unable to load conversation history.');
+      }
     } finally {
       setLoadingThread(false);
     }
@@ -195,12 +249,22 @@ export function AssistantPage() {
     setActiveSessionId(null);
     setMessages([]);
     setError(null);
+    if (user) {
+      invalidateCached(`chat_active:${user.uid}`);
+    }
   }
 
   async function handleDeleteSession(sessionId: string) {
     try {
       await deleteChatSession(sessionId);
-      setSessions((prev) => prev.filter((s) => s.sessionId !== sessionId));
+      setSessions((prev) => {
+        const next = prev.filter((s) => s.sessionId !== sessionId);
+        if (user) {
+          setCached(`chat_sessions:${user.uid}`, next, CHAT_CACHE_TTL_MS);
+          invalidateCached(`chat_msgs:${user.uid}:${sessionId}`);
+        }
+        return next;
+      });
       if (activeSessionId === sessionId) {
         handleNewChat();
       }
@@ -253,8 +317,15 @@ export function AssistantPage() {
         medicalEscalationRequired: response.medicalEscalationRequired,
         fallbackMode: response.reply.fallbackMode,
       };
-      setMessages((prev) => [...prev, assistantMsg]);
-      void refreshSessions();
+      setMessages((prev) => {
+        const next = [...prev, assistantMsg];
+        if (user) {
+          setCached(`chat_active:${user.uid}`, response.sessionId, CHAT_CACHE_TTL_MS);
+          setCached(`chat_msgs:${user.uid}:${response.sessionId}`, next, CHAT_CACHE_TTL_MS);
+        }
+        return next;
+      });
+      void refreshSessions(true);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to reach AI Assistant.');
       // Roll back optimistic message on failure so user can retry easily

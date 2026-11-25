@@ -12,6 +12,7 @@ import {
 } from 'firebase/firestore';
 
 import { getFirebaseDb } from '@/lib/firebase';
+import { getDocFromLocalCache, getDocsFromLocalCache } from '@/lib/firestore-cache';
 import {
   buildFamilyCreatePayload,
   buildFamilyUpdatePayload,
@@ -26,6 +27,52 @@ import {
 } from '@/models/family.model';
 
 const FAMILIES_COLLECTION = 'families';
+
+export async function getCachedUserFamily(
+  uid: string,
+  defaultFamilyId?: string | null,
+): Promise<{ family: FamilyModel | null; members: FamilyMemberModel[] } | null> {
+  const db = getFirebaseDb();
+  if (!db) {
+    return null;
+  }
+
+  let family: FamilyModel | null = null;
+  if (defaultFamilyId) {
+    const directSnap = await getDocFromLocalCache(doc(db, FAMILIES_COLLECTION, defaultFamilyId));
+    if (directSnap && directSnap.exists() && directSnap.data().ownerUserId === uid) {
+      family = mapFirestoreDocToFamilyModel(directSnap.id, directSnap.data());
+    }
+  }
+
+  if (!family) {
+    const q = query(
+      collection(db, FAMILIES_COLLECTION),
+      where('ownerUserId', '==', uid),
+      limit(1),
+    );
+    const snaps = await getDocsFromLocalCache(q);
+    const first = snaps?.docs[0];
+    if (first) {
+      family = mapFirestoreDocToFamilyModel(first.id, first.data());
+    }
+  }
+
+  if (!family) {
+    return null;
+  }
+
+  const membersQuery = query(
+    collection(db, FAMILIES_COLLECTION, family.familyId, 'members'),
+    where('ownerUserId', '==', uid),
+  );
+  const memberSnaps = await getDocsFromLocalCache(membersQuery);
+  const members = memberSnaps
+    ? memberSnaps.docs.map((d) => mapFirestoreDocToMemberModel(d.id, d.data()))
+    : [];
+
+  return { family, members };
+}
 
 export async function getUserFamily(
   uid: string,
