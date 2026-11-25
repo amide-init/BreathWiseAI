@@ -55,6 +55,7 @@ def get_air_quality(req: https_fn.CallableRequest[Any]) -> Any:
     region=_settings.region,
     memory=options.MemoryOption.MB_512,
     timeout_sec=60,
+    secrets=["GEMINI_API_KEY"],
 )
 def generate_daily_plan(req: https_fn.CallableRequest[Any]) -> Any:
     """Authenticated callable running the 5-node LangGraph Daily Planner (FR-06)."""
