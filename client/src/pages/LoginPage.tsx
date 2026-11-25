@@ -26,7 +26,8 @@ function mapAuthError(err: unknown): string {
       case 'auth/unauthorized-domain':
         return 'This domain is not authorized in Firebase Console → Authentication → Settings.';
       case 'auth/operation-not-allowed':
-        return 'This sign-in provider is not enabled yet in Firebase Console → Authentication.';
+      case 'auth/configuration-not-found':
+        return 'Firebase Authentication providers are not enabled yet on this project. Enable Email/Password and Google Sign-In in Firebase Console → Authentication.';
       default:
         return err.message;
     }
