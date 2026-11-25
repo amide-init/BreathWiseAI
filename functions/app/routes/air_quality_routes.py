@@ -36,7 +36,9 @@ def handle_get_air_quality_callable(req: Any) -> AirQualityResponse:
     lat = _parse_float_param(data.get("lat"), "lat", low=-90.0, high=90.0)
     lng = _parse_float_param(data.get("lng"), "lng", low=-180.0, high=180.0)
     label = str(data.get("label") or location_id).strip()[:120]
-    force_refresh = bool(data.get("forceRefresh", False))
+    # Only authenticated users can bypass the 30-min server cache to protect upstream quota
+    is_authenticated = getattr(req, "auth", None) is not None
+    force_refresh = bool(data.get("forceRefresh", False)) and is_authenticated
 
     return AirQualityService().get_air_quality(
         location_id=location_id,

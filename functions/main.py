@@ -48,8 +48,10 @@ def health_check(req: https_fn.CallableRequest[Any]) -> Any:
     timeout_sec=30,
 )
 def search_locations(req: https_fn.CallableRequest[Any]) -> Any:
-    """Authenticated callable returning normalized matching city locations (FR-02)."""
-    return run_callable("search_locations", req, handle_location_search_callable, require_auth=True)
+    """Public cache-backed callable returning normalized matching city locations (FR-02)."""
+    return run_callable(
+        "search_locations", req, handle_location_search_callable, require_auth=False
+    )
 
 
 @https_fn.on_call(
@@ -59,8 +61,8 @@ def search_locations(req: https_fn.CallableRequest[Any]) -> Any:
     secrets=["WAQI_API_TOKEN"],
 )
 def get_air_quality(req: https_fn.CallableRequest[Any]) -> Any:
-    """Authenticated callable returning cache-first CPCB NAQI, weather & forecasts (FR-03/04)."""
-    return run_callable("get_air_quality", req, handle_get_air_quality_callable, require_auth=True)
+    """Public cache-first callable returning CPCB NAQI, weather, forecasts & quick verdicts (FR-03/04)."""
+    return run_callable("get_air_quality", req, handle_get_air_quality_callable, require_auth=False)
 
 
 @https_fn.on_call(
