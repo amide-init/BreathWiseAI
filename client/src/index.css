@@ -1,8 +1,15 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:where(.dark, .dark *));
+
 @layer base {
   :root {
-    --radius: 0.75rem;
+    --radius: 0.875rem;
+    color-scheme: light;
+  }
+
+  .dark {
+    color-scheme: dark;
   }
 
   body {
@@ -13,5 +20,22 @@
       "Segoe UI",
       Roboto,
       sans-serif;
+    -webkit-tap-highlight-color: transparent;
   }
+
+  h1,
+  h2,
+  h3 {
+    font-family:
+      "Plus Jakarta Sans",
+      "Inter",
+      -apple-system,
+      BlinkMacSystemFont,
+      sans-serif;
+  }
+}
+
+/* Smooth safe-area utility for iOS / Android bottom gesture bars */
+.pb-safe {
+  padding-bottom: max(0.5rem, env(safe-area-inset-bottom));
 }

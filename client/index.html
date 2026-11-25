@@ -3,16 +3,34 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-    <meta name="theme-color" content="#0f766e" />
+    <meta name="theme-color" content="#fafafa" />
     <meta
       name="description"
       content="BreatheWise AI — Know Your Air. Protect Your Family. Make Every Action Count."
     />
     <link rel="icon" type="image/svg+xml" href="/icon.svg" />
     <link rel="manifest" href="/manifest.json" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <script>
+      (function () {
+        try {
+          var stored = localStorage.getItem('breathewise:theme');
+          var prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+          var isDark = stored === 'dark' || ((!stored || stored === 'system') && prefersDark);
+          document.documentElement.classList.toggle('dark', isDark);
+          var meta = document.querySelector('meta[name="theme-color"]');
+          if (meta) meta.setAttribute('content', isDark ? '#09090b' : '#fafafa');
+        } catch (e) {}
+      })();
+    </script>
     <title>BreatheWise AI — Personal Clean-Air Assistant</title>
   </head>
-  <body class="bg-slate-50 text-slate-900 antialiased">
+  <body class="bg-zinc-50 text-zinc-950 antialiased transition-colors duration-200 dark:bg-zinc-950 dark:text-zinc-50">
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
