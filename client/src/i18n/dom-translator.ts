@@ -133,9 +133,10 @@ function isInsideSkippedElement(node: Node): boolean {
 function splitOuterWhitespace(raw: string): { leading: string; core: string; trailing: string } {
   const match = raw.match(/^(\s*)([\s\S]*?)(\s*)$/);
   if (!match) {
-    return { leading: '', core: raw, trailing: '' };
+    return { leading: '', core: raw.replace(/\s+/g, ' ').trim(), trailing: '' };
   }
-  return { leading: match[1], core: match[2], trailing: match[3] };
+  // Collapse internal JSX newlines/indentation so identical prose always hits the same cache key.
+  return { leading: match[1], core: match[2].replace(/\s+/g, ' ').trim(), trailing: match[3] };
 }
 
 function readLangCache(lang: SupportedLanguage): Map<string, string> {
