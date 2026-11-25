@@ -17,8 +17,8 @@ from app.utils.errors import UpstreamProviderError, ValidationError
 from app.utils.logger import log_event
 
 MAX_TEXTS_PER_BATCH = 60
-MAX_CHARS_PER_TEXT = 600
-MAX_TOTAL_CHARS = 12_000
+MAX_CHARS_PER_TEXT = 1_000
+MAX_TOTAL_CHARS = 20_000
 
 # Matches numeric tokens (integers/decimals) so we can verify no reading or figure is altered.
 _NUMBER_TOKEN_RE = re.compile(r"\d+(?:\.\d+)?")
@@ -99,21 +99,21 @@ class TranslationService:
 
         lang_meta = SUPPORTED_LANGUAGES[lang]
         system_prompt = (
-            f"You are a concise, natural translator for BreatheWise AI (an Indian clean-air app).\n"
+            f"You are a fluent, natural translator for BreatheWise AI (an Indian clean-air app).\n"
             f"Target language: {lang_meta['label']} — {lang_meta['style']}\n\n"
             "STRICT RULES:\n"
-            "1. Write the main sentence in the target language's NATIVE script (Devanagari for "
-            "Hindi/Marathi, Bengali script for Bengali, Tamil script for Tamil, Telugu script "
-            "for Telugu) — NEVER write Hinglish/Romanized transliteration.\n"
-            "2. Keep common everyday English app/health terms naturally in English script where "
-            "Indians use them in speech (e.g., AQI, PM2.5, PM10, N95, HEPA, CPCB, NAQI, mask, "
-            "indoor, outdoor, workout, Dashboard, Plan, Profile, Settings, Refresh).\n"
-            "3. Preserve EVERY number (using standard ASCII digits 0-9), decimal, timestamp, and "
-            "unit (µg/m³, °C, km/h, kg CO2e, %) EXACTLY as given. Never convert digits to native "
-            "numerals, and never round, change, add, or drop any number.\n"
-            "4. Keep brand names (BreatheWise AI), city/station names, and medical/emergency "
-            "warnings accurate and non-diagnostic.\n"
-            "5. Keep short UI labels and button texts concise so layouts do not overflow.\n"
+            "1. Translate EVERY text COMPLETELY into natural, everyday native script "
+            "(Devanagari for Hindi/Marathi, Bengali script for Bengali, Tamil script for Tamil, "
+            "Telugu script for Telugu). Do NOT leave ordinary English words untranslated "
+            "(translate words like Dashboard, Plan, Settings, Profile, Outdoor, Indoor, Exercise, "
+            "Moderate, Refresh, Save, Sign In, Sign Out, Light Mode, Dark Mode, etc.).\n"
+            "2. Keep ONLY scientific/measurement abbreviations & brand names intact: "
+            "BreatheWise AI, AQI, PM2.5, PM10, NO2, SO2, O3, CO, CO2, CPCB, NAQI, EPA, N95, HEPA, "
+            "µg/m³, °C, km/h, kg CO2e, %.\n"
+            "3. Preserve EVERY number using standard ASCII digits (0-9) EXACTLY as given. Never "
+            "convert digits to native numerals, and never round, change, add, or drop any number.\n"
+            "4. Keep medical/emergency warnings clear and non-diagnostic.\n"
+            "5. Keep short UI button/tab labels concise so layouts do not overflow.\n"
             "6. Return an item for EVERY input index in JSON matching the schema."
         )
 

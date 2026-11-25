@@ -12,48 +12,53 @@ SUPPORTED_LANGUAGES: dict[str, dict[str, str]] = {
         "style": "Standard clear English.",
     },
     "hi": {
-        "label": "Hindi (हिन्दी + everyday English terms)",
+        "label": "Hindi (हिन्दी)",
         "style": (
-            "Natural everyday Hindi written in Devanagari script (हिन्दी), keeping common "
-            "everyday English & technical words in English script where natural (e.g., AQI, "
-            "PM2.5, N95 mask, HEPA, indoor, outdoor, workout, Dashboard, Plan, Settings). "
-            "Example: 'आज बाहर की हवा खराब है — outdoor jogging avoid करें और indoor workout करें।'"
+            "Complete, natural, everyday Hindi written fully in Devanagari script (हिन्दी). "
+            "Translate all headings, buttons, labels, descriptions, and advice fully into clear "
+            "Hindi — keep ONLY scientific symbols/units (AQI, PM2.5, PM10, N95, HEPA, CPCB, CO2, "
+            "°C, µg/m³) and the brand name BreatheWise AI in English. "
+            "Example: 'आज बाहर की हवा खराब है — बाहर व्यायाम से बचें और घर के अंदर कसरत करें।'"
         ),
     },
     "bn": {
-        "label": "Bengali (বাংলা + everyday English terms)",
+        "label": "Bengali (বাংলা)",
         "style": (
-            "Natural everyday Bengali written in Bengali script (বাংলা), keeping common "
-            "everyday English & technical words in English script where natural (e.g., AQI, "
-            "PM2.5, N95 mask, HEPA, indoor, outdoor, workout, Dashboard, Plan, Settings). "
-            "Example: 'আজ বাইরের হাওয়া খারাপ — outdoor jogging এড়িয়ে চলুন এবং indoor workout করুন।'"
+            "Complete, natural, everyday Bengali written fully in Bengali script (বাংলা). "
+            "Translate all headings, buttons, labels, descriptions, and advice fully into clear "
+            "Bengali — keep ONLY scientific symbols/units (AQI, PM2.5, PM10, N95, HEPA, CPCB, CO2, "
+            "°C, µg/m³) and the brand name BreatheWise AI in English. "
+            "Example: 'আজ বাইরের বাতাস খারাপ — বাইরে ব্যায়াম এড়িয়ে চলুন এবং ঘরের ভেতরে ব্যায়াম করুন।'"
         ),
     },
     "mr": {
-        "label": "Marathi (मराठी + everyday English terms)",
+        "label": "Marathi (मराठी)",
         "style": (
-            "Natural everyday Marathi written in Devanagari script (मराठी), keeping common "
-            "everyday English & technical words in English script where natural (e.g., AQI, "
-            "PM2.5, N95 mask, HEPA, indoor, outdoor, workout, Dashboard, Plan, Settings). "
-            "Example: 'आज बाहेरची हवा खराब आहे — outdoor jogging टाळा आणि indoor workout करा.'"
+            "Complete, natural, everyday Marathi written fully in Devanagari script (मराठी). "
+            "Translate all headings, buttons, labels, descriptions, and advice fully into clear "
+            "Marathi — keep ONLY scientific symbols/units (AQI, PM2.5, PM10, N95, HEPA, CPCB, CO2, "
+            "°C, µg/m³) and the brand name BreatheWise AI in English. "
+            "Example: 'आज बाहेरची हवा खराब आहे — बाहेर व्यायाम टाळा आणि घरातच व्यायाम करा.'"
         ),
     },
     "ta": {
-        "label": "Tamil (தமிழ் + everyday English terms)",
+        "label": "Tamil (தமிழ்)",
         "style": (
-            "Natural everyday Tamil written in Tamil script (தமிழ்), keeping common "
-            "everyday English & technical words in English script where natural (e.g., AQI, "
-            "PM2.5, N95 mask, HEPA, indoor, outdoor, workout, Dashboard, Plan, Settings). "
-            "Example: 'இன்று வெளியே காற்று தரம் மோசமாக உள்ளது — outdoor jogging தவிர்த்து indoor workout செய்யுங்கள்.'"
+            "Complete, natural, everyday Tamil written fully in Tamil script (தமிழ்). "
+            "Translate all headings, buttons, labels, descriptions, and advice fully into clear "
+            "Tamil — keep ONLY scientific symbols/units (AQI, PM2.5, PM10, N95, HEPA, CPCB, CO2, "
+            "°C, µg/m³) and the brand name BreatheWise AI in English. "
+            "Example: 'இன்று வெளியே காற்றின் தரம் மோசமாக உள்ளது — வெளியே உடற்பயிற்சியைத் தவிர்த்து வீட்டிற்குள் செய்யுங்கள்.'"
         ),
     },
     "te": {
-        "label": "Telugu (తెలుగు + everyday English terms)",
+        "label": "Telugu (తెలుగు)",
         "style": (
-            "Natural everyday Telugu written in Telugu script (తెలుగు), keeping common "
-            "everyday English & technical words in English script where natural (e.g., AQI, "
-            "PM2.5, N95 mask, HEPA, indoor, outdoor, workout, Dashboard, Plan, Settings). "
-            "Example: 'ఈరోజు బయట గాలి నాణ్యత తక్కువగా ఉంది — outdoor jogging మాని indoor workout చేయండి.'"
+            "Complete, natural, everyday Telugu written fully in Telugu script (తెలుగు). "
+            "Translate all headings, buttons, labels, descriptions, and advice fully into clear "
+            "Telugu — keep ONLY scientific symbols/units (AQI, PM2.5, PM10, N95, HEPA, CPCB, CO2, "
+            "°C, µg/m³) and the brand name BreatheWise AI in English. "
+            "Example: 'ఈరోజు బయట గాలి నాణ్యత తక్కువగా ఉంది — బయట వ్యాయామం మాని ఇంట్లోనే వ్యాయామం చేయండి.'"
         ),
     },
 }

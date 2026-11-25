@@ -1,12 +1,12 @@
 import { INSTANT_GLOSSARY } from './instant-glossary';
 import type { SupportedLanguage } from './languages';
 
-const CACHE_STORAGE_PREFIX = 'breathewise:rt-translate:v2:';
-const MAX_CACHE_ENTRIES = 600;
-const MAX_BATCH_SIZE = 40;
-const MAX_TEXT_LENGTH = 550;
-const DEBOUNCE_MS = 90;
-const FAILURE_COOLDOWN_MS = 60_000;
+const CACHE_STORAGE_PREFIX = 'breathewise:rt-translate:v3:';
+const MAX_CACHE_ENTRIES = 800;
+const MAX_BATCH_SIZE = 45;
+const MAX_TEXT_LENGTH = 900;
+const DEBOUNCE_MS = 80;
+const FAILURE_COOLDOWN_MS = 30_000;
 
 const SKIP_TAGS = new Set([
   'SCRIPT',
@@ -18,8 +18,6 @@ const SKIP_TAGS = new Set([
   'PRE',
   'TEXTAREA',
   'INPUT',
-  'SELECT',
-  'OPTION',
   'KBD',
 ]);
 

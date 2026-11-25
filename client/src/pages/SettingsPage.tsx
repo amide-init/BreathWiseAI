@@ -120,8 +120,8 @@ export function SettingsPage() {
             )}
           </div>
           <CardDescription>
-            Switch between English and Indian languages (with familiar English terms kept intact).
-            All screens and AI guidance translate in real time and cache locally on this device.
+            Switch between English and full Indian language translations. All screens, verdicts, and
+            AI guidance translate completely in real time and cache locally on this device.
           </CardDescription>
         </CardHeader>
         <CardContent>
