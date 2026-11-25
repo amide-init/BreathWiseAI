@@ -12,11 +12,16 @@ import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react
 
 import { AuthContext, type AuthContextValue } from '@/context/auth-context';
 import { getFirebaseAuth } from '@/lib/firebase';
-import { ensureUserDocument, type UserProfileRecord } from '@/services/user.service';
+import type { UpdateUserInput, UserModel } from '@/models/user.model';
+import {
+  ensureUserDocument,
+  getUserById,
+  updateUserProfile,
+} from '@/services/user.service';
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
-  const [userProfile, setUserProfile] = useState<UserProfileRecord | null>(null);
+  const [userProfile, setUserProfile] = useState<UserModel | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -67,7 +72,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const profile = await ensureUserDocument(cred.user);
         setUserProfile(profile);
       } catch {
-        // Firestore sync will retry on next auth state event
+        // Firestore sync retries on next auth state event
       }
     },
     [],
@@ -91,6 +96,33 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await firebaseSignOut(auth);
   }, []);
 
+  const updateUser = useCallback(
+    async (input: UpdateUserInput): Promise<UserModel | null> => {
+      if (!user) {
+        throw new Error('You must be signed in to update your profile.');
+      }
+      // Guarantee document exists before updating
+      await ensureUserDocument(user);
+      const updated = await updateUserProfile(user.uid, input);
+      if (updated) {
+        setUserProfile(updated);
+      }
+      if (input.displayName && input.displayName.trim() !== user.displayName) {
+        await updateProfile(user, { displayName: input.displayName.trim().slice(0, 100) });
+      }
+      return updated;
+    },
+    [user],
+  );
+
+  const refreshUserProfile = useCallback(async () => {
+    if (!user) {
+      return;
+    }
+    const latest = await getUserById(user.uid);
+    setUserProfile(latest);
+  }, [user]);
+
   const value = useMemo<AuthContextValue>(
     () => ({
       user,
@@ -100,8 +132,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       signUpWithEmail,
       signInWithGoogle,
       signOut,
+      updateUser,
+      refreshUserProfile,
     }),
-    [user, userProfile, isLoading, signInWithEmail, signUpWithEmail, signInWithGoogle, signOut],
+    [
+      user,
+      userProfile,
+      isLoading,
+      signInWithEmail,
+      signUpWithEmail,
+      signInWithGoogle,
+      signOut,
+      updateUser,
+      refreshUserProfile,
+    ],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

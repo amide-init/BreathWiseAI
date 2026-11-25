@@ -3,7 +3,6 @@ import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react
 import { DEFAULT_CITY } from '@/config/cities';
 import { LocationContext, type LocationContextValue } from '@/context/location-context';
 import { useAuth } from '@/hooks/useAuth';
-import { saveUserPrimaryLocation } from '@/services/user.service';
 import type { LocationOption } from '@/types';
 
 const STORAGE_KEY = 'breathewise:selected_location';
@@ -25,7 +24,7 @@ function readStoredLocation(): LocationOption {
 }
 
 export function LocationProvider({ children }: { children: ReactNode }) {
-  const { user, userProfile } = useAuth();
+  const { user, userProfile, updateUser } = useAuth();
   const [selectedLocation, setSelectedLocation] = useState<LocationOption>(readStoredLocation);
   const [isPickerOpen, setIsPickerOpen] = useState(false);
 
@@ -52,13 +51,13 @@ export function LocationProvider({ children }: { children: ReactNode }) {
       }
       if (user) {
         try {
-          await saveUserPrimaryLocation(user.uid, location);
+          await updateUser({ primaryLocation: location });
         } catch {
           // Non-fatal if Firestore rules/network temporarily unavailable
         }
       }
     },
-    [user],
+    [user, updateUser],
   );
 
   const value = useMemo<LocationContextValue>(

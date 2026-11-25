@@ -1,76 +1,86 @@
 import type { User } from 'firebase/auth';
-import { doc, getDoc, serverTimestamp, setDoc, updateDoc } from 'firebase/firestore';
+import { doc, getDoc, setDoc, updateDoc } from 'firebase/firestore';
 
 import { getFirebaseDb } from '@/lib/firebase';
+import {
+  buildUserCreatePayload,
+  buildUserUpdatePayload,
+  mapFirestoreDocToUserModel,
+  type UpdateUserInput,
+  type UserModel,
+} from '@/models/user.model';
 import type { LocationOption } from '@/types';
 
-export interface UserProfileRecord {
-  uid: string;
-  displayName: string;
-  email: string;
-  defaultFamilyId: string | null;
-  primaryLocation: LocationOption | null;
-  aqiScalePreference: 'CPCB_NAQI' | 'US_EPA';
-  onboardingCompleted: boolean;
+const USERS_COLLECTION = 'users';
+
+export async function getUserById(uid: string): Promise<UserModel | null> {
+  const db = getFirebaseDb();
+  if (!db) {
+    return null;
+  }
+  const snap = await getDoc(doc(db, USERS_COLLECTION, uid));
+  if (!snap.exists()) {
+    return null;
+  }
+  return mapFirestoreDocToUserModel(uid, snap.data());
 }
 
 /**
- * Ensures `users/{uid}` exists after sign-in using exact field allow-lists
- * enforced by `firestore.rules`.
+ * Ensures `users/{uid}` exists after sign-in using `UserModel` schema compliant with `firestore.rules`.
  */
-export async function ensureUserDocument(user: User): Promise<UserProfileRecord | null> {
+export async function ensureUserDocument(user: User): Promise<UserModel | null> {
   const db = getFirebaseDb();
   if (!db || !user.email) {
     return null;
   }
 
-  const ref = doc(db, 'users', user.uid);
-  const snap = await getDoc(ref);
-  if (snap.exists()) {
-    return snap.data() as UserProfileRecord;
+  const ref = doc(db, USERS_COLLECTION, user.uid);
+  const existing = await getDoc(ref);
+  if (existing.exists()) {
+    return mapFirestoreDocToUserModel(user.uid, existing.data());
   }
 
-  const displayName = (user.displayName?.trim() || user.email.split('@')[0] || 'BreatheWise User').slice(
-    0,
-    100,
-  );
-  const newRecord: UserProfileRecord = {
-    uid: user.uid,
-    displayName,
-    email: user.email,
-    defaultFamilyId: null,
-    primaryLocation: null,
-    aqiScalePreference: 'CPCB_NAQI',
-    onboardingCompleted: false,
-  };
+  const payload = buildUserCreatePayload(user);
+  await setDoc(ref, payload);
 
-  await setDoc(ref, {
-    ...newRecord,
-    createdAt: serverTimestamp(),
-    updatedAt: serverTimestamp(),
-  });
-  return newRecord;
+  const created = await getDoc(ref);
+  if (created.exists()) {
+    return mapFirestoreDocToUserModel(user.uid, created.data());
+  }
+
+  return {
+    uid: payload.uid,
+    displayName: payload.displayName,
+    email: payload.email,
+    defaultFamilyId: payload.defaultFamilyId,
+    primaryLocation: payload.primaryLocation,
+    aqiScalePreference: payload.aqiScalePreference,
+    onboardingCompleted: payload.onboardingCompleted,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  };
+}
+
+/**
+ * Updates editable fields on `users/{uid}` and returns the refreshed `UserModel`.
+ */
+export async function updateUserProfile(
+  uid: string,
+  input: UpdateUserInput,
+): Promise<UserModel | null> {
+  const db = getFirebaseDb();
+  if (!db) {
+    return null;
+  }
+  const ref = doc(db, USERS_COLLECTION, uid);
+  const payload = buildUserUpdatePayload(input);
+  await updateDoc(ref, payload);
+  return getUserById(uid);
 }
 
 export async function saveUserPrimaryLocation(
   uid: string,
   location: LocationOption,
-): Promise<void> {
-  const db = getFirebaseDb();
-  if (!db) {
-    return;
-  }
-  const ref = doc(db, 'users', uid);
-  await updateDoc(ref, {
-    primaryLocation: {
-      locationId: location.locationId,
-      city: location.city,
-      state: location.state,
-      country: location.country,
-      label: location.label,
-      lat: location.lat,
-      lng: location.lng,
-    },
-    updatedAt: serverTimestamp(),
-  });
+): Promise<UserModel | null> {
+  return updateUserProfile(uid, { primaryLocation: location });
 }
