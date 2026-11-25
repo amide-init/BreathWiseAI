@@ -10,7 +10,9 @@ import {
   Sparkles,
 } from 'lucide-react';
 import { useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 
+import { IndoorAdvisorPanel } from '@/components/planner/IndoorAdvisorPanel';
 import { AqiBadge } from '@/components/shared/AqiBadge';
 import { DataStateWrapper } from '@/components/shared/DataStateWrapper';
 import { MedicalDisclaimer } from '@/components/shared/MedicalDisclaimer';
@@ -23,6 +25,7 @@ import { useSelectedLocation } from '@/hooks/useSelectedLocation';
 import type { RecommendationItem } from '@/types';
 
 type TimeWindowTab = 'all' | 'morning' | 'afternoon' | 'evening';
+type PlannerModeTab = 'routine' | 'indoor';
 
 const PRIORITY_VARIANT: Record<RecommendationItem['priority'], 'danger' | 'warning' | 'neutral'> = {
   high: 'danger',
@@ -119,7 +122,18 @@ function RecommendationCard({
 export function PlannerPage() {
   const { selectedLocation } = useSelectedLocation();
   const { plan, isLoading, isGenerating, error, generate, toggleItemCompleted } = useDailyPlan();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [activeTab, setActiveTab] = useState<TimeWindowTab>('all');
+
+  const modeTab: PlannerModeTab = searchParams.get('tab') === 'indoor' ? 'indoor' : 'routine';
+
+  function handleModeTabChange(next: PlannerModeTab) {
+    if (next === 'indoor') {
+      setSearchParams({ tab: 'indoor' }, { replace: true });
+    } else {
+      setSearchParams({}, { replace: true });
+    }
+  }
 
   const allItems = plan
     ? [...plan.sections.morning, ...plan.sections.afternoon, ...plan.sections.evening]
@@ -143,29 +157,75 @@ export function PlannerPage() {
       <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-zinc-950 dark:text-zinc-50">
-            Daily Plan
+            Daily Plan &amp; Indoor Advisor
           </h1>
           <p className="text-sm text-zinc-600 dark:text-zinc-400">
-            Personalized Morning, Afternoon & Evening routines for {selectedLocation.city}.
+            Personalized routines and estimated indoor air improvements for {selectedLocation.city}.
           </p>
         </div>
 
-        <Button
-          onClick={() => void generate(true)}
-          disabled={isGenerating}
-          variant="primary"
-          size="sm"
-        >
-          {isGenerating ? (
-            <RefreshCw className="h-4 w-4 animate-spin" aria-hidden="true" />
-          ) : (
-            <Sparkles className="h-4 w-4" aria-hidden="true" />
-          )}
-          {isGenerating ? 'Generating Plan…' : plan ? 'Regenerate Plan' : "Generate Today's Plan"}
-        </Button>
+        <div className="flex flex-wrap items-center gap-2">
+          <div
+            className="inline-flex items-center gap-1 rounded-xl border border-zinc-200/80 bg-white p-1 shadow-2xs dark:border-zinc-800 dark:bg-zinc-900"
+            role="tablist"
+            aria-label="Planner mode"
+          >
+            <button
+              type="button"
+              role="tab"
+              aria-selected={modeTab === 'routine'}
+              onClick={() => handleModeTabChange('routine')}
+              className={`inline-flex cursor-pointer items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors ${
+                modeTab === 'routine'
+                  ? 'bg-emerald-500/15 text-emerald-800 dark:bg-emerald-400/20 dark:text-emerald-300'
+                  : 'text-zinc-600 hover:text-zinc-950 dark:text-zinc-400 dark:hover:text-zinc-50'
+              }`}
+            >
+              <CalendarCheck2 className="h-3.5 w-3.5" aria-hidden="true" />
+              Daily Routine
+            </button>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={modeTab === 'indoor'}
+              onClick={() => handleModeTabChange('indoor')}
+              className={`inline-flex cursor-pointer items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors ${
+                modeTab === 'indoor'
+                  ? 'bg-emerald-500/15 text-emerald-800 dark:bg-emerald-400/20 dark:text-emerald-300'
+                  : 'text-zinc-600 hover:text-zinc-950 dark:text-zinc-400 dark:hover:text-zinc-50'
+              }`}
+            >
+              <Home className="h-3.5 w-3.5" aria-hidden="true" />
+              Indoor Advisor
+            </button>
+          </div>
+
+          {modeTab === 'routine' ? (
+            <Button
+              onClick={() => void generate(true)}
+              disabled={isGenerating}
+              variant="primary"
+              size="sm"
+            >
+              {isGenerating ? (
+                <RefreshCw className="h-4 w-4 animate-spin" aria-hidden="true" />
+              ) : (
+                <Sparkles className="h-4 w-4" aria-hidden="true" />
+              )}
+              {isGenerating
+                ? 'Generating Plan…'
+                : plan
+                  ? 'Regenerate Plan'
+                  : "Generate Today's Plan"}
+            </Button>
+          ) : null}
+        </div>
       </div>
 
-      <DataStateWrapper isLoading={isLoading} error={error} onRetry={() => void generate(true)}>
+      {modeTab === 'indoor' ? (
+        <IndoorAdvisorPanel />
+      ) : (
+        <DataStateWrapper isLoading={isLoading} error={error} onRetry={() => void generate(true)}>
         {!plan ? (
           <Card>
             <CardHeader>
@@ -300,23 +360,8 @@ export function PlannerPage() {
             ) : null}
           </div>
         )}
-      </DataStateWrapper>
-
-      <Card>
-        <CardHeader>
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <CardTitle className="flex items-center gap-2 text-base">
-              <Home className="h-4 w-4 text-emerald-600 dark:text-emerald-400" aria-hidden="true" />
-              Indoor Air Quality Advisor
-            </CardTitle>
-            <Badge variant="warning">Estimated (Questionnaire-Based)</Badge>
-          </div>
-          <CardDescription>
-            Interactive 7-question home assessment (cooking ventilation, incense, dust, HEPA
-            filtration) wired next in Phase 4 alongside the Conversational AI Assistant.
-          </CardDescription>
-        </CardHeader>
-      </Card>
+        </DataStateWrapper>
+      )}
 
       <MedicalDisclaimer />
     </div>
