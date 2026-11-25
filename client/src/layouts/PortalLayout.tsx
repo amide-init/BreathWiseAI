@@ -2,6 +2,7 @@ import {
   CalendarCheck2,
   LayoutDashboard,
   Leaf,
+  LogIn,
   LogOut,
   MapPin,
   Settings,
@@ -12,6 +13,7 @@ import {
 import { Link, NavLink, Outlet, useLocation } from 'react-router-dom';
 
 import { LocationPickerModal } from '@/components/shared/LocationPickerModal';
+import { QuickOnboardingModal } from '@/components/shared/QuickOnboardingModal';
 import { ThemeToggle } from '@/components/shared/ThemeToggle';
 import {
   APP_ROUTES,
@@ -138,7 +140,15 @@ export function PortalLayout() {
                 <LogOut className="h-4 w-4" aria-hidden="true" />
               </button>
             </div>
-          ) : null}
+          ) : (
+            <Link
+              to={APP_ROUTES.LOGIN}
+              className="flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-600 px-3.5 py-2.5 text-xs font-semibold text-white shadow-xs transition-colors hover:bg-emerald-700 dark:bg-emerald-500 dark:text-zinc-950 dark:hover:bg-emerald-400"
+            >
+              <LogIn className="h-4 w-4" aria-hidden="true" />
+              Sign In · Free
+            </Link>
+          )}
         </div>
       </aside>
 
@@ -177,21 +187,31 @@ export function PortalLayout() {
 
             <ThemeToggle className="md:hidden" />
 
-            <NavLink
-              to={APP_ROUTES.SETTINGS}
-              aria-label="Settings"
-              title="Settings"
-              className={({ isActive }) =>
-                cn(
-                  'flex h-9 w-9 items-center justify-center rounded-xl border transition-all md:hidden',
-                  isActive
-                    ? 'border-emerald-500/40 bg-emerald-500/15 text-emerald-700 dark:border-emerald-400/40 dark:bg-emerald-400/20 dark:text-emerald-300'
-                    : 'border-zinc-200/90 bg-white text-zinc-600 hover:bg-zinc-100 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-800',
-                )
-              }
-            >
-              <Settings className="h-4 w-4" aria-hidden="true" />
-            </NavLink>
+            {user ? (
+              <NavLink
+                to={APP_ROUTES.SETTINGS}
+                aria-label="Settings"
+                title="Settings"
+                className={({ isActive }) =>
+                  cn(
+                    'flex h-9 w-9 items-center justify-center rounded-xl border transition-all md:hidden',
+                    isActive
+                      ? 'border-emerald-500/40 bg-emerald-500/15 text-emerald-700 dark:border-emerald-400/40 dark:bg-emerald-400/20 dark:text-emerald-300'
+                      : 'border-zinc-200/90 bg-white text-zinc-600 hover:bg-zinc-100 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-800',
+                  )
+                }
+              >
+                <Settings className="h-4 w-4" aria-hidden="true" />
+              </NavLink>
+            ) : (
+              <Link
+                to={APP_ROUTES.LOGIN}
+                className="inline-flex h-9 items-center gap-1.5 rounded-xl bg-emerald-600 px-3 text-xs font-semibold text-white shadow-xs md:hidden dark:bg-emerald-500 dark:text-zinc-950"
+              >
+                <LogIn className="h-3.5 w-3.5" aria-hidden="true" />
+                Sign In
+              </Link>
+            )}
           </div>
         </header>
 
@@ -248,6 +268,7 @@ export function PortalLayout() {
       </nav>
 
       <LocationPickerModal />
+      <QuickOnboardingModal />
     </div>
   );
 }

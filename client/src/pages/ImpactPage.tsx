@@ -1,9 +1,12 @@
 import {
+  Check,
   ChevronDown,
   ChevronUp,
+  Flame,
   Info,
   Leaf,
   Plus,
+  Share2,
   Shield,
   Trash2,
 } from 'lucide-react';
@@ -21,6 +24,11 @@ import { useAuth } from '@/hooks/useAuth';
 import { useFamilyProfile } from '@/hooks/useFamilyProfile';
 import { dedupeFetch, getCached, invalidateCached, setCached } from '@/lib/client-cache';
 import { formatCo2Kg } from '@/lib/formatters';
+import {
+  buildImpactShareText,
+  computeCleanAirStreak,
+  shareTextMessage,
+} from '@/lib/share';
 import type {
   ImpactDomain,
   ImpactLogRecord,
@@ -157,6 +165,7 @@ export function ImpactPage() {
   const [filter, setFilter] = useState<LogFilter>('all');
   const [modalDomain, setModalDomain] = useState<ImpactDomain | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [shareFeedback, setShareFeedback] = useState<'shared' | 'copied' | null>(null);
 
   const loadSummary = useCallback(
     async (force = false) => {
@@ -224,14 +233,39 @@ export function ImpactPage() {
   const filteredLogs = (summary?.recentLogs ?? []).filter(
     (log) => filter === 'all' || log.impactDomain === filter,
   );
+  const streakDays = computeCleanAirStreak((summary?.recentLogs ?? []).map((l) => l.loggedDate));
+
+  async function handleShareImpact() {
+    if (!summary) {
+      return;
+    }
+    const text = buildImpactShareText({
+      estimatedCo2Kg: summary.emissions.totalEstimatedCo2AvoidedKg,
+      protectiveActions: summary.exposure.totalProtectiveActions,
+      streakDays,
+    });
+    const outcome = await shareTextMessage('My BreatheWise AI Clean-Air Impact', text);
+    if (outcome === 'shared' || outcome === 'copied') {
+      setShareFeedback(outcome);
+      window.setTimeout(() => setShareFeedback(null), 2500);
+    }
+  }
 
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-zinc-950 dark:text-zinc-50">
-            My Impact
-          </h1>
+          <div className="flex flex-wrap items-center gap-2">
+            <h1 className="text-2xl font-bold tracking-tight text-zinc-950 dark:text-zinc-50">
+              My Impact
+            </h1>
+            {streakDays > 0 ? (
+              <Badge variant="default" className="gap-1">
+                <Flame className="h-3.5 w-3.5" aria-hidden="true" />
+                {streakDays}-Day Clean-Air Streak
+              </Badge>
+            ) : null}
+          </div>
           <p className="text-sm text-zinc-600 dark:text-zinc-400">
             Environmental CO₂ avoided and personal exposure protection are strictly tracked and
             reported separately.
@@ -239,6 +273,25 @@ export function ImpactPage() {
         </div>
 
         <div className="flex flex-wrap gap-2">
+          {summary ? (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => void handleShareImpact()}
+            >
+              {shareFeedback ? (
+                <Check className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+              ) : (
+                <Share2 className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+              )}
+              {shareFeedback === 'copied'
+                ? 'Copied ✓'
+                : shareFeedback === 'shared'
+                  ? 'Shared ✓'
+                  : 'Share Impact'}
+            </Button>
+          ) : null}
           <Button
             type="button"
             variant="primary"

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 
+import { useAuth } from '@/hooks/useAuth';
 import { useSelectedLocation } from '@/hooks/useSelectedLocation';
 import {
   applyAirQualityFreshness,
@@ -26,6 +27,7 @@ function getAqiCacheKey(locationId: string): string {
 }
 
 export function useAirQuality(): UseAirQualityResult {
+  const { user } = useAuth();
   const { selectedLocation } = useSelectedLocation();
   const cacheKey = getAqiCacheKey(selectedLocation.locationId);
 
@@ -65,8 +67,10 @@ export function useAirQuality(): UseAirQualityResult {
         setIsLoading(true);
         setError(null);
 
-        // Layer 2: Firestore local IndexedDB cache (~20ms on page reload)
-        const localFirestoreHit = await readCachedAirQualityFromFirestore(selectedLocation);
+        // Layer 2: Firestore local IndexedDB cache (~20ms on page reload for signed-in users)
+        const localFirestoreHit = user
+          ? await readCachedAirQualityFromFirestore(selectedLocation)
+          : null;
         if (!active) {
           return;
         }

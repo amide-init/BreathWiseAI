@@ -1,7 +1,7 @@
 import { FirebaseError } from 'firebase/app';
-import { Lock, Mail, User, Wind } from 'lucide-react';
+import { ArrowLeft, CheckCircle2, Lock, Mail, ShieldCheck, User, Wind } from 'lucide-react';
 import { useState, type FormEvent } from 'react';
-import { Navigate, useLocation } from 'react-router-dom';
+import { Link, Navigate, useLocation } from 'react-router-dom';
 
 import { ThemeToggle } from '@/components/shared/ThemeToggle';
 import { Alert } from '@/components/ui/alert';
@@ -93,6 +93,16 @@ export function LoginPage() {
         className="pointer-events-none absolute -top-40 left-1/2 h-96 w-[36rem] -translate-x-1/2 rounded-full bg-emerald-500/12 blur-3xl dark:bg-emerald-500/10"
       />
 
+      <div className="absolute top-4 left-4">
+        <Link
+          to={APP_ROUTES.HOME}
+          className="inline-flex items-center gap-1.5 rounded-xl border border-zinc-200/90 bg-white/90 px-3 py-2 text-xs font-semibold text-zinc-700 shadow-2xs backdrop-blur-sm hover:bg-zinc-100 dark:border-zinc-800 dark:bg-zinc-900/90 dark:text-zinc-300 dark:hover:bg-zinc-800"
+        >
+          <ArrowLeft className="h-3.5 w-3.5" aria-hidden="true" />
+          Live Air Preview
+        </Link>
+      </div>
+
       <div className="absolute top-4 right-4">
         <ThemeToggle />
       </div>
@@ -103,11 +113,22 @@ export function LoginPage() {
             <Wind className="h-6 w-6" aria-hidden="true" />
           </div>
           <CardTitle className="text-xl">
-            {mode === 'signin' ? 'Sign in to BreatheWise AI' : 'Create your family account'}
+            {mode === 'signin'
+              ? 'Personalize your family’s clean-air plan'
+              : 'Create your free family account'}
           </CardTitle>
           <CardDescription>
-            Know Your Air. Protect Your Family. Make Every Action Count.
+            30-second setup for parents &amp; daily commuters — AI Daily Plan, Indoor Air Advisor,
+            and CO₂ impact tracker.
           </CardDescription>
+          <div className="mt-2 flex flex-wrap items-center justify-center gap-1.5 text-[11px] font-medium text-emerald-700 dark:text-emerald-400">
+            <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-2.5 py-0.5">
+              <ShieldCheck className="h-3 w-3" /> India CPCB + WHO
+            </span>
+            <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-2.5 py-0.5">
+              <CheckCircle2 className="h-3 w-3" /> 100% Private · Zero Ads
+            </span>
+          </div>
         </CardHeader>
 
         <CardContent className="space-y-4">

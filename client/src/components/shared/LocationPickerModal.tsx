@@ -1,8 +1,9 @@
-import { MapPin, Search, X } from 'lucide-react';
+import { Loader2, LocateFixed, MapPin, Search, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
 import { QUICK_PICK_CITIES } from '@/config/cities';
 import { useSelectedLocation } from '@/hooks/useSelectedLocation';
+import { detectUserGpsLocation } from '@/lib/geolocation';
 import { searchLocations } from '@/services/air-quality.service';
 import type { LocationOption } from '@/types';
 
@@ -11,6 +12,21 @@ export function LocationPickerModal() {
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<LocationOption[]>([...QUICK_PICK_CITIES]);
   const [searching, setSearching] = useState(false);
+  const [locatingGps, setLocatingGps] = useState(false);
+  const [gpsError, setGpsError] = useState<string | null>(null);
+
+  async function handleDetectGps() {
+    setLocatingGps(true);
+    setGpsError(null);
+    try {
+      const detected = await detectUserGpsLocation();
+      await selectLocation(detected);
+    } catch (err) {
+      setGpsError(err instanceof Error ? err.message : 'Unable to detect your location.');
+    } finally {
+      setLocatingGps(false);
+    }
+  }
 
   useEffect(() => {
     if (!isPickerOpen) {
@@ -74,6 +90,26 @@ export function LocationPickerModal() {
           >
             <X className="h-4 w-4" />
           </button>
+        </div>
+
+        <div className="mb-3 space-y-2">
+          <button
+            type="button"
+            disabled={locatingGps}
+            onClick={() => void handleDetectGps()}
+            className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl border border-emerald-500/35 bg-emerald-500/10 px-3.5 py-2.5 text-xs font-semibold text-emerald-800 transition-colors hover:bg-emerald-500/15 disabled:opacity-60 dark:border-emerald-400/35 dark:bg-emerald-400/12 dark:text-emerald-300 dark:hover:bg-emerald-400/20"
+          >
+            {locatingGps ? (
+              <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+            ) : (
+              <LocateFixed className="h-4 w-4" aria-hidden="true" />
+            )}
+            {locatingGps ? 'Detecting your area…' : 'Use My Current Location (GPS)'}
+          </button>
+
+          {gpsError ? (
+            <p className="text-center text-[11px] text-amber-700 dark:text-amber-400">{gpsError}</p>
+          ) : null}
         </div>
 
         <div className="relative mb-4">

@@ -1,16 +1,20 @@
 import {
   ArrowRight,
+  Check,
   Clock,
   CloudOff,
   Compass,
   Droplets,
+  LogIn,
   MapPin,
   RefreshCw,
+  Share2,
   ShieldCheck,
   Sparkles,
   Thermometer,
   Wind,
 } from 'lucide-react';
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
 
 import { ForecastChart } from '@/components/dashboard/ForecastChart';
@@ -20,6 +24,7 @@ import { DataStateWrapper } from '@/components/shared/DataStateWrapper';
 import { FreshnessBanner } from '@/components/shared/FreshnessBanner';
 import { MedicalDisclaimer } from '@/components/shared/MedicalDisclaimer';
 import { MetricInfoButton } from '@/components/shared/MetricInfoModal';
+import { PwaInstallBanner } from '@/components/shared/PwaInstallBanner';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -27,15 +32,19 @@ import { getAqiToken } from '@/config/aqi-tokens';
 import { METRIC_EXPLAINERS } from '@/config/metric-explainers';
 import { APP_ROUTES } from '@/config/routes';
 import { useAirQuality } from '@/hooks/useAirQuality';
+import { useAuth } from '@/hooks/useAuth';
 import { useDailyPlan } from '@/hooks/useDailyPlan';
 import { useSelectedLocation } from '@/hooks/useSelectedLocation';
 import { formatMeasurement, formatWindDirection } from '@/lib/formatters';
+import { buildDailyAirShareText, shareTextMessage } from '@/lib/share';
 import { getCurrentTimeWindow, TIME_WINDOW_META } from '@/lib/time-window';
 
 export function DashboardPage() {
+  const { user } = useAuth();
   const { selectedLocation, openPicker } = useSelectedLocation();
   const { data, isLoading, isRefreshing, error, refresh } = useAirQuality();
   const { plan } = useDailyPlan();
+  const [shareFeedback, setShareFeedback] = useState<'shared' | 'copied' | null>(null);
 
   const currentWindow = getCurrentTimeWindow();
   const windowMeta = TIME_WINDOW_META[currentWindow];
@@ -57,6 +66,26 @@ export function DashboardPage() {
     : [];
 
   const activeQuickDecisions = plan?.riskAssessment.quickDecisions ?? data?.quickDecisions;
+
+  async function handleShareVerdict() {
+    if (!current) {
+      return;
+    }
+    const text = buildDailyAirShareText({
+      city: selectedLocation.city,
+      aqi: current.aqi,
+      category: current.category,
+      decisions: activeQuickDecisions,
+    });
+    const outcome = await shareTextMessage(
+      `${selectedLocation.city} Air Quality — BreatheWise AI`,
+      text,
+    );
+    if (outcome === 'shared' || outcome === 'copied') {
+      setShareFeedback(outcome);
+      window.setTimeout(() => setShareFeedback(null), 2500);
+    }
+  }
 
   return (
     <div className="space-y-6">
@@ -82,11 +111,25 @@ export function DashboardPage() {
             />
             Change City
           </Button>
+          {current ? (
+            <Button variant="outline" size="sm" onClick={() => void handleShareVerdict()}>
+              {shareFeedback ? (
+                <Check className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
+              ) : (
+                <Share2 className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
+              )}
+              {shareFeedback === 'copied'
+                ? 'Copied for WhatsApp'
+                : shareFeedback === 'shared'
+                  ? 'Shared ✓'
+                  : 'Share Verdict'}
+            </Button>
+          ) : null}
           <Button
             variant="secondary"
             size="sm"
             disabled={isLoading || isRefreshing}
-            onClick={() => refresh(true)}
+            onClick={() => refresh(Boolean(user))}
           >
             <RefreshCw
               className={`h-3.5 w-3.5 ${isRefreshing ? 'animate-spin' : ''}`}
@@ -96,6 +139,8 @@ export function DashboardPage() {
           </Button>
         </div>
       </div>
+
+      <PwaInstallBanner />
 
       <DataStateWrapper isLoading={isLoading} error={error} onRetry={() => refresh(true)}>
         {data && current ? (
@@ -134,7 +179,25 @@ export function DashboardPage() {
                 </div>
               </CardHeader>
               <CardContent>
-                {rightNowActions.length === 0 ? (
+                {!user ? (
+                  <div className="flex flex-col items-start justify-between gap-3 rounded-xl border border-emerald-500/30 bg-emerald-500/8 p-4 sm:flex-row sm:items-center dark:border-emerald-400/25 dark:bg-emerald-400/10">
+                    <div className="space-y-1">
+                      <p className="font-display text-sm font-bold text-zinc-950 dark:text-zinc-50">
+                        Want advice tailored to your kids, parents &amp; daily commute?
+                      </p>
+                      <p className="text-xs text-zinc-600 dark:text-zinc-400">
+                        Sign in free in 1 tap (30-sec setup · 100% private · zero ads) to unlock
+                        your AI Daily Plan, Indoor Air Advisor, and Ask AI.
+                      </p>
+                    </div>
+                    <Link to={APP_ROUTES.LOGIN} className="shrink-0">
+                      <Button size="sm" variant="brand">
+                        <LogIn className="h-3.5 w-3.5" aria-hidden="true" />
+                        Personalize Free
+                      </Button>
+                    </Link>
+                  </div>
+                ) : rightNowActions.length === 0 ? (
                   <div className="flex flex-col items-start justify-between gap-3 rounded-xl border border-dashed border-zinc-300 bg-zinc-50/80 p-4 sm:flex-row sm:items-center dark:border-zinc-700 dark:bg-zinc-950/60">
                     <p className="text-sm text-zinc-600 dark:text-zinc-400">
                       Get 2 short, tailored actions for your {windowMeta.label.toLowerCase()} based

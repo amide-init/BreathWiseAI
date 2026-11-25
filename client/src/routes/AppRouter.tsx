@@ -39,9 +39,13 @@ export function AppRouter() {
     <BrowserRouter>
       <Routes>
         <Route path={APP_ROUTES.LOGIN} element={<LoginPage />} />
+        {/* Public Guest Preview on Home Dashboard so visitors see live value before signing in */}
+        <Route element={<PortalLayout />}>
+          <Route path={APP_ROUTES.HOME} element={<DashboardPage />} />
+        </Route>
+        {/* Authenticated Personalization, AI & Impact Screens */}
         <Route element={<ProtectedRoute />}>
           <Route element={<PortalLayout />}>
-            <Route path={APP_ROUTES.HOME} element={<DashboardPage />} />
             <Route
               path={APP_ROUTES.PLANNER}
               element={

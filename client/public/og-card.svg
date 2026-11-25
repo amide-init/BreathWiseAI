@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630" fill="none">
+  <rect width="1200" height="630" fill="#09090b"/>
+  <circle cx="980" cy="110" r="280" fill="#10b981" fill-opacity="0.14"/>
+  <circle cx="180" cy="540" r="240" fill="#059669" fill-opacity="0.12"/>
+  <rect x="72" y="72" width="84" height="84" rx="22" fill="#10b981"/>
+  <path d="M96 114h36c6 0 10-4 10-9s-4-9-10-9-9 3-10 7M96 126h44c6 0 10 4 10 9s-4 9-10 9-9-3-10-7M96 102h22c4 0 8-3 8-7s-4-7-8-7" stroke="#09090b" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+  <text x="178" y="114" fill="#fafafa" font-family="system-ui, -apple-system, sans-serif" font-size="38" font-weight="800">BreatheWise AI</text>
+  <text x="178" y="148" fill="#a1a1aa" font-family="system-ui, -apple-system, sans-serif" font-size="22" font-weight="500">Clean-Air Intelligence for Families &amp; Commuters</text>
+  <text x="72" y="275" fill="#fafafa" font-family="system-ui, -apple-system, sans-serif" font-size="64" font-weight="800">Know Your Air.</text>
+  <text x="72" y="352" fill="#34d399" font-family="system-ui, -apple-system, sans-serif" font-size="64" font-weight="800">Protect Your Family.</text>
+  <text x="72" y="420" fill="#d4d4d8" font-family="system-ui, -apple-system, sans-serif" font-size="28" font-weight="500">Instant plain-English answers for walks, kids&#39; play, windows, masks &amp; indoor air.</text>
+  <rect x="72" y="482" width="245" height="58" rx="29" fill="#18181b" stroke="#27272a" stroke-width="2"/>
+  <text x="104" y="519" fill="#34d399" font-family="system-ui, -apple-system, sans-serif" font-size="22" font-weight="700">India CPCB NAQI</text>
+  <rect x="337" y="482" width="235" height="58" rx="29" fill="#18181b" stroke="#27272a" stroke-width="2"/>
+  <text x="369" y="519" fill="#fafafa" font-family="system-ui, -apple-system, sans-serif" font-size="22" font-weight="700">AI Daily Planner</text>
+  <rect x="592" y="482" width="255" height="58" rx="29" fill="#18181b" stroke="#27272a" stroke-width="2"/>
+  <text x="624" y="519" fill="#fafafa" font-family="system-ui, -apple-system, sans-serif" font-size="22" font-weight="700">100% Private &amp; Free</text>
+</svg>
