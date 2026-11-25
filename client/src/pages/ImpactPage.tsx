@@ -12,6 +12,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { ImpactProgressChart } from '@/components/impact/ImpactProgressChart';
 import { LogImpactModal } from '@/components/impact/LogImpactModal';
 import { DataStateWrapper } from '@/components/shared/DataStateWrapper';
+import { MetricInfoButton } from '@/components/shared/MetricInfoModal';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -235,7 +236,12 @@ export function ImpactPage() {
                         className="h-5 w-5 text-emerald-600 dark:text-emerald-400"
                         aria-hidden="true"
                       />
-                      Environmental Emissions Avoided
+                      <span>Environmental Emissions Avoided</span>
+                      <MetricInfoButton
+                        metricKey="co2_avoided"
+                        currentValue={summary.emissions.totalEstimatedCo2AvoidedKg}
+                        formattedValue={formatCo2Kg(summary.emissions.totalEstimatedCo2AvoidedKg)}
+                      />
                     </CardTitle>
                     <Badge variant="default">Estimate · 14 Days</Badge>
                   </div>

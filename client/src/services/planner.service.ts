@@ -11,6 +11,7 @@ import {
 
 import { callFunction } from '@/lib/callable-client';
 import { getFirebaseDb } from '@/lib/firebase';
+import { getCurrentTimeWindow, type TimeWindowKey } from '@/lib/time-window';
 import { getTodayLocalDateKey, type DailyPlanModel } from '@/models/planner.model';
 import type { LocationOption } from '@/types';
 
@@ -24,6 +25,7 @@ interface GenerateDailyPlanPayload {
   familyId?: string | null;
   planDate: string;
   forceRefresh?: boolean;
+  currentTimeWindow: TimeWindowKey;
 }
 
 export async function getTodayDailyPlan(
@@ -56,7 +58,12 @@ export async function getTodayDailyPlan(
 
 export function generateDailyPlanCallable(
   location: LocationOption,
-  options?: { familyId?: string | null; planDate?: string; forceRefresh?: boolean },
+  options?: {
+    familyId?: string | null;
+    planDate?: string;
+    forceRefresh?: boolean;
+    currentTimeWindow?: TimeWindowKey;
+  },
 ): Promise<DailyPlanModel> {
   return callFunction<GenerateDailyPlanPayload, DailyPlanModel>('generate_daily_plan', {
     locationId: location.locationId,
@@ -66,6 +73,7 @@ export function generateDailyPlanCallable(
     familyId: options?.familyId ?? null,
     planDate: options?.planDate ?? getTodayLocalDateKey(),
     forceRefresh: Boolean(options?.forceRefresh),
+    currentTimeWindow: options?.currentTimeWindow ?? getCurrentTimeWindow(),
   });
 }
 

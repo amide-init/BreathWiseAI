@@ -10,6 +10,7 @@ import {
   Trash2,
 } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState, type FormEvent } from 'react';
+import { useSearchParams } from 'react-router-dom';
 
 import { AqiBadge } from '@/components/shared/AqiBadge';
 import { MedicalDisclaimer } from '@/components/shared/MedicalDisclaimer';
@@ -133,6 +134,7 @@ export function AssistantPage() {
   const { user } = useAuth();
   const { selectedLocation } = useSelectedLocation();
   const { family } = useFamilyProfile();
+  const [searchParams, setSearchParams] = useSearchParams();
 
   const [sessions, setSessions] = useState<ChatSessionSummary[]>([]);
   const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
@@ -143,6 +145,14 @@ export function AssistantPage() {
   const [error, setError] = useState<string | null>(null);
 
   const bottomRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    const prefilled = searchParams.get('q');
+    if (prefilled && prefilled.trim()) {
+      setInput(prefilled.trim());
+      setSearchParams({}, { replace: true });
+    }
+  }, [searchParams, setSearchParams]);
 
   const refreshSessions = useCallback(async () => {
     if (!user) {

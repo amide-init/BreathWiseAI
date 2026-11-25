@@ -1,4 +1,6 @@
 import {
+  ArrowRight,
+  Clock,
   CloudOff,
   Compass,
   Droplets,
@@ -12,42 +14,64 @@ import {
 import { Link } from 'react-router-dom';
 
 import { ForecastChart } from '@/components/dashboard/ForecastChart';
+import { QuickDecisionsStrip } from '@/components/dashboard/QuickDecisionsStrip';
 import { AqiBadge } from '@/components/shared/AqiBadge';
 import { DataStateWrapper } from '@/components/shared/DataStateWrapper';
 import { FreshnessBanner } from '@/components/shared/FreshnessBanner';
 import { MedicalDisclaimer } from '@/components/shared/MedicalDisclaimer';
+import { MetricInfoButton } from '@/components/shared/MetricInfoModal';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { getAqiToken } from '@/config/aqi-tokens';
+import { METRIC_EXPLAINERS } from '@/config/metric-explainers';
 import { APP_ROUTES } from '@/config/routes';
 import { useAirQuality } from '@/hooks/useAirQuality';
 import { useDailyPlan } from '@/hooks/useDailyPlan';
 import { useSelectedLocation } from '@/hooks/useSelectedLocation';
 import { formatMeasurement, formatWindDirection } from '@/lib/formatters';
+import { getCurrentTimeWindow, TIME_WINDOW_META } from '@/lib/time-window';
 
 export function DashboardPage() {
   const { selectedLocation, openPicker } = useSelectedLocation();
   const { data, isLoading, isRefreshing, error, refresh } = useAirQuality();
   const { plan } = useDailyPlan();
 
+  const currentWindow = getCurrentTimeWindow();
+  const windowMeta = TIME_WINDOW_META[currentWindow];
+
   const current = data?.current;
   const weather = data?.weather;
   const token = getAqiToken(current?.category ?? 'Unavailable');
   const pm25Reading = current?.readings.find((r) => r.pollutant === 'PM2.5');
   const pm10Reading = current?.readings.find((r) => r.pollutant === 'PM10');
-  const topActions = plan
-    ? [...plan.sections.morning, ...plan.sections.afternoon, ...plan.sections.evening].slice(0, 3)
+
+  const pm25Eval = METRIC_EXPLAINERS.pm25.evaluateValue(pm25Reading?.value);
+  const pm10Eval = METRIC_EXPLAINERS.pm10.evaluateValue(pm10Reading?.value);
+
+  // Show actions for RIGHT NOW first (matching the user's current local time window)
+  const rightNowActions = plan
+    ? plan.sections[currentWindow].length > 0
+      ? plan.sections[currentWindow]
+      : [...plan.sections.morning, ...plan.sections.afternoon, ...plan.sections.evening].slice(0, 2)
     : [];
+
+  const activeQuickDecisions = plan?.riskAssessment.quickDecisions ?? data?.quickDecisions;
 
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div>
+          <p className="text-xs font-semibold text-emerald-700 dark:text-emerald-400">
+            {windowMeta.greeting} · {windowMeta.rangeLabel}
+          </p>
           <h1 className="text-2xl font-bold tracking-tight text-zinc-950 dark:text-zinc-50">
-            Dashboard
+            {selectedLocation.city} Air Overview
           </h1>
-          <p className="text-sm text-zinc-600 dark:text-zinc-400">{selectedLocation.label}</p>
+          <p className="text-xs text-zinc-500 dark:text-zinc-400">
+            Tap any <span className="font-semibold text-zinc-700 dark:text-zinc-300">ⓘ</span> icon
+            to see what a metric means in plain English.
+          </p>
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
@@ -75,21 +99,106 @@ export function DashboardPage() {
 
       <DataStateWrapper isLoading={isLoading} error={error} onRetry={() => refresh(true)}>
         {data && current ? (
-          <div className="space-y-5">
+          <div className="space-y-6">
             <FreshnessBanner
               freshnessStatus={current.freshnessStatus}
               observedAt={current.observedAt}
               source={current.source}
             />
 
+            {/* Everyday Human Quick Verdicts FIRST */}
+            <QuickDecisionsStrip decisions={activeQuickDecisions} category={current.category} />
+
+            {/* Right Now Actions Preview (Time-Aware!) */}
+            <Card>
+              <CardHeader className="pb-3">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <div>
+                    <CardTitle className="flex items-center gap-2 text-base">
+                      <Clock
+                        className="h-4 w-4 text-emerald-600 dark:text-emerald-400"
+                        aria-hidden="true"
+                      />
+                      What To Do Right Now ({windowMeta.label})
+                    </CardTitle>
+                    <CardDescription>
+                      Your most important steps for this time of day in {selectedLocation.city}.
+                    </CardDescription>
+                  </div>
+                  <Link to={APP_ROUTES.PLANNER}>
+                    <Button variant="outline" size="sm">
+                      {rightNowActions.length > 0 ? 'Open Full Plan' : 'Build My Daily Plan'}
+                      <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
+                    </Button>
+                  </Link>
+                </div>
+              </CardHeader>
+              <CardContent>
+                {rightNowActions.length === 0 ? (
+                  <div className="flex flex-col items-start justify-between gap-3 rounded-xl border border-dashed border-zinc-300 bg-zinc-50/80 p-4 sm:flex-row sm:items-center dark:border-zinc-700 dark:bg-zinc-950/60">
+                    <p className="text-sm text-zinc-600 dark:text-zinc-400">
+                      Get 2 short, tailored actions for your {windowMeta.label.toLowerCase()} based
+                      on live {selectedLocation.city} air and your family profile.
+                    </p>
+                    <Link to={APP_ROUTES.PLANNER} className="shrink-0">
+                      <Button size="sm" variant="primary">
+                        <Sparkles className="h-3.5 w-3.5" aria-hidden="true" />
+                        Generate Now
+                      </Button>
+                    </Link>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+                    {rightNowActions.slice(0, 2).map((item) => (
+                      <Link
+                        key={item.itemId}
+                        to={APP_ROUTES.PLANNER}
+                        className="group rounded-xl border border-zinc-200/80 bg-zinc-50/70 p-4 transition-all hover:border-emerald-500/40 hover:bg-emerald-500/5 dark:border-zinc-800 dark:bg-zinc-950/60 dark:hover:border-emerald-400/40"
+                      >
+                        <div className="flex items-center justify-between gap-2">
+                          <Badge
+                            variant={
+                              item.priority === 'high'
+                                ? 'danger'
+                                : item.priority === 'medium'
+                                  ? 'warning'
+                                  : 'neutral'
+                            }
+                          >
+                            {item.priority === 'high' ? 'Top Priority' : item.priority}
+                          </Badge>
+                          <span className="text-[11px] font-medium text-emerald-700 opacity-80 group-hover:opacity-100 dark:text-emerald-400">
+                            Details →
+                          </span>
+                        </div>
+                        <p className="font-display mt-2 text-sm font-bold text-zinc-950 dark:text-zinc-50">
+                          {item.title}
+                        </p>
+                        <p className="mt-1 line-clamp-2 text-xs leading-relaxed text-zinc-600 dark:text-zinc-400">
+                          {item.whatToDo}
+                        </p>
+                      </Link>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Live Readings + Tap-to-Learn (i) Explainers */}
             <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-              {/* Hero CPCB NAQI Card */}
               <Card className={`lg:col-span-2 ${token.surfaceClass} ${token.borderClass}`}>
                 <CardHeader>
                   <div className="flex flex-wrap items-center justify-between gap-2">
-                    <CardTitle className="flex items-center gap-2">
+                    <CardTitle className="flex items-center gap-1.5">
                       <Wind className={`h-5 w-5 ${token.accentTextClass}`} aria-hidden="true" />
-                      Current Air Quality (CPCB NAQI)
+                      <span>Air Quality Score</span>
+                      <MetricInfoButton
+                        metricKey="aqi"
+                        currentValue={current.aqi}
+                        formattedValue={
+                          current.aqi !== null ? `${current.aqi} (${current.category})` : 'Unavailable'
+                        }
+                      />
                     </CardTitle>
                     <AqiBadge category={current.category} aqi={current.aqi} />
                   </div>
@@ -116,7 +225,7 @@ export function DashboardPage() {
                       <div className="flex flex-wrap items-center gap-2 text-xs text-zinc-600 dark:text-zinc-400">
                         {current.dominantPollutant ? (
                           <Badge variant="neutral">
-                            Dominant: {current.dominantPollutant.toUpperCase()}
+                            Main pollutant: {current.dominantPollutant.toUpperCase()}
                           </Badge>
                         ) : null}
                         {data.fallbackProviderUsed ? (
@@ -130,34 +239,80 @@ export function DashboardPage() {
                     {current.healthGuidance}
                   </p>
 
-                  {/* PM2.5 & PM10 Pollutant Readings */}
+                  {/* PM2.5 & PM10 with Plain Labels + (i) Explainer Icons */}
                   <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                    {[
-                      { label: 'PM2.5', reading: pm25Reading, unit: 'µg/m³' },
-                      { label: 'PM10', reading: pm10Reading, unit: 'µg/m³' },
-                    ].map(({ label, reading, unit }) => (
-                      <div
-                        key={label}
-                        className="rounded-xl border border-zinc-200/80 bg-white/90 p-3.5 dark:border-zinc-800/90 dark:bg-zinc-950/70"
-                      >
-                        <div className="flex items-center justify-between">
-                          <span className="text-xs font-medium text-zinc-500 dark:text-zinc-400">
-                            {label}
+                    <div className="rounded-xl border border-zinc-200/80 bg-white/90 p-3.5 dark:border-zinc-800/90 dark:bg-zinc-950/70">
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-1">
+                          <span className="text-xs font-semibold text-zinc-800 dark:text-zinc-200">
+                            PM2.5
                           </span>
-                          <span className="text-[11px] capitalize text-zinc-400 dark:text-zinc-500">
-                            {reading?.freshnessStatus ?? 'unavailable'}
+                          <span className="text-[11px] text-zinc-500 dark:text-zinc-400">
+                            · Tiny lung dust
                           </span>
+                          <MetricInfoButton
+                            metricKey="pm25"
+                            currentValue={pm25Reading?.value}
+                            formattedValue={formatMeasurement(pm25Reading?.value, 'µg/m³')}
+                          />
                         </div>
-                        <p className="font-display mt-1 text-xl font-bold tabular-nums text-zinc-950 dark:text-zinc-50">
-                          {formatMeasurement(reading?.value, unit)}
-                        </p>
+                        <Badge
+                          variant={
+                            pm25Eval.tone === 'good'
+                              ? 'default'
+                              : pm25Eval.tone === 'caution'
+                                ? 'warning'
+                                : pm25Eval.tone === 'unhealthy'
+                                  ? 'danger'
+                                  : 'neutral'
+                          }
+                        >
+                          {pm25Eval.badge}
+                        </Badge>
                       </div>
-                    ))}
+                      <p className="font-display mt-1.5 text-xl font-bold tabular-nums text-zinc-950 dark:text-zinc-50">
+                        {formatMeasurement(pm25Reading?.value, 'µg/m³')}
+                      </p>
+                    </div>
+
+                    <div className="rounded-xl border border-zinc-200/80 bg-white/90 p-3.5 dark:border-zinc-800/90 dark:bg-zinc-950/70">
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-1">
+                          <span className="text-xs font-semibold text-zinc-800 dark:text-zinc-200">
+                            PM10
+                          </span>
+                          <span className="text-[11px] text-zinc-500 dark:text-zinc-400">
+                            · Road dust
+                          </span>
+                          <MetricInfoButton
+                            metricKey="pm10"
+                            currentValue={pm10Reading?.value}
+                            formattedValue={formatMeasurement(pm10Reading?.value, 'µg/m³')}
+                          />
+                        </div>
+                        <Badge
+                          variant={
+                            pm10Eval.tone === 'good'
+                              ? 'default'
+                              : pm10Eval.tone === 'caution'
+                                ? 'warning'
+                                : pm10Eval.tone === 'unhealthy'
+                                  ? 'danger'
+                                  : 'neutral'
+                          }
+                        >
+                          {pm10Eval.badge}
+                        </Badge>
+                      </div>
+                      <p className="font-display mt-1.5 text-xl font-bold tabular-nums text-zinc-950 dark:text-zinc-50">
+                        {formatMeasurement(pm10Reading?.value, 'µg/m³')}
+                      </p>
+                    </div>
                   </div>
                 </CardContent>
               </Card>
 
-              {/* Right Column: Weather + Quick Actions */}
+              {/* Right Column: Weather (with (i) icons) + Quick Links */}
               <div className="space-y-4">
                 <Card>
                   <CardHeader>
@@ -175,13 +330,25 @@ export function DashboardPage() {
                       </p>
                       <p className="text-[11px] text-zinc-500 dark:text-zinc-400">Temp</p>
                     </div>
+
                     <div className="rounded-xl border border-zinc-200/60 bg-zinc-50 p-2.5 dark:border-zinc-800 dark:bg-zinc-950/70">
                       <Droplets className="mx-auto h-4 w-4 text-sky-500" aria-hidden="true" />
                       <p className="mt-1 text-sm font-bold tabular-nums text-zinc-950 dark:text-zinc-50">
                         {formatMeasurement(weather?.humidityPct, '%')}
                       </p>
-                      <p className="text-[11px] text-zinc-500 dark:text-zinc-400">Humidity</p>
+                      <div className="flex items-center justify-center gap-0.5">
+                        <span className="text-[11px] text-zinc-500 dark:text-zinc-400">
+                          Humidity
+                        </span>
+                        <MetricInfoButton
+                          metricKey="humidity"
+                          currentValue={weather?.humidityPct}
+                          formattedValue={formatMeasurement(weather?.humidityPct, '%')}
+                          className="h-4 w-4"
+                        />
+                      </div>
                     </div>
+
                     <div className="rounded-xl border border-zinc-200/60 bg-zinc-50 p-2.5 dark:border-zinc-800 dark:bg-zinc-950/70">
                       <Compass
                         className="mx-auto h-4 w-4 text-zinc-500 dark:text-zinc-400"
@@ -190,9 +357,17 @@ export function DashboardPage() {
                       <p className="mt-1 text-sm font-bold tabular-nums text-zinc-950 dark:text-zinc-50">
                         {formatMeasurement(weather?.windSpeedKmh, 'km/h')}
                       </p>
-                      <p className="text-[11px] text-zinc-500 dark:text-zinc-400">
-                        Wind {formatWindDirection(weather?.windDirectionDeg)}
-                      </p>
+                      <div className="flex items-center justify-center gap-0.5">
+                        <span className="text-[11px] text-zinc-500 dark:text-zinc-400">
+                          Wind {formatWindDirection(weather?.windDirectionDeg)}
+                        </span>
+                        <MetricInfoButton
+                          metricKey="wind"
+                          currentValue={weather?.windSpeedKmh}
+                          formattedValue={formatMeasurement(weather?.windSpeedKmh, 'km/h')}
+                          className="h-4 w-4"
+                        />
+                      </div>
                     </div>
                   </CardContent>
                 </Card>
@@ -204,24 +379,24 @@ export function DashboardPage() {
                         className="h-4 w-4 text-emerald-600 dark:text-emerald-400"
                         aria-hidden="true"
                       />
-                      Quick Actions
+                      Quick Shortcuts
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="flex flex-col gap-2">
-                    <Link to={APP_ROUTES.PROFILE}>
-                      <Button className="w-full justify-start" size="sm" variant="primary">
-                        Personalize Family Profile
-                      </Button>
-                    </Link>
-                    <Link to={APP_ROUTES.PLANNER}>
-                      <Button className="w-full justify-start" size="sm" variant="outline">
-                        Open Daily Plan
-                      </Button>
-                    </Link>
                     <Link to={APP_ROUTES.ASSISTANT}>
-                      <Button className="w-full justify-start" size="sm" variant="secondary">
+                      <Button className="w-full justify-start" size="sm" variant="primary">
                         <Sparkles className="h-3.5 w-3.5" aria-hidden="true" />
                         Ask BreatheWise AI
+                      </Button>
+                    </Link>
+                    <Link to={`${APP_ROUTES.PLANNER}?tab=indoor`}>
+                      <Button className="w-full justify-start" size="sm" variant="outline">
+                        Check Indoor Home Air
+                      </Button>
+                    </Link>
+                    <Link to={APP_ROUTES.PROFILE}>
+                      <Button className="w-full justify-start" size="sm" variant="secondary">
+                        Personalize Family Profile
                       </Button>
                     </Link>
                   </CardContent>
@@ -230,60 +405,6 @@ export function DashboardPage() {
             </div>
 
             <ForecastChart forecasts={data.forecasts} />
-
-            {/* Today's Top Recommended Actions Preview */}
-            <Card>
-              <CardHeader>
-                <div className="flex flex-wrap items-center justify-between gap-2">
-                  <div>
-                    <CardTitle className="text-base">Today’s Recommended Actions</CardTitle>
-                    <CardDescription>
-                      Top clean-air actions from your personalized Daily Plan.
-                    </CardDescription>
-                  </div>
-                  <Link to={APP_ROUTES.PLANNER}>
-                    <Button variant="outline" size="sm">
-                      {topActions.length > 0 ? 'View Full Plan' : "Generate Today's Plan"}
-                    </Button>
-                  </Link>
-                </div>
-              </CardHeader>
-              <CardContent>
-                {topActions.length === 0 ? (
-                  <p className="text-sm text-zinc-600 dark:text-zinc-400">
-                    Generate your personalized Morning, Afternoon & Evening plan based on live{' '}
-                    {selectedLocation.city} AQI and your family profile.
-                  </p>
-                ) : (
-                  <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
-                    {topActions.map((item) => (
-                      <div
-                        key={item.itemId}
-                        className="rounded-xl border border-zinc-200/80 bg-zinc-50/70 p-3.5 dark:border-zinc-800 dark:bg-zinc-950/60"
-                      >
-                        <Badge
-                          variant={
-                            item.priority === 'high'
-                              ? 'danger'
-                              : item.priority === 'medium'
-                                ? 'warning'
-                                : 'neutral'
-                          }
-                        >
-                          {item.priority.toUpperCase()}
-                        </Badge>
-                        <p className="mt-2 text-sm font-semibold text-zinc-950 dark:text-zinc-50">
-                          {item.title}
-                        </p>
-                        <p className="mt-1 line-clamp-2 text-xs text-zinc-600 dark:text-zinc-400">
-                          {item.whatToDo}
-                        </p>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
           </div>
         ) : null}
       </DataStateWrapper>

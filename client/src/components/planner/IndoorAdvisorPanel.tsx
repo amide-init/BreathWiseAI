@@ -10,6 +10,7 @@ import {
 import { useEffect, useState, type FormEvent } from 'react';
 
 import { AqiBadge } from '@/components/shared/AqiBadge';
+import { MetricInfoButton } from '@/components/shared/MetricInfoModal';
 import { Alert } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -257,8 +258,15 @@ export function IndoorAdvisorPanel() {
                     className="h-5 w-5 text-emerald-600 dark:text-emerald-400"
                     aria-hidden="true"
                   />
-                  Estimated Indoor Risk:{' '}
-                  <span className="capitalize">{assessment.estimatedRiskLevel}</span>
+                  <span>
+                    Estimated Indoor Risk:{' '}
+                    <span className="capitalize">{assessment.estimatedRiskLevel}</span>
+                  </span>
+                  <MetricInfoButton
+                    metricKey="indoor_risk"
+                    currentValue={assessment.estimatedRiskLevel}
+                    formattedValue={`${assessment.estimatedRiskLevel.toUpperCase()} (Estimated)`}
+                  />
                 </CardTitle>
                 <div className="flex flex-wrap items-center gap-2">
                   <Badge variant={RISK_BADGE_VARIANT[assessment.estimatedRiskLevel]}>

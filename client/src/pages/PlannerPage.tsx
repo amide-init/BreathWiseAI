@@ -1,82 +1,140 @@
 import {
   BookOpen,
   CalendarCheck2,
+  Car,
   CheckCircle2,
+  ChevronRight,
   Circle,
+  Clock,
+  Footprints,
   Home,
   Info,
+  Leaf,
   RefreshCw,
   ShieldAlert,
   Sparkles,
+  Utensils,
+  X,
 } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 
 import { IndoorAdvisorPanel } from '@/components/planner/IndoorAdvisorPanel';
 import { AqiBadge } from '@/components/shared/AqiBadge';
 import { DataStateWrapper } from '@/components/shared/DataStateWrapper';
 import { MedicalDisclaimer } from '@/components/shared/MedicalDisclaimer';
+import { MetricInfoButton } from '@/components/shared/MetricInfoModal';
 import { Alert } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useDailyPlan } from '@/hooks/useDailyPlan';
 import { useSelectedLocation } from '@/hooks/useSelectedLocation';
+import { cn } from '@/lib/cn';
+import {
+  getCurrentTimeWindow,
+  getOrderedTimeWindows,
+  TIME_WINDOW_META,
+  type TimeWindowKey,
+} from '@/lib/time-window';
 import type { RecommendationItem } from '@/types';
 
-type TimeWindowTab = 'all' | 'morning' | 'afternoon' | 'evening';
+type TimeFilterTab = TimeWindowKey | 'all';
 type PlannerModeTab = 'routine' | 'indoor';
 
-const PRIORITY_VARIANT: Record<RecommendationItem['priority'], 'danger' | 'warning' | 'neutral'> = {
-  high: 'danger',
-  medium: 'warning',
-  low: 'neutral',
+const CATEGORY_META: Record<
+  RecommendationItem['category'],
+  { label: string; icon: typeof Home; accent: string }
+> = {
+  outdoor_activity: {
+    label: 'Outdoors',
+    icon: Footprints,
+    accent: 'bg-sky-500/12 text-sky-700 dark:bg-sky-400/15 dark:text-sky-300',
+  },
+  commute: {
+    label: 'Commute',
+    icon: Car,
+    accent: 'bg-indigo-500/12 text-indigo-700 dark:bg-indigo-400/15 dark:text-indigo-300',
+  },
+  indoor_air: {
+    label: 'Home Air',
+    icon: Home,
+    accent: 'bg-emerald-500/12 text-emerald-700 dark:bg-emerald-400/15 dark:text-emerald-300',
+  },
+  cooking_ventilation: {
+    label: 'Kitchen',
+    icon: Utensils,
+    accent: 'bg-amber-500/12 text-amber-700 dark:bg-amber-400/15 dark:text-amber-300',
+  },
+  sustainability: {
+    label: 'Clean Swap',
+    icon: Leaf,
+    accent: 'bg-emerald-500/12 text-emerald-700 dark:bg-emerald-400/15 dark:text-emerald-300',
+  },
+  health_precaution: {
+    label: 'Health Alert',
+    icon: ShieldAlert,
+    accent: 'bg-red-500/12 text-red-700 dark:bg-red-400/15 dark:text-red-300',
+  },
 };
 
-function RecommendationCard({
+function ActionDetailModal({
   item,
   completed,
   onToggle,
+  onClose,
 }: {
   item: RecommendationItem;
   completed: boolean;
   onToggle: () => void;
+  onClose: () => void;
 }) {
-  return (
-    <Card
-      className={
-        completed
-          ? 'border-emerald-300/70 bg-emerald-50/40 dark:border-emerald-800/60 dark:bg-emerald-950/20'
-          : undefined
+  const cat = CATEGORY_META[item.category];
+  const Icon = cat.icon;
+
+  useEffect(() => {
+    function onKeyDown(e: KeyboardEvent) {
+      if (e.key === 'Escape') {
+        onClose();
       }
+    }
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [onClose]);
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-end justify-center bg-zinc-950/60 p-3 backdrop-blur-xs sm:items-center sm:p-4"
+      role="dialog"
+      aria-modal="true"
+      aria-label={item.title}
+      onClick={(e) => {
+        if (e.target === e.currentTarget) {
+          onClose();
+        }
+      }}
     >
-      <CardHeader className="pb-2">
-        <div className="flex items-start justify-between gap-3">
-          <button
-            type="button"
-            onClick={onToggle}
-            className="flex cursor-pointer items-start gap-2.5 text-left"
-          >
-            {completed ? (
-              <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-emerald-600 dark:text-emerald-400" />
-            ) : (
-              <Circle className="mt-0.5 h-5 w-5 shrink-0 text-zinc-400 hover:text-emerald-600 dark:text-zinc-500 dark:hover:text-emerald-400" />
-            )}
+      <div className="max-h-[88vh] w-full max-w-lg overflow-y-auto rounded-2xl border border-zinc-200 bg-white p-5 shadow-xl dark:border-zinc-800 dark:bg-zinc-900">
+        <div className="flex items-start justify-between gap-3 pb-3">
+          <div className="flex items-start gap-3">
+            <span className={cn('flex h-10 w-10 shrink-0 items-center justify-center rounded-xl', cat.accent)}>
+              <Icon className="h-5 w-5" aria-hidden="true" />
+            </span>
             <div>
-              <CardTitle
-                className={
-                  completed
-                    ? 'line-through text-zinc-500 dark:text-zinc-500'
-                    : 'text-zinc-950 dark:text-zinc-50'
-                }
-              >
-                {item.title}
-              </CardTitle>
-              <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
-                <Badge variant={PRIORITY_VARIANT[item.priority]}>
-                  {item.priority.toUpperCase()} priority
+              <h2 className="text-lg font-bold text-zinc-950 dark:text-zinc-50">{item.title}</h2>
+              <div className="mt-1 flex flex-wrap items-center gap-1.5">
+                <Badge
+                  variant={
+                    item.priority === 'high'
+                      ? 'danger'
+                      : item.priority === 'medium'
+                        ? 'warning'
+                        : 'neutral'
+                  }
+                >
+                  {item.priority === 'high' ? 'Top Priority' : `${item.priority} priority`}
                 </Badge>
-                <Badge variant="outline">{item.category.replace(/_/g, ' ')}</Badge>
+                <Badge variant="outline">{cat.label}</Badge>
                 {item.targetMembers.map((member) => (
                   <Badge key={member} variant="neutral">
                     {member}
@@ -84,36 +142,148 @@ function RecommendationCard({
                 ))}
               </div>
             </div>
+          </div>
+
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Close action details"
+            className="flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-lg text-zinc-500 hover:bg-zinc-100 hover:text-zinc-950 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-50"
+          >
+            <X className="h-4 w-4" />
           </button>
         </div>
-      </CardHeader>
 
-      <CardContent className="space-y-2.5 pl-12 text-sm">
-        <div>
-          <p className="text-[11px] font-semibold uppercase tracking-wide text-emerald-700 dark:text-emerald-400">
-            What to do
+        <div className="space-y-4 text-sm">
+          <div className="rounded-xl border border-emerald-200/80 bg-emerald-50/60 p-3.5 dark:border-emerald-900/50 dark:bg-emerald-950/30">
+            <p className="text-[11px] font-bold uppercase tracking-wide text-emerald-700 dark:text-emerald-400">
+              What to do
+            </p>
+            <p className="mt-1 leading-relaxed text-zinc-900 dark:text-zinc-100">{item.whatToDo}</p>
+          </div>
+
+          <div>
+            <p className="text-[11px] font-bold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
+              Why it matters for you
+            </p>
+            <p className="mt-1 leading-relaxed text-zinc-700 dark:text-zinc-300">{item.why}</p>
+          </div>
+
+          <div className="rounded-xl border border-zinc-200/80 bg-zinc-50/80 p-3.5 dark:border-zinc-800 dark:bg-zinc-950/60">
+            <p className="text-[11px] font-bold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
+              Easy Backup Plan
+            </p>
+            <p className="mt-1 leading-relaxed text-zinc-700 dark:text-zinc-300">
+              {item.alternative}
+            </p>
+          </div>
+
+          <p className="text-xs text-zinc-500 dark:text-zinc-400">
+            <span className="font-semibold text-zinc-700 dark:text-zinc-300">Based on:</span>{' '}
+            {item.supportingData}
           </p>
-          <p className="text-zinc-800 dark:text-zinc-200">{item.whatToDo}</p>
         </div>
 
-        <div>
-          <p className="text-[11px] font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
-            Why it’s recommended
-          </p>
-          <p className="text-zinc-600 dark:text-zinc-400">{item.why}</p>
+        <div className="mt-5 flex flex-wrap items-center justify-between gap-2 border-t border-zinc-100 pt-3.5 dark:border-zinc-800">
+          <Button type="button" variant={completed ? 'secondary' : 'brand'} size="sm" onClick={onToggle}>
+            <CheckCircle2 className="h-4 w-4" aria-hidden="true" />
+            {completed ? 'Completed ✓' : 'Mark as Done'}
+          </Button>
+          <Button type="button" variant="outline" size="sm" onClick={onClose}>
+            Close
+          </Button>
         </div>
+      </div>
+    </div>
+  );
+}
 
-        <div className="rounded-xl border border-zinc-200/70 bg-zinc-50 p-2.5 dark:border-zinc-800 dark:bg-zinc-950/60">
-          <p className="text-[11px] font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
-            Practical Alternative
-          </p>
-          <p className="text-zinc-700 dark:text-zinc-300">{item.alternative}</p>
+function CompactActionCard({
+  item,
+  completed,
+  onToggle,
+  onOpenDetails,
+}: {
+  item: RecommendationItem;
+  completed: boolean;
+  onToggle: () => void;
+  onOpenDetails: () => void;
+}) {
+  const cat = CATEGORY_META[item.category];
+  const Icon = cat.icon;
+
+  return (
+    <Card
+      className={cn(
+        'transition-all hover:border-emerald-500/35 dark:hover:border-emerald-400/35',
+        completed &&
+          'border-emerald-300/70 bg-emerald-50/35 opacity-85 dark:border-emerald-800/60 dark:bg-emerald-950/20',
+      )}
+    >
+      <CardContent className="p-4">
+        <div className="flex items-start gap-3">
+          <button
+            type="button"
+            onClick={onToggle}
+            aria-label={completed ? `Mark ${item.title} as not done` : `Mark ${item.title} as done`}
+            className="mt-0.5 shrink-0 cursor-pointer"
+          >
+            {completed ? (
+              <CheckCircle2 className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
+            ) : (
+              <Circle className="h-5 w-5 text-zinc-400 hover:text-emerald-600 dark:text-zinc-500 dark:hover:text-emerald-400" />
+            )}
+          </button>
+
+          <div className="min-w-0 flex-1 space-y-2">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div className="flex flex-wrap items-center gap-1.5">
+                <span
+                  className={cn(
+                    'inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-semibold',
+                    cat.accent,
+                  )}
+                >
+                  <Icon className="h-3 w-3" aria-hidden="true" />
+                  {cat.label}
+                </span>
+                {item.priority === 'high' ? <Badge variant="danger">Top Priority</Badge> : null}
+                {item.targetMembers.slice(0, 2).map((member) => (
+                  <Badge key={member} variant="neutral">
+                    {member}
+                  </Badge>
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <h3
+                className={cn(
+                  'font-display text-base font-bold leading-snug',
+                  completed
+                    ? 'line-through text-zinc-500 dark:text-zinc-500'
+                    : 'text-zinc-950 dark:text-zinc-50',
+                )}
+              >
+                {item.title}
+              </h3>
+              <p className="mt-1 text-sm leading-relaxed text-zinc-600 dark:text-zinc-400">
+                {item.whatToDo}
+              </p>
+            </div>
+
+            <div className="flex items-center justify-between pt-1">
+              <button
+                type="button"
+                onClick={onOpenDetails}
+                className="inline-flex cursor-pointer items-center gap-1 text-xs font-semibold text-emerald-700 hover:text-emerald-800 dark:text-emerald-400 dark:hover:text-emerald-300"
+              >
+                <span>Why &amp; Backup Plan</span>
+                <ChevronRight className="h-3.5 w-3.5" aria-hidden="true" />
+              </button>
+            </div>
+          </div>
         </div>
-
-        <p className="text-xs text-zinc-500 dark:text-zinc-400">
-          <span className="font-medium text-zinc-700 dark:text-zinc-300">Supporting data:</span>{' '}
-          {item.supportingData}
-        </p>
       </CardContent>
     </Card>
   );
@@ -123,7 +293,11 @@ export function PlannerPage() {
   const { selectedLocation } = useSelectedLocation();
   const { plan, isLoading, isGenerating, error, generate, toggleItemCompleted } = useDailyPlan();
   const [searchParams, setSearchParams] = useSearchParams();
-  const [activeTab, setActiveTab] = useState<TimeWindowTab>('all');
+
+  const currentWindow = getCurrentTimeWindow();
+  const orderedWindows = getOrderedTimeWindows(currentWindow);
+  const [activeTab, setActiveTab] = useState<TimeFilterTab>(currentWindow);
+  const [selectedItem, setSelectedItem] = useState<RecommendationItem | null>(null);
 
   const modeTab: PlannerModeTab = searchParams.get('tab') === 'indoor' ? 'indoor' : 'routine';
 
@@ -143,13 +317,14 @@ export function PlannerPage() {
     : 0;
 
   const sectionsToRender = plan
-    ? (
-        [
-          { key: 'morning' as const, label: 'Morning', items: plan.sections.morning },
-          { key: 'afternoon' as const, label: 'Afternoon', items: plan.sections.afternoon },
-          { key: 'evening' as const, label: 'Evening', items: plan.sections.evening },
-        ] as const
-      ).filter((s) => activeTab === 'all' || activeTab === s.key)
+    ? orderedWindows
+        .map((key) => ({
+          key,
+          meta: TIME_WINDOW_META[key],
+          isNow: key === currentWindow,
+          items: plan.sections[key],
+        }))
+        .filter((s) => activeTab === 'all' || activeTab === s.key)
     : [];
 
   return (
@@ -160,7 +335,7 @@ export function PlannerPage() {
             Daily Plan &amp; Indoor Advisor
           </h1>
           <p className="text-sm text-zinc-600 dark:text-zinc-400">
-            Personalized routines and estimated indoor air improvements for {selectedLocation.city}.
+            Short, time-aware clean-air steps for {selectedLocation.city} — starting with right now.
           </p>
         </div>
 
@@ -213,10 +388,10 @@ export function PlannerPage() {
                 <Sparkles className="h-4 w-4" aria-hidden="true" />
               )}
               {isGenerating
-                ? 'Generating Plan…'
+                ? 'Personalizing…'
                 : plan
-                  ? 'Regenerate Plan'
-                  : "Generate Today's Plan"}
+                  ? 'Refresh Plan'
+                  : "Build Today's Plan"}
             </Button>
           ) : null}
         </div>
@@ -226,142 +401,185 @@ export function PlannerPage() {
         <IndoorAdvisorPanel />
       ) : (
         <DataStateWrapper isLoading={isLoading} error={error} onRetry={() => void generate(true)}>
-        {!plan ? (
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <CalendarCheck2
-                  className="h-5 w-5 text-emerald-600 dark:text-emerald-400"
-                  aria-hidden="true"
-                />
-                No Clean-Air Plan Generated Yet for Today
-              </CardTitle>
-              <CardDescription>
-                Run the 5-node LangGraph engine using live local AQI, your Family Profile,
-                deterministic CPCB risk rules, and verified public-health guidance.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Button onClick={() => void generate(false)} disabled={isGenerating}>
-                <Sparkles className="h-4 w-4" aria-hidden="true" />
-                {isGenerating ? 'Generating…' : "Generate Today's Clean-Air Plan"}
-              </Button>
-            </CardContent>
-          </Card>
-        ) : (
-          <div className="space-y-5">
-            <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-zinc-200/80 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900/80">
-              <div className="flex flex-wrap items-center gap-2.5">
-                <AqiBadge
-                  category={plan.environmentalSnapshot.category}
-                  aqi={plan.environmentalSnapshot.aqi}
-                />
-                <span className="text-xs text-zinc-600 dark:text-zinc-400">
-                  Date: <strong className="text-zinc-900 dark:text-zinc-100">{plan.planDate}</strong>{' '}
-                  · Source: {plan.environmentalSnapshot.source}
-                </span>
+          {!plan ? (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <CalendarCheck2
+                    className="h-5 w-5 text-emerald-600 dark:text-emerald-400"
+                    aria-hidden="true"
+                  />
+                  Build Your {TIME_WINDOW_META[currentWindow].label} Clean-Air Plan
+                </CardTitle>
+                <CardDescription>
+                  Get short, practical steps tailored to live {selectedLocation.city} air and your
+                  family routine — no clutter, just what helps right now.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Button onClick={() => void generate(false)} disabled={isGenerating}>
+                  <Sparkles className="h-4 w-4" aria-hidden="true" />
+                  {isGenerating ? 'Personalizing…' : "Build Today's Clean-Air Plan"}
+                </Button>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="space-y-5">
+              {/* Compact Status Bar */}
+              <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-zinc-200/80 bg-white px-4 py-3 dark:border-zinc-800 dark:bg-zinc-900/80">
+                <div className="flex flex-wrap items-center gap-2">
+                  <AqiBadge
+                    category={plan.environmentalSnapshot.category}
+                    aqi={plan.environmentalSnapshot.aqi}
+                  />
+                  <MetricInfoButton
+                    metricKey="aqi"
+                    currentValue={plan.environmentalSnapshot.aqi}
+                    formattedValue={
+                      plan.environmentalSnapshot.aqi !== null
+                        ? `${plan.environmentalSnapshot.aqi} (${plan.environmentalSnapshot.category})`
+                        : 'Unavailable'
+                    }
+                  />
+                  <span className="text-xs text-zinc-500 dark:text-zinc-400">
+                    {plan.planDate} · {plan.environmentalSnapshot.source}
+                  </span>
+                </div>
+                <Badge variant="default">
+                  {completedCount} / {allItems.length} done today
+                </Badge>
               </div>
-              <Badge variant="default">
-                {completedCount} / {allItems.length} completed
-              </Badge>
-            </div>
 
-            {plan.fallbackMode ? (
-              <Alert variant="info">
-                <Info className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
-                <div>
-                  <p className="font-semibold">Generated with Verified Deterministic Guidelines</p>
-                  <p className="text-xs opacity-90">
-                    All recommendations strictly obey CPCB NAQI risk rules and your household
+              {plan.fallbackMode ? (
+                <Alert variant="info">
+                  <Info className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
+                  <p className="text-xs">
+                    Generated from verified CPCB clean-air guidelines tailored to your family
                     profile.
                   </p>
-                </div>
-              </Alert>
-            ) : null}
+                </Alert>
+              ) : null}
 
-            {plan.riskAssessment.constraints.medicalEscalationRequired ? (
-              <Alert variant="danger">
-                <ShieldAlert className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
-                <div>
-                  <p className="font-semibold">Severe Air-Quality Precaution</p>
-                  <p className="text-xs">
-                    Follow official local public-health advisories. If anyone experiences wheezing,
-                    chest tightness, or shortness of breath, seek qualified medical care promptly.
-                  </p>
-                </div>
-              </Alert>
-            ) : null}
+              {plan.riskAssessment.constraints.medicalEscalationRequired ? (
+                <Alert variant="danger">
+                  <ShieldAlert className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
+                  <div>
+                    <p className="font-semibold">Severe Air-Quality Precaution</p>
+                    <p className="text-xs">
+                      Follow local health advisories. Seek qualified medical care promptly for
+                      wheezing, chest tightness, or trouble breathing.
+                    </p>
+                  </div>
+                </Alert>
+              ) : null}
 
-            <div className="flex flex-wrap gap-2" role="tablist" aria-label="Time of day filter">
-              {(
-                [
-                  { id: 'all', label: 'Full Day' },
-                  { id: 'morning', label: 'Morning' },
-                  { id: 'afternoon', label: 'Afternoon' },
-                  { id: 'evening', label: 'Evening' },
-                ] as const
-              ).map((tab) => (
+              {/* Time-Aware Filter Pills (Current Time First!) */}
+              <div className="flex flex-wrap items-center gap-2" role="tablist" aria-label="Time of day filter">
+                {orderedWindows.map((key) => {
+                  const isNow = key === currentWindow;
+                  const items = plan.sections[key];
+                  const doneInWindow = items.filter((i) =>
+                    plan.completedItemIds.includes(i.itemId),
+                  ).length;
+                  const active = activeTab === key;
+
+                  return (
+                    <button
+                      key={key}
+                      type="button"
+                      role="tab"
+                      aria-selected={active}
+                      onClick={() => setActiveTab(key)}
+                      className={cn(
+                        'inline-flex min-h-[38px] cursor-pointer items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-semibold transition-all',
+                        active
+                          ? 'bg-zinc-950 text-white shadow-xs dark:bg-emerald-500 dark:text-zinc-950'
+                          : 'border border-zinc-200 bg-white text-zinc-700 hover:bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-800',
+                      )}
+                    >
+                      {isNow ? (
+                        <span className="h-2 w-2 rounded-full bg-emerald-400 dark:bg-zinc-950" />
+                      ) : null}
+                      <span>{isNow ? `Right Now (${TIME_WINDOW_META[key].label})` : TIME_WINDOW_META[key].label}</span>
+                      <span className="opacity-70">
+                        {doneInWindow}/{items.length}
+                      </span>
+                    </button>
+                  );
+                })}
+
                 <button
-                  key={tab.id}
                   type="button"
                   role="tab"
-                  aria-selected={activeTab === tab.id}
-                  onClick={() => setActiveTab(tab.id)}
-                  className={`min-h-[36px] cursor-pointer rounded-full px-4 py-1.5 text-xs font-semibold transition-all ${
-                    activeTab === tab.id
-                      ? 'bg-zinc-950 text-white dark:bg-emerald-500 dark:text-zinc-950'
-                      : 'border border-zinc-200 bg-white text-zinc-700 hover:bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-800'
-                  }`}
+                  aria-selected={activeTab === 'all'}
+                  onClick={() => setActiveTab('all')}
+                  className={cn(
+                    'min-h-[38px] cursor-pointer rounded-full px-3.5 py-1.5 text-xs font-semibold transition-all',
+                    activeTab === 'all'
+                      ? 'bg-zinc-950 text-white shadow-xs dark:bg-emerald-500 dark:text-zinc-950'
+                      : 'border border-zinc-200 bg-white text-zinc-700 hover:bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-800',
+                  )}
                 >
-                  {tab.label}
+                  Full Day ({allItems.length})
                 </button>
-              ))}
-            </div>
+              </div>
 
-            <div className="space-y-6">
-              {sectionsToRender.map((section) => (
-                <section key={section.key} className="space-y-3">
-                  <h2 className="text-xs font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
-                    {section.label}
-                  </h2>
-                  <div className="space-y-3">
-                    {section.items.map((item) => (
-                      <RecommendationCard
-                        key={item.itemId}
-                        item={item}
-                        completed={plan.completedItemIds.includes(item.itemId)}
-                        onToggle={() => void toggleItemCompleted(item.itemId)}
-                      />
-                    ))}
-                  </div>
-                </section>
-              ))}
-            </div>
+              {/* Compact Time-Ordered Action Cards */}
+              <div className="space-y-6">
+                {sectionsToRender.map((section) => (
+                  <section key={section.key} className="space-y-3">
+                    <div className="flex items-center justify-between gap-2">
+                      <h2 className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
+                        <Clock className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
+                        <span>{section.meta.label}</span>
+                        <span className="font-normal normal-case opacity-75">
+                          ({section.meta.rangeLabel})
+                        </span>
+                      </h2>
+                      {section.isNow ? <Badge variant="default">Happening Now</Badge> : null}
+                    </div>
 
-            {plan.citations.length > 0 ? (
-              <Card>
-                <CardHeader className="pb-2">
-                  <CardTitle className="flex items-center gap-2 text-sm">
-                    <BookOpen
-                      className="h-4 w-4 text-emerald-600 dark:text-emerald-400"
-                      aria-hidden="true"
-                    />
-                    Verified Knowledge Sources Used
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="flex flex-wrap gap-2">
+                    <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+                      {section.items.map((item) => (
+                        <CompactActionCard
+                          key={item.itemId}
+                          item={item}
+                          completed={plan.completedItemIds.includes(item.itemId)}
+                          onToggle={() => void toggleItemCompleted(item.itemId)}
+                          onOpenDetails={() => setSelectedItem(item)}
+                        />
+                      ))}
+                    </div>
+                  </section>
+                ))}
+              </div>
+
+              {plan.citations.length > 0 ? (
+                <div className="flex flex-wrap items-center gap-2 rounded-2xl border border-zinc-200/70 bg-white/70 px-4 py-3 dark:border-zinc-800 dark:bg-zinc-900/50">
+                  <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-zinc-600 dark:text-zinc-400">
+                    <BookOpen className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
+                    Sources:
+                  </span>
                   {plan.citations.map((c) => (
                     <Badge key={c.docId} variant="outline">
                       {c.title} · {c.sourceAuthority}
                     </Badge>
                   ))}
-                </CardContent>
-              </Card>
-            ) : null}
-          </div>
-        )}
+                </div>
+              ) : null}
+            </div>
+          )}
         </DataStateWrapper>
       )}
+
+      {selectedItem && plan ? (
+        <ActionDetailModal
+          item={selectedItem}
+          completed={plan.completedItemIds.includes(selectedItem.itemId)}
+          onToggle={() => void toggleItemCompleted(selectedItem.itemId)}
+          onClose={() => setSelectedItem(null)}
+        />
+      ) : null}
 
       <MedicalDisclaimer />
     </div>

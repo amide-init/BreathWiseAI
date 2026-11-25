@@ -20,6 +20,16 @@ export interface Citation {
   sourceUrl?: string | null;
 }
 
+export type QuickDecisionStatus = 'good' | 'caution' | 'avoid' | 'unknown';
+
+export interface QuickDecision {
+  id: 'exercise' | 'kids_play' | 'windows' | 'mask';
+  label: string;
+  status: QuickDecisionStatus;
+  verdict: string;
+  shortReason: string;
+}
+
 export interface LocationOption {
   locationId: string;
   city: string;
@@ -80,6 +90,7 @@ export interface AirQualityResponse {
   weather: WeatherSnapshot;
   forecasts: ForecastPoint[];
   fallbackProviderUsed: boolean;
+  quickDecisions?: QuickDecision[];
 }
 
 export interface RecommendationItem {

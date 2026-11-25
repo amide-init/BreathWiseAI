@@ -1,4 +1,10 @@
-import type { AqiCategory, Citation, CurrentAirQuality, RecommendationItem } from '@/types';
+import type {
+  AqiCategory,
+  Citation,
+  CurrentAirQuality,
+  QuickDecision,
+  RecommendationItem,
+} from '@/types';
 
 export interface RiskConstraintsModel {
   allowStrenuousOutdoor: boolean;
@@ -19,6 +25,7 @@ export interface RiskAssessmentModel {
   constraints: RiskConstraintsModel;
   safeForecastWindows: string[];
   summaryGuidance: string;
+  quickDecisions?: QuickDecision[];
 }
 
 export interface DailyPlanSectionsModel {
