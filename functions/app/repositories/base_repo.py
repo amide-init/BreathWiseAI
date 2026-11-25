@@ -7,13 +7,16 @@ from typing import Any
 import firebase_admin
 from firebase_admin import firestore
 
+from app.config.settings import get_settings
+
 
 def ensure_firebase_app() -> firebase_admin.App:
     """Idempotently initialize Firebase Admin SDK once per Cloud Function instance."""
     try:
         return firebase_admin.get_app()
     except ValueError:
-        return firebase_admin.initialize_app()
+        settings = get_settings()
+        return firebase_admin.initialize_app(options={"projectId": settings.firebase_project_id})
 
 
 class BaseFirestoreRepository:

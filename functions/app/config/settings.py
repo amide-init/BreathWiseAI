@@ -13,6 +13,7 @@ class AppSettings:
 
     service_name: str = "breathewise-ai-api"
     api_version: str = "1.0.0"
+    firebase_project_id: str = "agentora-ai-v2"
     region: str = "asia-south1"
     environment: str = "development"
 
@@ -37,6 +38,10 @@ class AppSettings:
 def get_settings() -> AppSettings:
     """Return cached runtime settings constructed from environment variables."""
     return AppSettings(
+        firebase_project_id=os.getenv(
+            "GOOGLE_CLOUD_PROJECT",
+            os.getenv("FIREBASE_PROJECT_ID", "agentora-ai-v2"),
+        ),
         region=os.getenv("BREATHEWISE_REGION", "asia-south1"),
         environment=os.getenv("BREATHEWISE_ENV", "development"),
         aqi_cache_ttl_minutes=int(os.getenv("AQI_CACHE_TTL_MINUTES", "30")),
