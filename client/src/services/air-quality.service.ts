@@ -1,30 +1,34 @@
-import { apiRequest } from '@/lib/api-client';
+import { callFunction } from '@/lib/callable-client';
 import type { AirQualityResponse, LocationOption } from '@/types';
 
 interface LocationSearchResponse {
   results: LocationOption[];
 }
 
+interface GetAirQualityPayload {
+  locationId: string;
+  lat: number;
+  lng: number;
+  label: string;
+  forceRefresh?: boolean;
+}
+
 export async function searchLocations(query: string): Promise<LocationOption[]> {
-  const params = new URLSearchParams({ q: query });
-  const data = await apiRequest<LocationSearchResponse>(`/v1/locations/search?${params.toString()}`);
+  const data = await callFunction<{ q: string }, LocationSearchResponse>('search_locations', {
+    q: query,
+  });
   return data.results ?? [];
 }
 
 export function fetchAirQuality(
   location: LocationOption,
-  options?: { forceRefresh?: boolean; signal?: AbortSignal },
+  options?: { forceRefresh?: boolean },
 ): Promise<AirQualityResponse> {
-  const params = new URLSearchParams({
+  return callFunction<GetAirQualityPayload, AirQualityResponse>('get_air_quality', {
     locationId: location.locationId,
-    lat: String(location.lat),
-    lng: String(location.lng),
+    lat: location.lat,
+    lng: location.lng,
     label: location.label,
-  });
-  if (options?.forceRefresh) {
-    params.set('forceRefresh', 'true');
-  }
-  return apiRequest<AirQualityResponse>(`/v1/air-quality?${params.toString()}`, {
-    signal: options?.signal,
+    forceRefresh: Boolean(options?.forceRefresh),
   });
 }

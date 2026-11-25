@@ -12,6 +12,7 @@ export const env = {
     messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID ?? '',
     appId: import.meta.env.VITE_FIREBASE_APP_ID ?? '',
   },
+  functionsRegion: import.meta.env.VITE_FUNCTIONS_REGION ?? 'asia-south1',
   apiBaseUrl: (import.meta.env.VITE_API_BASE_URL ?? '/api').replace(/\/$/, ''),
   useEmulators: import.meta.env.VITE_USE_EMULATORS === 'true',
 } as const;

@@ -6,33 +6,24 @@
 
 ## 1. Backend API Conventions
 
-- **Runtime**: Firebase Cloud Functions Gen 2 (Python 3.12), HTTPS endpoints under base path `/api/v1`.
-- **Authentication**: Every protected endpoint requires `Authorization: Bearer <Firebase_ID_Token>`. The backend verifies the token via `firebase_admin.auth.verify_id_token` and uses `decoded_token["uid"]` as the sole authoritative `userId`.
-- **Content-Type**: `application/json`.
-- **Standard Error Envelope**:
-  ```json
-  {
-    "error": {
-      "code": "UNAUTHENTICATED | INVALID_ARGUMENT | NOT_FOUND | RATE_LIMITED | INTERNAL_ERROR",
-      "message": "Human-readable error description",
-      "requestId": "req_01J..."
-    }
-  }
-  ```
+- **Runtime & Transport Priority**: Firebase Cloud Functions Gen 2 (Python, `asia-south1`) — **always prioritize `@https_fn.on_call` Callable Functions** invoked from the client via Firebase `httpsCallable` (`src/lib/callable-client.ts`).
+- **Authentication**: Firebase Callable Functions automatically verify the signed-in user's ID token and populate `req.auth.uid` on the server (`require_callable_auth`). Never trust a client-supplied `userId` for authorization.
+- **Error Handling**: All domain `AppError` / Pydantic validation failures are mapped centrally in `app/utils/callable_utils.py` to typed `https_fn.HttpsError` codes (`UNAUTHENTICATED`, `INVALID_ARGUMENT`, `PERMISSION_DENIED`, `NOT_FOUND`, `RESOURCE_EXHAUSTED`, `UNAVAILABLE`, `INTERNAL`) with a `requestId` in `details`.
 
 ---
 
-## 2. Backend Endpoint Catalog
+## 2. Backend Callable Function Catalog
 
-| Method | Path | Auth | Purpose | PRD Ref |
-|---|---|---|---|---|
-| `GET` | `/api/v1/locations/search` | Required | Geocode / search supported cities & return normalized `locationId` | FR-02 |
-| `GET` | `/api/v1/air-quality` | Required | Cache-first current AQI, PM2.5/PM10, weather, forecasts & freshness | FR-03, FR-04 |
-| `POST` | `/api/v1/daily-plan/generate` | Required | Run 5-node LangGraph workflow for Morning/Afternoon/Evening plan | FR-06, FR-09 |
-| `POST` | `/api/v1/indoor-advisor/assess` | Required | Evaluate Module 4 indoor questionnaire & return estimated guidance | FR-07 |
-| `POST` | `/api/v1/chat/message` | Required | Run 5-node LangGraph conversational assistant with RAG & history | FR-08, FR-11 |
-| `POST` | `/api/v1/impact/log` | Required | Log sustainable or exposure-protection action with server-side math | FR-09, FR-10 |
-| `GET` | `/api/v1/impact/summary` | Required | Return 7-day & cumulative totals (emissions & exposure separated) | FR-10 |
+| Callable Name (`on_call`) | Auth | Purpose | PRD Ref |
+|---|---|---|---|
+| `health_check` | Public | Operational health & service version check | — |
+| `search_locations` | Required | Geocode / search supported cities & return normalized `locationId` | FR-02 |
+| `get_air_quality` | Required | Cache-first current AQI, PM2.5/PM10, weather, forecasts & freshness | FR-03, FR-04 |
+| `generate_daily_plan` | Required | Run 5-node LangGraph workflow for Morning/Afternoon/Evening plan | FR-06, FR-09 |
+| `assess_indoor_air` | Required | Evaluate Module 4 indoor questionnaire & return estimated guidance | FR-07 |
+| `send_chat_message` | Required | Run 5-node LangGraph conversational assistant with RAG & history | FR-08, FR-11 |
+| `log_impact_action` | Required | Log sustainable or exposure-protection action with server-side math | FR-09, FR-10 |
+| `get_impact_summary` | Required | Return 7-day & cumulative totals (emissions & exposure separated) | FR-10 |
 
 > **Direct Firestore Operations (Client SDK + `firestore.rules`)**: User profile updates (`users/{uid}`), Family & Member CRUD (`families/{familyId}`), toggling completed items on `daily_plans/{planId}`, and reading `chat_sessions` / `daily_plans` / `impact_logs` history use Firestore directly for low latency and real-time updates.
 

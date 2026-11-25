@@ -20,7 +20,7 @@ Follow [docs/UI_UX_SPEC.md](../../docs/UI_UX_SPEC.md) and [docs/API_SPEC.md](../
 ## 2. Client Security & Secret Hygiene
 
 - **Zero server secrets in client code**: NEVER store or reference `GEMINI_API_KEY`, WAQI tokens, CPCB API keys, or Firebase Admin credentials in `client/` or any `VITE_*` variable.
-- **Authenticated API calls**: Attach the current Firebase Auth user's fresh ID token (`Authorization: Bearer <idToken>`) on every request to protected Cloud Functions endpoints.
+- **Callable-First Backend Calls (`httpsCallable`)**: Always call backend Cloud Functions via Firebase `httpsCallable` through `src/lib/callable-client.ts` (`getFirebaseFunctions()` in `asia-south1`), rather than raw `fetch` URLs. Firebase SDK automatically attaches the signed-in user's ID token and handles CORS.
 - **Privacy in UI**: Clearly mark health-related family profile fields as **Optional & Private**. Never dump family profile or health notes into `console.log` or URL query strings.
 
 ## 3. Mandatory UI Data & Safety States

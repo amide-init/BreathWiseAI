@@ -10,7 +10,8 @@ Follow [docs/AI_WORKFLOW.md](../../docs/AI_WORKFLOW.md), [docs/API_SPEC.md](../.
 
 ## 1. Runtime & Senior-Level Clean Architecture
 
-- **Target Runtime**: Python 3.12 on Firebase Cloud Functions Gen 2 (`firebase-functions`, `firebase-admin`, `langgraph`, `google-genai` / `langchain-google-genai`, `pydantic>=2`, `httpx`).
+- **Target Runtime**: Python 3.14 (or 3.12+) on Firebase Cloud Functions Gen 2 (`firebase-functions`, `firebase-admin`, `langgraph`, `google-genai`, `pydantic>=2`, `httpx`).
+- **Prefer Callable Functions (`@https_fn.on_call`)**: Always prioritize Firebase Callable Functions (`@https_fn.on_call`) over raw `@https_fn.on_request` HTTP functions for all client-facing endpoints (automatic Firebase Auth verification via `req.auth.uid`, built-in CORS, typed `HttpsError` propagation, and zero manual URL configuration). Use `app/utils/callable_utils.py` (`run_callable`, `require_callable_auth`, `get_callable_data`) so every callable stays thin and consistent. Reserve `@https_fn.on_request` strictly for external webhooks if ever required.
 - **Strict Layered Modular Structure (`functions/app/`)**: Never cram business logic, HTTP parsing, or external API calls into `main.py` or monolithic files. Keep `main.py` as a thin Cloud Functions bootstrapper and separate concerns strictly:
   - `config/` — Centralized typed settings (`settings.py`), secret definitions (`secrets.py`), and domain constants (`constants.py`: TTLs, CPCB breakpoints, emission factors). No magic numbers or scattered `os.getenv` calls.
   - `routes/` — Thin HTTP route handlers (auth guard, Pydantic request parsing, delegating to `services/`, standard response/error serialization). Zero business logic in routes.

@@ -22,7 +22,7 @@ export function useAirQuality(): UseAirQualityResult {
   const [forceNext, setForceNext] = useState(false);
 
   useEffect(() => {
-    const controller = new AbortController();
+    let active = true;
     const firstLoad = data === null || data.locationId !== selectedLocation.locationId;
     if (firstLoad) {
       setIsLoading(true);
@@ -31,32 +31,34 @@ export function useAirQuality(): UseAirQualityResult {
     }
     setError(null);
 
-    fetchAirQuality(selectedLocation, {
-      forceRefresh: forceNext,
-      signal: controller.signal,
-    })
+    fetchAirQuality(selectedLocation, { forceRefresh: forceNext })
       .then((response) => {
+        if (!active) {
+          return;
+        }
         setData(response);
         setForceNext(false);
       })
       .catch((err: unknown) => {
-        if (controller.signal.aborted) {
+        if (!active) {
           return;
         }
         const message =
           err instanceof Error
             ? err.message
-            : 'Unable to reach the BreatheWise environmental API.';
+            : 'Unable to reach the BreatheWise environmental service.';
         setError(message);
       })
       .finally(() => {
-        if (!controller.signal.aborted) {
+        if (active) {
           setIsLoading(false);
           setIsRefreshing(false);
         }
       });
 
-    return () => controller.abort();
+    return () => {
+      active = false;
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedLocation.locationId, reloadTick]);
 
