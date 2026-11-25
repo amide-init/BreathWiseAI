@@ -49,9 +49,9 @@ export function PortalLayout() {
 
   return (
     <div className="min-h-screen bg-zinc-50 text-zinc-950 transition-colors duration-200 md:flex dark:bg-zinc-950 dark:text-zinc-50">
-      {/* Desktop Sidebar */}
-      <aside className="hidden md:flex md:w-64 md:shrink-0 md:flex-col md:border-r md:border-zinc-200/80 md:bg-white dark:md:border-zinc-800/90 dark:md:bg-zinc-950">
-        <div className="flex items-center gap-2.5 border-b border-zinc-100 px-5 py-4 dark:border-zinc-900">
+      {/* Desktop Sidebar (fixed viewport height, sticky while main content scrolls) */}
+      <aside className="hidden md:sticky md:top-0 md:flex md:h-screen md:w-64 md:shrink-0 md:flex-col md:overflow-hidden md:border-r md:border-zinc-200/80 md:bg-white dark:md:border-zinc-800/90 dark:md:bg-zinc-950">
+        <div className="flex shrink-0 items-center gap-2.5 border-b border-zinc-100 px-5 py-4 dark:border-zinc-900">
           <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-600 text-white shadow-xs dark:bg-emerald-500 dark:text-zinc-950">
             <Wind className="h-5 w-5" aria-hidden="true" />
           </div>
@@ -65,7 +65,7 @@ export function PortalLayout() {
           </div>
         </div>
 
-        <nav className="flex-1 space-y-1 p-3" aria-label="Primary navigation">
+        <nav className="flex-1 space-y-1 overflow-y-auto p-3" aria-label="Primary navigation">
           {PRIMARY_NAV_ITEMS.map((item) => {
             const Icon = NAV_ICONS[item.iconKey];
             return (
