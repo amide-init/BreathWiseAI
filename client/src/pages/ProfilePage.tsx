@@ -1,27 +1,86 @@
-import { CheckCircle2, Lock, MapPin, Save, User, Users } from 'lucide-react';
+import {
+  CheckCircle2,
+  Home,
+  Lock,
+  MapPin,
+  Pencil,
+  Plus,
+  Save,
+  Trash2,
+  User,
+  Users,
+} from 'lucide-react';
 import { useEffect, useState, type FormEvent } from 'react';
+import { Link } from 'react-router-dom';
 
+import { MemberFormModal } from '@/components/profile/MemberFormModal';
+import { DataStateWrapper } from '@/components/shared/DataStateWrapper';
 import { Alert } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { APP_ROUTES } from '@/config/routes';
 import { useAuth } from '@/hooks/useAuth';
+import { useFamilyProfile } from '@/hooks/useFamilyProfile';
 import { useSelectedLocation } from '@/hooks/useSelectedLocation';
+import {
+  AGE_GROUP_LABELS,
+  ROLE_LABELS,
+  TRANSPORT_LABELS,
+  type FamilyMemberModel,
+  type SaveMemberInput,
+  type TransportMode,
+} from '@/models/family.model';
 import type { AqiScalePreference } from '@/models/user.model';
 
 export function ProfilePage() {
   const { user, userProfile, updateUser } = useAuth();
   const { selectedLocation, openPicker } = useSelectedLocation();
+  const {
+    family,
+    members,
+    isLoading,
+    error: familyLoadError,
+    saveFamily,
+    createMember,
+    editMember,
+    removeMember,
+    reload,
+  } = useFamilyProfile();
 
+  // Account (`users/{uid}`) state
   const [displayName, setDisplayName] = useState(
     userProfile?.displayName ?? user?.displayName ?? '',
   );
   const [aqiScale, setAqiScale] = useState<AqiScalePreference>(
     userProfile?.aqiScalePreference ?? 'CPCB_NAQI',
   );
-  const [saving, setSaving] = useState(false);
-  const [saveMessage, setSaveMessage] = useState<string | null>(null);
-  const [saveError, setSaveError] = useState<string | null>(null);
+  const [savingAccount, setSavingAccount] = useState(false);
+  const [accountFeedback, setAccountFeedback] = useState<string | null>(null);
+  const [accountError, setAccountError] = useState<string | null>(null);
+
+  // Household (`families/{familyId}`) state
+  const [householdName, setHouseholdName] = useState('My Family');
+  const [primaryMode, setPrimaryMode] = useState<TransportMode>('personal_car');
+  const [dailyCommuteKm, setDailyCommuteKm] = useState('18');
+  const [vehicleFuelType, setVehicleFuelType] = useState('petrol');
+  const [occupancy, setOccupancy] = useState('1');
+  const [prefersOutdoor, setPrefersOutdoor] = useState(true);
+  const [preferredWindow, setPreferredWindow] = useState('morning');
+  const [activityType, setActivityType] = useState('walk');
+  const [hasHepaPurifier, setHasHepaPurifier] = useState(false);
+  const [purifierRoomsCount, setPurifierRoomsCount] = useState('1');
+  const [hasKitchenExhaust, setHasKitchenExhaust] = useState(true);
+  const [hasCrossVentilation, setHasCrossVentilation] = useState(true);
+  const [hasN95Masks, setHasN95Masks] = useState(false);
+  const [indoorSmokingPresent, setIndoorSmokingPresent] = useState(false);
+  const [savingHousehold, setSavingHousehold] = useState(false);
+  const [householdFeedback, setHouseholdFeedback] = useState<string | null>(null);
+  const [householdError, setHouseholdError] = useState<string | null>(null);
+
+  // Member modal state
+  const [memberModalOpen, setMemberModalOpen] = useState(false);
+  const [editingMember, setEditingMember] = useState<FamilyMemberModel | null>(null);
 
   useEffect(() => {
     if (userProfile) {
@@ -30,36 +89,109 @@ export function ProfilePage() {
     }
   }, [userProfile]);
 
+  useEffect(() => {
+    if (!family) {
+      return;
+    }
+    setHouseholdName(family.householdName);
+    setPrimaryMode(family.transportationHabits.primaryMode);
+    setDailyCommuteKm(String(family.transportationHabits.dailyCommuteKm));
+    setVehicleFuelType(family.transportationHabits.vehicleFuelType ?? 'petrol');
+    setOccupancy(String(family.transportationHabits.occupancy));
+    setPrefersOutdoor(family.exercisePreferences.prefersOutdoor);
+    setPreferredWindow(family.exercisePreferences.preferredWindow ?? 'morning');
+    setActivityType(family.exercisePreferences.activityType ?? 'walk');
+    setHasHepaPurifier(family.indoorEquipment.hasHepaPurifier);
+    setPurifierRoomsCount(String(Math.max(1, family.indoorEquipment.purifierRoomsCount)));
+    setHasKitchenExhaust(family.indoorEquipment.hasKitchenExhaust);
+    setHasCrossVentilation(family.indoorEquipment.hasCrossVentilation);
+    setHasN95Masks(family.indoorEquipment.hasN95Masks);
+    setIndoorSmokingPresent(family.indoorEquipment.indoorSmokingPresent);
+  }, [family]);
+
   async function handleSaveAccount(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    setSaving(true);
-    setSaveError(null);
-    setSaveMessage(null);
+    setSavingAccount(true);
+    setAccountError(null);
+    setAccountFeedback(null);
     try {
       await updateUser({
         displayName,
         aqiScalePreference: aqiScale,
         primaryLocation: selectedLocation,
       });
-      setSaveMessage('Account profile saved to Firestore.');
+      setAccountFeedback('Account profile saved to Firestore.');
     } catch (err) {
-      setSaveError(err instanceof Error ? err.message : 'Unable to save profile changes.');
+      setAccountError(err instanceof Error ? err.message : 'Unable to save account details.');
     } finally {
-      setSaving(false);
+      setSavingAccount(false);
+    }
+  }
+
+  async function handleSaveHousehold(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setSavingHousehold(true);
+    setHouseholdError(null);
+    setHouseholdFeedback(null);
+    try {
+      await saveFamily({
+        householdName,
+        location: selectedLocation,
+        transportationHabits: {
+          primaryMode,
+          dailyCommuteKm: Number(dailyCommuteKm) || 0,
+          vehicleFuelType,
+          occupancy: Number(occupancy) || 1,
+        },
+        exercisePreferences: {
+          prefersOutdoor,
+          preferredWindow,
+          activityType,
+        },
+        indoorEquipment: {
+          hasHepaPurifier,
+          purifierRoomsCount: hasHepaPurifier ? Number(purifierRoomsCount) || 1 : 0,
+          hasKitchenExhaust,
+          hasCrossVentilation,
+          hasN95Masks,
+          indoorSmokingPresent,
+        },
+      });
+      setHouseholdFeedback(
+        'Household profile saved! Refresh your Daily Plan to personalize guidance.',
+      );
+    } catch (err) {
+      setHouseholdError(err instanceof Error ? err.message : 'Unable to save household profile.');
+    } finally {
+      setSavingHousehold(false);
+    }
+  }
+
+  async function handleMemberSubmit(input: SaveMemberInput) {
+    if (editingMember) {
+      await editMember(editingMember.memberId, input);
+    } else {
+      await createMember(input);
     }
   }
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight text-slate-900">Family Profile</h1>
-        <p className="text-sm text-slate-600">
-          Manage your personal details, default city, household members, commute habits, and indoor
-          equipment.
-        </p>
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight text-slate-900">Family Profile</h1>
+          <p className="text-sm text-slate-600">
+            Personalize clean-air routines for every member of your household.
+          </p>
+        </div>
+        <Link to={APP_ROUTES.PLANNER}>
+          <Button variant="outline" size="sm">
+            View Personalized Daily Plan
+          </Button>
+        </Link>
       </div>
 
-      {/* Editable User Collection Card (`users/{uid}`) */}
+      {/* 1. Personal Account Details (`users/{uid}`) */}
       <Card>
         <CardHeader>
           <div className="flex flex-wrap items-center justify-between gap-2">
@@ -67,20 +199,17 @@ export function ProfilePage() {
               <User className="h-5 w-5 text-teal-700" aria-hidden="true" />
               Personal Account Details
             </CardTitle>
-            <Badge variant="default">users collection</Badge>
+            <Badge variant="neutral">Private Account</Badge>
           </div>
-          <CardDescription>
-            Stored privately in <code className="rounded bg-slate-100 px-1">users/{user?.uid ?? 'uid'}</code>{' '}
-            and editable anytime.
-          </CardDescription>
+          <CardDescription>Your name, preferred AQI scale, and default location.</CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSaveAccount} className="space-y-4">
-            {saveError ? <Alert variant="danger">{saveError}</Alert> : null}
-            {saveMessage ? (
+            {accountError ? <Alert variant="danger">{accountError}</Alert> : null}
+            {accountFeedback ? (
               <Alert variant="info" className="items-center">
                 <CheckCircle2 className="h-4 w-4 shrink-0" aria-hidden="true" />
-                <span>{saveMessage}</span>
+                <span>{accountFeedback}</span>
               </Alert>
             ) : null}
 
@@ -93,17 +222,17 @@ export function ProfilePage() {
                   maxLength={100}
                   value={displayName}
                   onChange={(e) => setDisplayName(e.target.value)}
-                  className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none focus:border-teal-600 focus:ring-2 focus:ring-teal-600/20"
+                  className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:border-teal-600 focus:ring-2 focus:ring-teal-600/20"
                 />
               </label>
 
               <label className="block space-y-1">
-                <span className="text-xs font-medium text-slate-700">Email (Account ID)</span>
+                <span className="text-xs font-medium text-slate-700">Email</span>
                 <input
                   type="email"
                   disabled
                   value={userProfile?.email ?? user?.email ?? ''}
-                  className="w-full rounded-lg border border-slate-200 bg-slate-100 px-3 py-2.5 text-sm text-slate-500"
+                  className="w-full rounded-lg border border-slate-200 bg-slate-100 px-3 py-2 text-sm text-slate-500"
                 />
               </label>
 
@@ -112,7 +241,7 @@ export function ProfilePage() {
                 <select
                   value={aqiScale}
                   onChange={(e) => setAqiScale(e.target.value as AqiScalePreference)}
-                  className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none focus:border-teal-600 focus:ring-2 focus:ring-teal-600/20"
+                  className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:border-teal-600"
                 >
                   <option value="CPCB_NAQI">India CPCB NAQI (0–500 · Recommended)</option>
                   <option value="US_EPA">US EPA AQI (0–500)</option>
@@ -121,7 +250,7 @@ export function ProfilePage() {
 
               <div className="space-y-1">
                 <span className="block text-xs font-medium text-slate-700">Primary City</span>
-                <div className="flex items-center justify-between gap-2 rounded-lg border border-slate-300 bg-slate-50 px-3 py-2">
+                <div className="flex items-center justify-between gap-2 rounded-lg border border-slate-300 bg-slate-50 px-3 py-1.5">
                   <span className="flex min-w-0 items-center gap-2 text-sm text-slate-800">
                     <MapPin className="h-4 w-4 shrink-0 text-teal-700" aria-hidden="true" />
                     <span className="truncate">{selectedLocation.label}</span>
@@ -134,54 +263,326 @@ export function ProfilePage() {
             </div>
 
             <div className="flex justify-end">
-              <Button type="submit" disabled={saving}>
-                <Save className="h-4 w-4" aria-hidden="true" />
-                {saving ? 'Saving…' : 'Save Account Details'}
+              <Button type="submit" size="sm" disabled={savingAccount}>
+                <Save className="h-3.5 w-3.5" aria-hidden="true" />
+                {savingAccount ? 'Saving…' : 'Save Account'}
               </Button>
             </div>
           </form>
         </CardContent>
       </Card>
 
-      {/* Household & Optional Health Cards (Phase 3 CRUD) */}
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Users className="h-5 w-5 text-teal-700" aria-hidden="true" />
-              Household Members & Schedules
-            </CardTitle>
-            <CardDescription>
-              Add working parents, school-going children, and elderly family members to tailor
-              deterministic risk protection.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="text-sm text-slate-600">
-            Interactive CRUD for <code className="rounded bg-slate-100 px-1.5 py-0.5">families/</code>{' '}
-            and member schedules activates next in Phase 3.
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <div className="flex items-center justify-between gap-2">
+      <DataStateWrapper isLoading={isLoading} error={familyLoadError} onRetry={() => void reload()}>
+        <div className="space-y-6">
+          {/* 2. Household Commute, Exercise & Indoor Air Equipment (`families/{familyId}`) */}
+          <Card>
+            <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <Lock className="h-5 w-5 text-teal-700" aria-hidden="true" />
-                Health Sensitivities
+                <Home className="h-5 w-5 text-teal-700" aria-hidden="true" />
+                Household, Commute & Indoor Air Equipment
               </CardTitle>
-              <Badge variant="neutral">Optional & Private</Badge>
-            </div>
-            <CardDescription>
-              Strictly owner-only in Firestore and excluded from server logs. Used solely to apply
-              more conservative general air-quality guidance.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="text-sm text-slate-600">
-            Includes indoor equipment toggles (HEPA air purifier, kitchen exhaust, N95 masks) and
-            commute distance/mode defaults.
-          </CardContent>
-        </Card>
-      </div>
+              <CardDescription>
+                Used by the LangGraph Daily Planner and Sustainability Advisor to tailor commute
+                swaps, exercise alternatives, and indoor filtration guidance.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <form onSubmit={handleSaveHousehold} className="space-y-5">
+                {householdError ? <Alert variant="danger">{householdError}</Alert> : null}
+                {householdFeedback ? (
+                  <Alert variant="info" className="items-center">
+                    <CheckCircle2 className="h-4 w-4 shrink-0" aria-hidden="true" />
+                    <span>{householdFeedback}</span>
+                  </Alert>
+                ) : null}
+
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+                  <label className="block space-y-1">
+                    <span className="text-xs font-medium text-slate-700">Household Name</span>
+                    <input
+                      type="text"
+                      required
+                      maxLength={80}
+                      value={householdName}
+                      onChange={(e) => setHouseholdName(e.target.value)}
+                      placeholder="e.g. Sharma Family"
+                      className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-teal-600"
+                    />
+                  </label>
+
+                  <label className="block space-y-1">
+                    <span className="text-xs font-medium text-slate-700">Primary Commute</span>
+                    <select
+                      value={primaryMode}
+                      onChange={(e) => setPrimaryMode(e.target.value as TransportMode)}
+                      className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:border-teal-600"
+                    >
+                      {(Object.keys(TRANSPORT_LABELS) as TransportMode[]).map((mode) => (
+                        <option key={mode} value={mode}>
+                          {TRANSPORT_LABELS[mode]}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+
+                  <label className="block space-y-1">
+                    <span className="text-xs font-medium text-slate-700">
+                      Daily Commute Distance (km)
+                    </span>
+                    <input
+                      type="number"
+                      min={0}
+                      max={500}
+                      step={1}
+                      value={dailyCommuteKm}
+                      onChange={(e) => setDailyCommuteKm(e.target.value)}
+                      className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-teal-600"
+                    />
+                  </label>
+                </div>
+
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+                  <label className="block space-y-1">
+                    <span className="text-xs font-medium text-slate-700">Vehicle Fuel Type</span>
+                    <select
+                      value={vehicleFuelType}
+                      onChange={(e) => setVehicleFuelType(e.target.value)}
+                      className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:border-teal-600"
+                    >
+                      <option value="petrol">Petrol</option>
+                      <option value="diesel">Diesel</option>
+                      <option value="cng">CNG</option>
+                      <option value="electric">Electric</option>
+                    </select>
+                  </label>
+
+                  <label className="block space-y-1">
+                    <span className="text-xs font-medium text-slate-700">
+                      Typical Car Occupancy
+                    </span>
+                    <input
+                      type="number"
+                      min={1}
+                      max={10}
+                      value={occupancy}
+                      onChange={(e) => setOccupancy(e.target.value)}
+                      className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-teal-600"
+                    />
+                  </label>
+
+                  <label className="block space-y-1">
+                    <span className="text-xs font-medium text-slate-700">
+                      Preferred Exercise Routine
+                    </span>
+                    <div className="flex items-center gap-2 pt-1.5">
+                      <input
+                        type="checkbox"
+                        checked={prefersOutdoor}
+                        onChange={(e) => setPrefersOutdoor(e.target.checked)}
+                        className="h-4 w-4 accent-teal-700"
+                      />
+                      <span className="text-sm text-slate-700">Outdoor {activityType}</span>
+                      <select
+                        value={preferredWindow}
+                        onChange={(e) => setPreferredWindow(e.target.value)}
+                        aria-label="Exercise time window"
+                        className="ml-auto rounded-lg border border-slate-300 bg-white px-2 py-1 text-xs"
+                      >
+                        <option value="morning">Morning</option>
+                        <option value="afternoon">Afternoon</option>
+                        <option value="evening">Evening</option>
+                      </select>
+                    </div>
+                  </label>
+                </div>
+
+                {/* Indoor Equipment Toggles */}
+                <div className="rounded-xl border border-slate-200 bg-slate-50/70 p-4">
+                  <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-slate-500">
+                    Indoor Air Equipment
+                  </p>
+                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                    <label className="flex items-center gap-2 text-sm text-slate-800">
+                      <input
+                        type="checkbox"
+                        checked={hasHepaPurifier}
+                        onChange={(e) => setHasHepaPurifier(e.target.checked)}
+                        className="h-4 w-4 accent-teal-700"
+                      />
+                      HEPA Air Purifier Available
+                    </label>
+
+                    {hasHepaPurifier ? (
+                      <label className="flex items-center gap-2 text-sm text-slate-800">
+                        <span>Units:</span>
+                        <input
+                          type="number"
+                          min={1}
+                          max={20}
+                          value={purifierRoomsCount}
+                          onChange={(e) => setPurifierRoomsCount(e.target.value)}
+                          className="w-16 rounded-lg border border-slate-300 bg-white px-2 py-1 text-sm"
+                        />
+                      </label>
+                    ) : null}
+
+                    <label className="flex items-center gap-2 text-sm text-slate-800">
+                      <input
+                        type="checkbox"
+                        checked={hasKitchenExhaust}
+                        onChange={(e) => setHasKitchenExhaust(e.target.checked)}
+                        className="h-4 w-4 accent-teal-700"
+                      />
+                      Kitchen Exhaust / Chimney
+                    </label>
+
+                    <label className="flex items-center gap-2 text-sm text-slate-800">
+                      <input
+                        type="checkbox"
+                        checked={hasCrossVentilation}
+                        onChange={(e) => setHasCrossVentilation(e.target.checked)}
+                        className="h-4 w-4 accent-teal-700"
+                      />
+                      Cross-Ventilation Windows
+                    </label>
+
+                    <label className="flex items-center gap-2 text-sm text-slate-800">
+                      <input
+                        type="checkbox"
+                        checked={hasN95Masks}
+                        onChange={(e) => setHasN95Masks(e.target.checked)}
+                        className="h-4 w-4 accent-teal-700"
+                      />
+                      N95 / KN95 Masks at Home
+                    </label>
+
+                    <label className="flex items-center gap-2 text-sm text-slate-800">
+                      <input
+                        type="checkbox"
+                        checked={indoorSmokingPresent}
+                        onChange={(e) => setIndoorSmokingPresent(e.target.checked)}
+                        className="h-4 w-4 accent-teal-700"
+                      />
+                      Indoor Smoking Present
+                    </label>
+                  </div>
+                </div>
+
+                <div className="flex justify-end">
+                  <Button type="submit" disabled={savingHousehold}>
+                    <Save className="h-4 w-4" aria-hidden="true" />
+                    {savingHousehold ? 'Saving…' : 'Save Household Profile'}
+                  </Button>
+                </div>
+              </form>
+            </CardContent>
+          </Card>
+
+          {/* 3. Family Members List (`families/{familyId}/members`) */}
+          <Card>
+            <CardHeader>
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div>
+                  <CardTitle className="flex items-center gap-2">
+                    <Users className="h-5 w-5 text-teal-700" aria-hidden="true" />
+                    Household Members ({members.length})
+                  </CardTitle>
+                  <CardDescription>
+                    Add parents, school-going children, or elderly relatives so risk rules apply
+                    sensitive-group protection automatically.
+                  </CardDescription>
+                </div>
+                <Button
+                  type="button"
+                  size="sm"
+                  disabled={!family}
+                  onClick={() => {
+                    setEditingMember(null);
+                    setMemberModalOpen(true);
+                  }}
+                >
+                  <Plus className="h-4 w-4" aria-hidden="true" />
+                  Add Member
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent>
+              {!family ? (
+                <Alert variant="neutral">
+                  Save your Household Profile above first, then add family members here.
+                </Alert>
+              ) : members.length === 0 ? (
+                <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50 px-4 py-8 text-center text-sm text-slate-500">
+                  No family members added yet. Add a school-going child, working parent, or elderly
+                  member to personalize your Daily Plan.
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+                  {members.map((member) => (
+                    <div
+                      key={member.memberId}
+                      className="flex items-start justify-between gap-3 rounded-xl border border-slate-200 bg-slate-50/50 p-4"
+                    >
+                      <div className="min-w-0 space-y-1.5">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <p className="font-semibold text-slate-900">{member.nickname}</p>
+                          <Badge variant="default">{ROLE_LABELS[member.role]}</Badge>
+                          <Badge variant="outline">{AGE_GROUP_LABELS[member.ageGroup]}</Badge>
+                        </div>
+                        {member.schedule?.leaveHomeTime || member.schedule?.returnHomeTime ? (
+                          <p className="text-xs text-slate-600">
+                            Schedule: {member.schedule?.leaveHomeTime || '—'} →{' '}
+                            {member.schedule?.returnHomeTime || '—'}
+                          </p>
+                        ) : null}
+                        {member.optionalHealthProfile ? (
+                          <p className="inline-flex items-center gap-1 text-[11px] font-medium text-teal-800">
+                            <Lock className="h-3 w-3" aria-hidden="true" />
+                            Private sensitivity flags active
+                          </p>
+                        ) : null}
+                      </div>
+
+                      <div className="flex shrink-0 items-center gap-1">
+                        <button
+                          type="button"
+                          aria-label={`Edit ${member.nickname}`}
+                          onClick={() => {
+                            setEditingMember(member);
+                            setMemberModalOpen(true);
+                          }}
+                          className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-500 hover:bg-slate-200/70 hover:text-slate-900"
+                        >
+                          <Pencil className="h-3.5 w-3.5" />
+                        </button>
+                        <button
+                          type="button"
+                          aria-label={`Remove ${member.nickname}`}
+                          onClick={() => void removeMember(member.memberId)}
+                          className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-500 hover:bg-red-100 hover:text-red-700"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+      </DataStateWrapper>
+
+      {memberModalOpen ? (
+        <MemberFormModal
+          initial={editingMember}
+          onClose={() => {
+            setMemberModalOpen(false);
+            setEditingMember(null);
+          }}
+          onSubmit={handleMemberSubmit}
+        />
+      ) : null}
     </div>
   );
 }
