@@ -6,7 +6,10 @@ import logging
 from dataclasses import dataclass
 from typing import Any
 
+from firebase_admin import firestore
+
 from app.repositories.base_repo import BaseFirestoreRepository
+from app.schemas.planner import IndoorQuestionnaire
 from app.schemas.profile import (
     ExercisePreferences,
     FamilyMember,
@@ -15,6 +18,7 @@ from app.schemas.profile import (
     OptionalHealthProfile,
     TransportationHabits,
 )
+from app.utils.datetime_utils import to_iso_utc, utc_now
 from app.utils.logger import log_event
 
 
@@ -92,6 +96,37 @@ class FamilyRepository(BaseFirestoreRepository):
             self.db.collection(self.COLLECTION).where("ownerUserId", "==", uid).limit(1).stream()
         )
         return snaps[0] if snaps else None
+
+    def save_indoor_questionnaire(
+        self,
+        *,
+        uid: str,
+        family_id: str,
+        questionnaire: IndoorQuestionnaire,
+    ) -> bool:
+        """Persist questionnaire baseline on `families/{familyId}` after ownership check."""
+        try:
+            doc_ref = self.db.collection(self.COLLECTION).document(family_id)
+            snap = doc_ref.get()
+            if not snap.exists or (snap.to_dict() or {}).get("ownerUserId") != uid:
+                return False
+            q_payload = questionnaire.model_dump(by_alias=True)
+            q_payload["completedAt"] = to_iso_utc(utc_now())
+            doc_ref.update(
+                {
+                    "indoorQuestionnaire": q_payload,
+                    "updatedAt": firestore.SERVER_TIMESTAMP,
+                }
+            )
+            return True
+        except Exception as exc:  # noqa: BLE001
+            log_event(
+                "indoor_questionnaire_save_failed",
+                level=logging.WARNING,
+                family_id=family_id,
+                error=str(exc),
+            )
+            return False
 
 
 def _parse_member(member_id: str, data: dict[str, Any]) -> FamilyMember:

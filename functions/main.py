@@ -14,7 +14,14 @@ from firebase_functions import https_fn, options
 from app.config.settings import get_settings
 from app.repositories.base_repo import ensure_firebase_app
 from app.routes.air_quality_routes import handle_get_air_quality_callable
+from app.routes.chat_routes import handle_send_chat_message_callable
 from app.routes.health_routes import handle_health
+from app.routes.impact_routes import (
+    handle_delete_impact_action_callable,
+    handle_get_impact_summary_callable,
+    handle_log_impact_action_callable,
+)
+from app.routes.indoor_routes import handle_assess_indoor_air_callable
 from app.routes.location_routes import handle_location_search_callable
 from app.routes.planner_routes import handle_generate_daily_plan_callable
 from app.utils.callable_utils import run_callable
@@ -66,4 +73,66 @@ def generate_daily_plan(req: https_fn.CallableRequest[Any]) -> Any:
     """Authenticated callable running the 5-node LangGraph Daily Planner (FR-06)."""
     return run_callable(
         "generate_daily_plan", req, handle_generate_daily_plan_callable, require_auth=True
+    )
+
+
+@https_fn.on_call(
+    region=_settings.region,
+    memory=options.MemoryOption.MB_512,
+    timeout_sec=60,
+    secrets=["GEMINI_API_KEY", "WAQI_API_TOKEN"],
+)
+def assess_indoor_air(req: https_fn.CallableRequest[Any]) -> Any:
+    """Authenticated callable running the questionnaire-based Indoor Air Advisor (FR-07)."""
+    return run_callable(
+        "assess_indoor_air", req, handle_assess_indoor_air_callable, require_auth=True
+    )
+
+
+@https_fn.on_call(
+    region=_settings.region,
+    memory=options.MemoryOption.MB_512,
+    timeout_sec=60,
+    secrets=["GEMINI_API_KEY", "WAQI_API_TOKEN"],
+)
+def send_chat_message(req: https_fn.CallableRequest[Any]) -> Any:
+    """Authenticated callable running the 5-node LangGraph Conversational Assistant (FR-08)."""
+    return run_callable(
+        "send_chat_message", req, handle_send_chat_message_callable, require_auth=True
+    )
+
+
+@https_fn.on_call(
+    region=_settings.region,
+    memory=options.MemoryOption.MB_256,
+    timeout_sec=30,
+)
+def log_impact_action(req: https_fn.CallableRequest[Any]) -> Any:
+    """Authenticated callable calculating & logging emissions or exposure actions (FR-09/10)."""
+    return run_callable(
+        "log_impact_action", req, handle_log_impact_action_callable, require_auth=True
+    )
+
+
+@https_fn.on_call(
+    region=_settings.region,
+    memory=options.MemoryOption.MB_256,
+    timeout_sec=30,
+)
+def get_impact_summary(req: https_fn.CallableRequest[Any]) -> Any:
+    """Authenticated callable returning separated emissions & exposure summary (FR-10)."""
+    return run_callable(
+        "get_impact_summary", req, handle_get_impact_summary_callable, require_auth=True
+    )
+
+
+@https_fn.on_call(
+    region=_settings.region,
+    memory=options.MemoryOption.MB_256,
+    timeout_sec=30,
+)
+def delete_impact_action(req: https_fn.CallableRequest[Any]) -> Any:
+    """Authenticated callable deleting a user-owned impact log record (FR-10)."""
+    return run_callable(
+        "delete_impact_action", req, handle_delete_impact_action_callable, require_auth=True
     )
