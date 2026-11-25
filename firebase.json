@@ -20,7 +20,7 @@
     {
       "source": "functions",
       "codebase": "default",
-      "runtime": "python312",
+      "runtime": "python314",
       "ignore": [
         "venv",
         ".venv",
