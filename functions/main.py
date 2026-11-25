@@ -24,6 +24,7 @@ from app.routes.impact_routes import (
 from app.routes.indoor_routes import handle_assess_indoor_air_callable
 from app.routes.location_routes import handle_location_search_callable
 from app.routes.planner_routes import handle_generate_daily_plan_callable
+from app.routes.translation_routes import handle_translate_texts_callable
 from app.utils.callable_utils import run_callable
 
 _settings = get_settings()
@@ -138,3 +139,14 @@ def delete_impact_action(req: https_fn.CallableRequest[Any]) -> Any:
     return run_callable(
         "delete_impact_action", req, handle_delete_impact_action_callable, require_auth=True
     )
+
+
+@https_fn.on_call(
+    region=_settings.region,
+    memory=options.MemoryOption.MB_512,
+    timeout_sec=30,
+    secrets=["GEMINI_API_KEY"],
+)
+def translate_texts(req: https_fn.CallableRequest[Any]) -> Any:
+    """Public bounded callable for real-time Indian-English batch translation."""
+    return run_callable("translate_texts", req, handle_translate_texts_callable, require_auth=False)
