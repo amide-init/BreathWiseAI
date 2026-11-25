@@ -98,12 +98,12 @@ export function DashboardPage() {
                   <div className="flex flex-wrap items-baseline gap-4">
                     {current.aqi !== null ? (
                       <p
-                        className={`text-5xl font-extrabold tracking-tight tabular-nums ${token.accentTextClass}`}
+                        className={`font-display text-5xl font-extrabold tracking-tight tabular-nums ${token.accentTextClass}`}
                       >
                         {current.aqi}
                       </p>
                     ) : (
-                      <p className="flex items-center gap-2 text-2xl font-bold text-zinc-700 dark:text-zinc-300">
+                      <p className="font-display flex items-center gap-2 text-2xl font-bold text-zinc-700 dark:text-zinc-300">
                         <CloudOff className="h-6 w-6 text-zinc-400" aria-hidden="true" />
                         Unavailable
                       </p>
@@ -148,7 +148,7 @@ export function DashboardPage() {
                             {reading?.freshnessStatus ?? 'unavailable'}
                           </span>
                         </div>
-                        <p className="mt-1 text-xl font-bold tabular-nums text-zinc-950 dark:text-zinc-50">
+                        <p className="font-display mt-1 text-xl font-bold tabular-nums text-zinc-950 dark:text-zinc-50">
                           {formatMeasurement(reading?.value, unit)}
                         </p>
                       </div>

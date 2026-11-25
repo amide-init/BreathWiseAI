@@ -56,10 +56,12 @@ export function PortalLayout() {
             <Wind className="h-5 w-5" aria-hidden="true" />
           </div>
           <div>
-            <p className="text-sm font-bold tracking-tight text-zinc-950 dark:text-zinc-50">
+            <p className="font-display text-base font-bold tracking-tight text-zinc-950 dark:text-zinc-50">
               BreatheWise AI
             </p>
-            <p className="text-[11px] text-zinc-500 dark:text-zinc-400">Clean-Air Intelligence</p>
+            <p className="text-[11px] font-medium text-zinc-500 dark:text-zinc-400">
+              Clean-Air Intelligence
+            </p>
           </div>
         </div>
 
@@ -147,7 +149,7 @@ export function PortalLayout() {
             <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-emerald-600 text-white dark:bg-emerald-500 dark:text-zinc-950">
               <Wind className="h-4 w-4" aria-hidden="true" />
             </div>
-            <span className="truncate text-sm font-bold tracking-tight text-zinc-950 dark:text-zinc-50">
+            <span className="font-display truncate text-base font-bold tracking-tight text-zinc-950 dark:text-zinc-50">
               {activeRoute.label}
             </span>
           </div>
