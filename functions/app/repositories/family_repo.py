@@ -1,0 +1,112 @@
+"""Firestore repository for `families/{familyId}` and `families/{familyId}/members/{memberId}`."""
+
+from __future__ import annotations
+
+import logging
+from dataclasses import dataclass
+from typing import Any
+
+from app.repositories.base_repo import BaseFirestoreRepository
+from app.schemas.profile import (
+    ExercisePreferences,
+    FamilyMember,
+    IndoorEquipment,
+    MemberSchedule,
+    OptionalHealthProfile,
+    TransportationHabits,
+)
+from app.utils.logger import log_event
+
+
+@dataclass(frozen=True, slots=True)
+class FamilyAggregate:
+    """Loaded household profile and member list owned by a user."""
+
+    family_id: str
+    owner_user_id: str
+    household_name: str
+    location_label: str
+    transportation: TransportationHabits
+    exercise: ExercisePreferences
+    indoor_equipment: IndoorEquipment
+    members: list[FamilyMember]
+
+
+class FamilyRepository(BaseFirestoreRepository):
+    """Owner-verified Firestore reads for household & member context."""
+
+    COLLECTION = "families"
+
+    def get_family_for_user(
+        self,
+        *,
+        uid: str,
+        family_id: str | None = None,
+    ) -> FamilyAggregate | None:
+        try:
+            doc_snap = self._find_family_doc(uid=uid, family_id=family_id)
+            if doc_snap is None or not doc_snap.exists:
+                return None
+
+            data = doc_snap.to_dict() or {}
+            if data.get("ownerUserId") != uid:
+                return None
+
+            member_snaps = (
+                self.db.collection(self.COLLECTION)
+                .document(doc_snap.id)
+                .collection("members")
+                .where("ownerUserId", "==", uid)
+                .stream()
+            )
+            members = [_parse_member(m.id, m.to_dict() or {}) for m in member_snaps if m.exists]
+
+            loc = data.get("location") if isinstance(data.get("location"), dict) else {}
+            return FamilyAggregate(
+                family_id=doc_snap.id,
+                owner_user_id=uid,
+                household_name=str(data.get("householdName") or "Household"),
+                location_label=str(loc.get("label") or loc.get("city") or ""),
+                transportation=TransportationHabits.model_validate(
+                    data.get("transportationHabits") or {}
+                ),
+                exercise=ExercisePreferences.model_validate(data.get("exercisePreferences") or {}),
+                indoor_equipment=IndoorEquipment.model_validate(data.get("indoorEquipment") or {}),
+                members=members,
+            )
+        except Exception as exc:  # noqa: BLE001
+            log_event(
+                "family_profile_read_failed",
+                level=logging.WARNING,
+                error=str(exc),
+            )
+            return None
+
+    def _find_family_doc(self, *, uid: str, family_id: str | None) -> Any | None:
+        if family_id:
+            snap = self.db.collection(self.COLLECTION).document(family_id).get()
+            if snap.exists and (snap.to_dict() or {}).get("ownerUserId") == uid:
+                return snap
+
+        snaps = list(
+            self.db.collection(self.COLLECTION).where("ownerUserId", "==", uid).limit(1).stream()
+        )
+        return snaps[0] if snaps else None
+
+
+def _parse_member(member_id: str, data: dict[str, Any]) -> FamilyMember:
+    schedule_raw = data.get("schedule")
+    health_raw = data.get("optionalHealthProfile")
+    return FamilyMember(
+        member_id=member_id,
+        nickname=str(data.get("nickname") or "Member"),
+        role=str(data.get("role") or "working_adult"),
+        age_group=str(data.get("ageGroup") or "18_45"),
+        schedule=MemberSchedule.model_validate(schedule_raw)
+        if isinstance(schedule_raw, dict)
+        else MemberSchedule(),
+        commute_mode=data.get("commuteMode"),
+        optional_health_profile=OptionalHealthProfile.model_validate(health_raw)
+        if isinstance(health_raw, dict)
+        else None,
+    )
