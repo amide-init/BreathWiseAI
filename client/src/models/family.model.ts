@@ -1,5 +1,6 @@
 import { serverTimestamp, Timestamp, type DocumentData } from 'firebase/firestore';
 
+import type { IndoorQuestionnaireInput } from '@/models/indoor.model';
 import type { LocationOption } from '@/types';
 
 export type TransportMode =
@@ -52,6 +53,7 @@ export interface FamilyModel {
   transportationHabits: TransportationHabitsModel;
   exercisePreferences: ExercisePreferencesModel;
   indoorEquipment: IndoorEquipmentModel;
+  indoorQuestionnaire?: Partial<IndoorQuestionnaireInput> | null;
   readonly createdAt: string | null;
   updatedAt: string | null;
 }
@@ -285,6 +287,10 @@ export function mapFirestoreDocToFamilyModel(familyId: string, data: DocumentDat
       hasN95Masks: Boolean(equipment.hasN95Masks),
       indoorSmokingPresent: Boolean(equipment.indoorSmokingPresent),
     },
+    indoorQuestionnaire:
+      data.indoorQuestionnaire && typeof data.indoorQuestionnaire === 'object'
+        ? (data.indoorQuestionnaire as Partial<IndoorQuestionnaireInput>)
+        : null,
     createdAt: toIso(data.createdAt),
     updatedAt: toIso(data.updatedAt),
   };

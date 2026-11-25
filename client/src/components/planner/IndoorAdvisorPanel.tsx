@@ -2,9 +2,12 @@ import {
   AlertTriangle,
   BookOpen,
   CheckCircle2,
+  ChevronDown,
+  ChevronUp,
   Home,
   Info,
   RefreshCw,
+  SlidersHorizontal,
   Sparkles,
 } from 'lucide-react';
 import { useEffect, useState, type FormEvent } from 'react';
@@ -15,8 +18,14 @@ import { Alert } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { useAuth } from '@/hooks/useAuth';
 import { useFamilyProfile } from '@/hooks/useFamilyProfile';
 import { useSelectedLocation } from '@/hooks/useSelectedLocation';
+import {
+  AQI_FRESHNESS_MAX_AGE_MS,
+  getSessionCached,
+  setSessionCached,
+} from '@/lib/client-cache';
 import {
   COOKING_FUEL_LABELS,
   DEFAULT_INDOOR_QUESTIONNAIRE,
@@ -43,27 +52,95 @@ const RISK_BADGE_VARIANT: Record<IndoorRiskLevel, 'default' | 'neutral' | 'warni
   high: 'danger',
 };
 
+function indoorCacheKey(uid: string, locationId: string): string {
+  return `indoor_plan:${uid}:${locationId}`;
+}
+
+function questionnairesMatch(
+  a: IndoorQuestionnaireInput,
+  b: IndoorQuestionnaireInput | undefined,
+): boolean {
+  if (!b) {
+    return false;
+  }
+  return (
+    a.cookingFuel === b.cookingFuel &&
+    a.usesKitchenExhaust === b.usesKitchenExhaust &&
+    a.hasHepaPurifier === b.hasHepaPurifier &&
+    a.indoorSmokingPresent === b.indoorSmokingPresent &&
+    a.incenseOrDhoopDaily === b.incenseOrDhoopDaily &&
+    a.dustCleaningMethod === b.dustCleaningMethod &&
+    a.windowSealingQuality === b.windowSealingQuality
+  );
+}
+
 export function IndoorAdvisorPanel() {
+  const { user } = useAuth();
   const { selectedLocation } = useSelectedLocation();
   const { family } = useFamilyProfile();
 
-  const [form, setForm] = useState<IndoorQuestionnaireInput>(DEFAULT_INDOOR_QUESTIONNAIRE);
+  const cacheKey = user ? indoorCacheKey(user.uid, selectedLocation.locationId) : null;
+
+  const [assessment, setAssessment] = useState<IndoorAssessmentResult | null>(() =>
+    cacheKey ? getSessionCached<IndoorAssessmentResult>(cacheKey) : null,
+  );
+  const [form, setForm] = useState<IndoorQuestionnaireInput>(() => {
+    const cached = cacheKey ? getSessionCached<IndoorAssessmentResult>(cacheKey) : null;
+    return cached?.questionnaire ?? DEFAULT_INDOOR_QUESTIONNAIRE;
+  });
+  const [showForm, setShowForm] = useState<boolean>(() => {
+    const cached = cacheKey ? getSessionCached<IndoorAssessmentResult>(cacheKey) : null;
+    return !cached;
+  });
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [assessment, setAssessment] = useState<IndoorAssessmentResult | null>(null);
 
-  // Pre-fill defaults from saved household equipment when available
+  // Sync cached Indoor Plan whenever user switches city
   useEffect(() => {
-    if (!family) {
+    const nextCached = cacheKey ? getSessionCached<IndoorAssessmentResult>(cacheKey) : null;
+    setAssessment(nextCached);
+    if (nextCached?.questionnaire) {
+      setForm(nextCached.questionnaire);
+      setShowForm(false);
+    } else {
+      setShowForm(true);
+    }
+  }, [cacheKey]);
+
+  // Pre-fill defaults from saved Firestore household questionnaire / equipment when no city plan exists yet
+  useEffect(() => {
+    if (!family || assessment) {
       return;
     }
+    const savedQ = family.indoorQuestionnaire;
     setForm((prev) => ({
       ...prev,
-      usesKitchenExhaust: family.indoorEquipment.hasKitchenExhaust,
-      hasHepaPurifier: family.indoorEquipment.hasHepaPurifier,
-      indoorSmokingPresent: family.indoorEquipment.indoorSmokingPresent,
+      cookingFuel: (savedQ?.cookingFuel as CookingFuelType | undefined) ?? prev.cookingFuel,
+      dustCleaningMethod:
+        (savedQ?.dustCleaningMethod as DustCleaningMethod | undefined) ?? prev.dustCleaningMethod,
+      windowSealingQuality:
+        (savedQ?.windowSealingQuality as WindowSealingQuality | undefined) ??
+        prev.windowSealingQuality,
+      incenseOrDhoopDaily:
+        savedQ?.incenseOrDhoopDaily !== undefined
+          ? Boolean(savedQ.incenseOrDhoopDaily)
+          : prev.incenseOrDhoopDaily,
+      usesKitchenExhaust:
+        savedQ?.usesKitchenExhaust !== undefined
+          ? Boolean(savedQ.usesKitchenExhaust)
+          : family.indoorEquipment.hasKitchenExhaust,
+      hasHepaPurifier:
+        savedQ?.hasHepaPurifier !== undefined
+          ? Boolean(savedQ.hasHepaPurifier)
+          : family.indoorEquipment.hasHepaPurifier,
+      indoorSmokingPresent:
+        savedQ?.indoorSmokingPresent !== undefined
+          ? Boolean(savedQ.indoorSmokingPresent)
+          : family.indoorEquipment.indoorSmokingPresent,
     }));
-  }, [family]);
+  }, [family, assessment]);
+
+  const answersChanged = Boolean(assessment && !questionnairesMatch(form, assessment.questionnaire));
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -76,6 +153,10 @@ export function IndoorAdvisorPanel() {
         familyId: family?.familyId ?? null,
       });
       setAssessment(result);
+      setShowForm(false);
+      if (cacheKey) {
+        setSessionCached(cacheKey, result, AQI_FRESHNESS_MAX_AGE_MS);
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unable to generate indoor air assessment.');
     } finally {
@@ -97,157 +178,7 @@ export function IndoorAdvisorPanel() {
         </div>
       </Alert>
 
-      {/* 7-Question Home Air Questionnaire */}
-      <Card>
-        <CardHeader>
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <CardTitle className="flex items-center gap-2">
-              <Home className="h-5 w-5 text-emerald-600 dark:text-emerald-400" aria-hidden="true" />
-              7-Question Home Air Assessment
-            </CardTitle>
-            <Badge variant="warning">Estimated · Non-Sensor</Badge>
-          </div>
-          <CardDescription>
-            Answer these quick home questions to get tailored ventilation, cooking, dust-control,
-            and filtration steps.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-5">
-            {error ? <Alert variant="danger">{error}</Alert> : null}
-
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-              <label className="block space-y-1.5">
-                <span className={LABEL_CLASS}>1. Primary Cooking Fuel</span>
-                <select
-                  value={form.cookingFuel}
-                  onChange={(e) =>
-                    setForm((prev) => ({
-                      ...prev,
-                      cookingFuel: e.target.value as CookingFuelType,
-                    }))
-                  }
-                  className={FIELD_CLASS}
-                >
-                  {(Object.keys(COOKING_FUEL_LABELS) as CookingFuelType[]).map((key) => (
-                    <option key={key} value={key}>
-                      {COOKING_FUEL_LABELS[key]}
-                    </option>
-                  ))}
-                </select>
-              </label>
-
-              <label className="block space-y-1.5">
-                <span className={LABEL_CLASS}>2. Floor &amp; Dust Cleaning Method</span>
-                <select
-                  value={form.dustCleaningMethod}
-                  onChange={(e) =>
-                    setForm((prev) => ({
-                      ...prev,
-                      dustCleaningMethod: e.target.value as DustCleaningMethod,
-                    }))
-                  }
-                  className={FIELD_CLASS}
-                >
-                  {(Object.keys(DUST_CLEANING_LABELS) as DustCleaningMethod[]).map((key) => (
-                    <option key={key} value={key}>
-                      {DUST_CLEANING_LABELS[key]}
-                    </option>
-                  ))}
-                </select>
-              </label>
-
-              <label className="block space-y-1.5">
-                <span className={LABEL_CLASS}>3. Window &amp; Door Sealing</span>
-                <select
-                  value={form.windowSealingQuality}
-                  onChange={(e) =>
-                    setForm((prev) => ({
-                      ...prev,
-                      windowSealingQuality: e.target.value as WindowSealingQuality,
-                    }))
-                  }
-                  className={FIELD_CLASS}
-                >
-                  {(Object.keys(WINDOW_SEALING_LABELS) as WindowSealingQuality[]).map((key) => (
-                    <option key={key} value={key}>
-                      {WINDOW_SEALING_LABELS[key]}
-                    </option>
-                  ))}
-                </select>
-              </label>
-            </div>
-
-            <div className="grid grid-cols-1 gap-3 rounded-xl border border-zinc-200/80 bg-zinc-50/70 p-4 sm:grid-cols-2 dark:border-zinc-800 dark:bg-zinc-950/60">
-              <label className="flex cursor-pointer items-center gap-2.5 text-sm text-zinc-800 dark:text-zinc-200">
-                <input
-                  type="checkbox"
-                  checked={form.usesKitchenExhaust}
-                  onChange={(e) =>
-                    setForm((prev) => ({ ...prev, usesKitchenExhaust: e.target.checked }))
-                  }
-                  className="h-4 w-4 accent-emerald-600"
-                />
-                <span>4. Uses kitchen chimney / exhaust fan while cooking</span>
-              </label>
-
-              <label className="flex cursor-pointer items-center gap-2.5 text-sm text-zinc-800 dark:text-zinc-200">
-                <input
-                  type="checkbox"
-                  checked={form.hasHepaPurifier}
-                  onChange={(e) =>
-                    setForm((prev) => ({ ...prev, hasHepaPurifier: e.target.checked }))
-                  }
-                  className="h-4 w-4 accent-emerald-600"
-                />
-                <span>5. True-HEPA air purifier available at home</span>
-              </label>
-
-              <label className="flex cursor-pointer items-center gap-2.5 text-sm text-zinc-800 dark:text-zinc-200">
-                <input
-                  type="checkbox"
-                  checked={form.incenseOrDhoopDaily}
-                  onChange={(e) =>
-                    setForm((prev) => ({ ...prev, incenseOrDhoopDaily: e.target.checked }))
-                  }
-                  className="h-4 w-4 accent-emerald-600"
-                />
-                <span>6. Daily incense (agarbatti), dhoop, or mosquito coils</span>
-              </label>
-
-              <label className="flex cursor-pointer items-center gap-2.5 text-sm text-zinc-800 dark:text-zinc-200">
-                <input
-                  type="checkbox"
-                  checked={form.indoorSmokingPresent}
-                  onChange={(e) =>
-                    setForm((prev) => ({ ...prev, indoorSmokingPresent: e.target.checked }))
-                  }
-                  className="h-4 w-4 accent-emerald-600"
-                />
-                <span>7. Indoor tobacco or secondhand smoke present</span>
-              </label>
-            </div>
-
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <p className="text-xs text-zinc-500 dark:text-zinc-400">
-                {family
-                  ? `Saves answers to your "${family.householdName}" household profile.`
-                  : 'Runs immediately for your current city (save a Family Profile to persist).'}
-              </p>
-              <Button type="submit" disabled={submitting}>
-                {submitting ? (
-                  <RefreshCw className="h-4 w-4 animate-spin" aria-hidden="true" />
-                ) : (
-                  <Sparkles className="h-4 w-4" aria-hidden="true" />
-                )}
-                {submitting ? 'Analyzing Home Air…' : 'Generate Estimated Indoor Plan'}
-              </Button>
-            </div>
-          </form>
-        </CardContent>
-      </Card>
-
-      {/* Assessment Results */}
+      {/* Saved / Generated Estimated Indoor Plan (Displayed First When Ready!) */}
       {assessment ? (
         <div className="space-y-4">
           <Card>
@@ -283,14 +214,38 @@ export function IndoorAdvisorPanel() {
               <CardDescription>{assessment.disclaimer}</CardDescription>
             </CardHeader>
             <CardContent className="space-y-3">
-              {assessment.savedToFamilyId ? (
-                <Alert variant="info" className="items-center py-2">
-                  <CheckCircle2 className="h-4 w-4 shrink-0" aria-hidden="true" />
-                  <span className="text-xs">
-                    Questionnaire saved to your Family Profile for future guidance.
-                  </span>
-                </Alert>
-              ) : null}
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div className="flex flex-wrap items-center gap-2">
+                  {assessment.savedToFamilyId ? (
+                    <span className="inline-flex items-center gap-1 text-xs font-medium text-emerald-700 dark:text-emerald-400">
+                      <CheckCircle2 className="h-3.5 w-3.5" aria-hidden="true" />
+                      Saved for {selectedLocation.city}
+                    </span>
+                  ) : (
+                    <span className="text-xs text-zinc-500 dark:text-zinc-400">
+                      Cached for {selectedLocation.city}
+                    </span>
+                  )}
+                  {answersChanged ? (
+                    <Badge variant="warning">Answers changed — update plan</Badge>
+                  ) : null}
+                </div>
+
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowForm((prev) => !prev)}
+                >
+                  <SlidersHorizontal className="h-3.5 w-3.5" aria-hidden="true" />
+                  <span>{showForm ? 'Hide Answers' : 'Edit Home Answers'}</span>
+                  {showForm ? (
+                    <ChevronUp className="h-3.5 w-3.5" />
+                  ) : (
+                    <ChevronDown className="h-3.5 w-3.5" />
+                  )}
+                </Button>
+              </div>
 
               {assessment.keyIndoorSources.length > 0 ? (
                 <div className="space-y-1.5">
@@ -309,13 +264,13 @@ export function IndoorAdvisorPanel() {
             </CardContent>
           </Card>
 
-          <div className="space-y-3">
-            {assessment.recommendations.map((item) => (
-              <Card key={item.itemId}>
-                <CardHeader className="pb-2">
-                  <div className="flex flex-wrap items-center justify-between gap-2">
-                    <CardTitle>{item.title}</CardTitle>
-                    <div className="flex flex-wrap items-center gap-1.5">
+          {!showForm ? (
+            <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+              {assessment.recommendations.map((item) => (
+                <Card key={item.itemId}>
+                  <CardHeader className="pb-2">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <CardTitle className="text-base">{item.title}</CardTitle>
                       <Badge
                         variant={
                           item.priority === 'high'
@@ -325,62 +280,204 @@ export function IndoorAdvisorPanel() {
                               : 'neutral'
                         }
                       >
-                        {item.priority.toUpperCase()} priority
+                        {item.priority === 'high' ? 'Top Priority' : item.priority}
                       </Badge>
-                      <Badge variant="outline">{item.category.replace(/_/g, ' ')}</Badge>
                     </div>
-                  </div>
-                </CardHeader>
-                <CardContent className="space-y-2.5 text-sm">
-                  <div>
-                    <p className="text-[11px] font-semibold uppercase tracking-wide text-emerald-700 dark:text-emerald-400">
-                      What to do
+                  </CardHeader>
+                  <CardContent className="space-y-2.5 text-sm">
+                    <p className="leading-relaxed text-zinc-800 dark:text-zinc-200">
+                      {item.whatToDo}
                     </p>
-                    <p className="text-zinc-800 dark:text-zinc-200">{item.whatToDo}</p>
-                  </div>
-                  <div>
-                    <p className="text-[11px] font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
-                      Why it helps
+                    <p className="text-xs text-zinc-600 dark:text-zinc-400">
+                      <span className="font-semibold text-zinc-700 dark:text-zinc-300">Why:</span>{' '}
+                      {item.why}
                     </p>
-                    <p className="text-zinc-600 dark:text-zinc-400">{item.why}</p>
-                  </div>
-                  <div className="rounded-xl border border-zinc-200/70 bg-zinc-50 p-2.5 dark:border-zinc-800 dark:bg-zinc-950/60">
-                    <p className="text-[11px] font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
-                      Practical Alternative
-                    </p>
-                    <p className="text-zinc-700 dark:text-zinc-300">{item.alternative}</p>
-                  </div>
-                  <p className="text-xs text-zinc-500 dark:text-zinc-400">
-                    <span className="font-medium text-zinc-700 dark:text-zinc-300">
-                      Supporting data:
-                    </span>{' '}
-                    {item.supportingData}
-                  </p>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-
-          {assessment.citations.length > 0 ? (
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="flex items-center gap-2 text-sm">
-                  <BookOpen
-                    className="h-4 w-4 text-emerald-600 dark:text-emerald-400"
-                    aria-hidden="true"
-                  />
-                  Verified Indoor Guidance Sources
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="flex flex-wrap gap-2">
-                {assessment.citations.map((c) => (
-                  <Badge key={c.docId} variant="outline">
-                    {c.title} · {c.sourceAuthority}
-                  </Badge>
-                ))}
-              </CardContent>
-            </Card>
+                    <div className="rounded-xl border border-zinc-200/70 bg-zinc-50 p-2.5 text-xs dark:border-zinc-800 dark:bg-zinc-950/60">
+                      <span className="font-semibold text-zinc-700 dark:text-zinc-300">
+                        Easy swap:{' '}
+                      </span>
+                      <span className="text-zinc-600 dark:text-zinc-400">{item.alternative}</span>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
           ) : null}
+        </div>
+      ) : null}
+
+      {/* 7-Question Home Air Questionnaire (Expanded on first run or when user clicks Edit) */}
+      {showForm ? (
+        <Card>
+          <CardHeader>
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <CardTitle className="flex items-center gap-2">
+                <Home
+                  className="h-5 w-5 text-emerald-600 dark:text-emerald-400"
+                  aria-hidden="true"
+                />
+                7-Question Home Air Assessment
+              </CardTitle>
+              <Badge variant="warning">Estimated · Non-Sensor</Badge>
+            </div>
+            <CardDescription>
+              Answer these quick home questions to get tailored ventilation, cooking, dust-control,
+              and filtration steps.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleSubmit} className="space-y-5">
+              {error ? <Alert variant="danger">{error}</Alert> : null}
+
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+                <label className="block space-y-1.5">
+                  <span className={LABEL_CLASS}>1. Primary Cooking Fuel</span>
+                  <select
+                    value={form.cookingFuel}
+                    onChange={(e) =>
+                      setForm((prev) => ({
+                        ...prev,
+                        cookingFuel: e.target.value as CookingFuelType,
+                      }))
+                    }
+                    className={FIELD_CLASS}
+                  >
+                    {(Object.keys(COOKING_FUEL_LABELS) as CookingFuelType[]).map((key) => (
+                      <option key={key} value={key}>
+                        {COOKING_FUEL_LABELS[key]}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+
+                <label className="block space-y-1.5">
+                  <span className={LABEL_CLASS}>2. Floor &amp; Dust Cleaning Method</span>
+                  <select
+                    value={form.dustCleaningMethod}
+                    onChange={(e) =>
+                      setForm((prev) => ({
+                        ...prev,
+                        dustCleaningMethod: e.target.value as DustCleaningMethod,
+                      }))
+                    }
+                    className={FIELD_CLASS}
+                  >
+                    {(Object.keys(DUST_CLEANING_LABELS) as DustCleaningMethod[]).map((key) => (
+                      <option key={key} value={key}>
+                        {DUST_CLEANING_LABELS[key]}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+
+                <label className="block space-y-1.5">
+                  <span className={LABEL_CLASS}>3. Window &amp; Door Sealing</span>
+                  <select
+                    value={form.windowSealingQuality}
+                    onChange={(e) =>
+                      setForm((prev) => ({
+                        ...prev,
+                        windowSealingQuality: e.target.value as WindowSealingQuality,
+                      }))
+                    }
+                    className={FIELD_CLASS}
+                  >
+                    {(Object.keys(WINDOW_SEALING_LABELS) as WindowSealingQuality[]).map((key) => (
+                      <option key={key} value={key}>
+                        {WINDOW_SEALING_LABELS[key]}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              </div>
+
+              <div className="grid grid-cols-1 gap-3 rounded-xl border border-zinc-200/80 bg-zinc-50/70 p-4 sm:grid-cols-2 dark:border-zinc-800 dark:bg-zinc-950/60">
+                <label className="flex cursor-pointer items-center gap-2.5 text-sm text-zinc-800 dark:text-zinc-200">
+                  <input
+                    type="checkbox"
+                    checked={form.usesKitchenExhaust}
+                    onChange={(e) =>
+                      setForm((prev) => ({ ...prev, usesKitchenExhaust: e.target.checked }))
+                    }
+                    className="h-4 w-4 accent-emerald-600"
+                  />
+                  <span>4. Uses kitchen chimney / exhaust fan while cooking</span>
+                </label>
+
+                <label className="flex cursor-pointer items-center gap-2.5 text-sm text-zinc-800 dark:text-zinc-200">
+                  <input
+                    type="checkbox"
+                    checked={form.hasHepaPurifier}
+                    onChange={(e) =>
+                      setForm((prev) => ({ ...prev, hasHepaPurifier: e.target.checked }))
+                    }
+                    className="h-4 w-4 accent-emerald-600"
+                  />
+                  <span>5. True-HEPA air purifier available at home</span>
+                </label>
+
+                <label className="flex cursor-pointer items-center gap-2.5 text-sm text-zinc-800 dark:text-zinc-200">
+                  <input
+                    type="checkbox"
+                    checked={form.incenseOrDhoopDaily}
+                    onChange={(e) =>
+                      setForm((prev) => ({ ...prev, incenseOrDhoopDaily: e.target.checked }))
+                    }
+                    className="h-4 w-4 accent-emerald-600"
+                  />
+                  <span>6. Daily incense (agarbatti), dhoop, or mosquito coils</span>
+                </label>
+
+                <label className="flex cursor-pointer items-center gap-2.5 text-sm text-zinc-800 dark:text-zinc-200">
+                  <input
+                    type="checkbox"
+                    checked={form.indoorSmokingPresent}
+                    onChange={(e) =>
+                      setForm((prev) => ({ ...prev, indoorSmokingPresent: e.target.checked }))
+                    }
+                    className="h-4 w-4 accent-emerald-600"
+                  />
+                  <span>7. Indoor tobacco or secondhand smoke present</span>
+                </label>
+              </div>
+
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <p className="text-xs text-zinc-500 dark:text-zinc-400">
+                  {family
+                    ? `Saves answers to your "${family.householdName}" household profile.`
+                    : 'Runs immediately for your current city (save a Family Profile to persist).'}
+                </p>
+                <Button type="submit" disabled={submitting}>
+                  {submitting ? (
+                    <RefreshCw className="h-4 w-4 animate-spin" aria-hidden="true" />
+                  ) : (
+                    <Sparkles className="h-4 w-4" aria-hidden="true" />
+                  )}
+                  {submitting
+                    ? 'Analyzing Home Air…'
+                    : answersChanged
+                      ? 'Update Indoor Plan'
+                      : assessment
+                        ? 'Refresh Indoor Plan'
+                        : 'Generate Estimated Indoor Plan'}
+                </Button>
+              </div>
+            </form>
+          </CardContent>
+        </Card>
+      ) : null}
+
+      {assessment && assessment.citations.length > 0 ? (
+        <div className="flex flex-wrap items-center gap-2 rounded-2xl border border-zinc-200/70 bg-white/70 px-4 py-3 dark:border-zinc-800 dark:bg-zinc-900/50">
+          <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-zinc-600 dark:text-zinc-400">
+            <BookOpen className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
+            Sources:
+          </span>
+          {assessment.citations.map((c) => (
+            <Badge key={c.docId} variant="outline">
+              {c.title} · {c.sourceAuthority}
+            </Badge>
+          ))}
         </div>
       ) : null}
     </div>

@@ -8,9 +8,53 @@ interface CacheEntry<T> {
 
 const memoryStore = new Map<string, CacheEntry<unknown>>();
 const inflightRequests = new Map<string, Promise<unknown>>();
+const SESSION_CACHE_PREFIX = 'breathewise:sc:';
 
 export const AQI_FRESHNESS_MAX_AGE_MS = 30 * 60 * 1000; // 30 min CPCB freshness SLA
 export const AQI_SOFT_REVALIDATE_MS = 5 * 60 * 1000; // Silently revalidate after 5 min
+
+export function getSessionCached<T>(key: string, now = Date.now()): T | null {
+  const mem = getCached<T>(key, now);
+  if (mem && mem.isFresh) {
+    return mem.value;
+  }
+  try {
+    if (typeof sessionStorage === 'undefined') {
+      return null;
+    }
+    const raw = sessionStorage.getItem(`${SESSION_CACHE_PREFIX}${key}`);
+    if (!raw) {
+      return null;
+    }
+    const parsed = JSON.parse(raw) as CacheEntry<T>;
+    if (now - parsed.storedAt > parsed.ttlMs) {
+      sessionStorage.removeItem(`${SESSION_CACHE_PREFIX}${key}`);
+      return null;
+    }
+    setCached(key, parsed.value, parsed.ttlMs - (now - parsed.storedAt), now);
+    return parsed.value;
+  } catch {
+    return null;
+  }
+}
+
+export function setSessionCached<T>(
+  key: string,
+  value: T,
+  ttlMs: number,
+  now = Date.now(),
+): void {
+  setCached(key, value, ttlMs, now);
+  try {
+    if (typeof sessionStorage === 'undefined') {
+      return;
+    }
+    const entry: CacheEntry<T> = { value, storedAt: now, ttlMs };
+    sessionStorage.setItem(`${SESSION_CACHE_PREFIX}${key}`, JSON.stringify(entry));
+  } catch {
+    // Ignore storage quota or private mode restrictions
+  }
+}
 
 export function getCached<T>(
   key: string,
@@ -54,6 +98,19 @@ export function invalidateByPrefix(prefix: string): void {
 export function clearAllCaches(): void {
   memoryStore.clear();
   inflightRequests.clear();
+  try {
+    if (typeof sessionStorage === 'undefined') {
+      return;
+    }
+    for (let i = sessionStorage.length - 1; i >= 0; i -= 1) {
+      const k = sessionStorage.key(i);
+      if (k && k.startsWith(SESSION_CACHE_PREFIX)) {
+        sessionStorage.removeItem(k);
+      }
+    }
+  } catch {
+    // Ignore storage access errors
+  }
 }
 
 /**
