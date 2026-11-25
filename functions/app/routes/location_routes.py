@@ -1,16 +1,17 @@
-"""Thin HTTP route handler for GET /api/v1/locations/search (FR-02)."""
+"""Thin callable route handler for `search_locations` (FR-02)."""
 
 from __future__ import annotations
 
 from typing import Any
 
 from app.services.location_service import LocationService
-from app.utils.auth import verify_request_user
+from app.utils.callable_utils import get_callable_data
 
 
-def handle_location_search(req: Any) -> dict[str, Any]:
-    """Authenticate request and return normalized matching city locations."""
-    verify_request_user(req)
-    query = req.args.get("q") if hasattr(req, "args") and req.args else None
+def handle_location_search_callable(req: Any) -> dict[str, Any]:
+    """Validate callable input and return normalized matching city locations."""
+    data = get_callable_data(req)
+    raw_query = data.get("q") or data.get("query")
+    query = str(raw_query) if raw_query is not None else None
     results = LocationService().search(query)
     return {"results": [item.model_dump(by_alias=True) for item in results]}
