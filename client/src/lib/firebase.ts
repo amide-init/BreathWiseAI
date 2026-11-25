@@ -1,6 +1,14 @@
 import { getApp, getApps, initializeApp, type FirebaseApp } from 'firebase/app';
 import { connectAuthEmulator, getAuth, type Auth } from 'firebase/auth';
-import { connectFirestoreEmulator, getFirestore, type Firestore } from 'firebase/firestore';
+import {
+  connectFirestoreEmulator,
+  getFirestore,
+  initializeFirestore,
+  memoryLocalCache,
+  persistentLocalCache,
+  persistentMultipleTabManager,
+  type Firestore,
+} from 'firebase/firestore';
 import { connectFunctionsEmulator, getFunctions, type Functions } from 'firebase/functions';
 
 import { env, isFirebaseConfigured } from '@/config/env';
@@ -44,7 +52,20 @@ export function getFirebaseDb(): Firestore | null {
     return null;
   }
   if (!dbInstance) {
-    dbInstance = getFirestore(app);
+    try {
+      dbInstance = initializeFirestore(app, {
+        localCache: persistentLocalCache({
+          tabManager: persistentMultipleTabManager(),
+        }),
+      });
+    } catch {
+      // Fallback when already initialized (Vite HMR) or when IndexedDB is unavailable (private mode)
+      try {
+        dbInstance = getFirestore(app);
+      } catch {
+        dbInstance = initializeFirestore(app, { localCache: memoryLocalCache() });
+      }
+    }
     if (env.useEmulators && !firestoreEmulatorConnected) {
       connectFirestoreEmulator(dbInstance, '127.0.0.1', 8080);
       firestoreEmulatorConnected = true;
