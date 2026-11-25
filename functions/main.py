@@ -49,6 +49,7 @@ def search_locations(req: https_fn.CallableRequest[Any]) -> Any:
     region=_settings.region,
     memory=options.MemoryOption.MB_512,
     timeout_sec=60,
+    secrets=["WAQI_API_TOKEN"],
 )
 def get_air_quality(req: https_fn.CallableRequest[Any]) -> Any:
     """Authenticated callable returning cache-first CPCB NAQI, weather & forecasts (FR-03/04)."""
@@ -59,7 +60,7 @@ def get_air_quality(req: https_fn.CallableRequest[Any]) -> Any:
     region=_settings.region,
     memory=options.MemoryOption.MB_512,
     timeout_sec=60,
-    secrets=["GEMINI_API_KEY"],
+    secrets=["GEMINI_API_KEY", "WAQI_API_TOKEN"],
 )
 def generate_daily_plan(req: https_fn.CallableRequest[Any]) -> Any:
     """Authenticated callable running the 5-node LangGraph Daily Planner (FR-06)."""
