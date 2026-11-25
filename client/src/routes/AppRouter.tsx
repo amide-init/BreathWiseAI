@@ -8,6 +8,7 @@ import { ImpactPage } from '@/pages/ImpactPage';
 import { LoginPage } from '@/pages/LoginPage';
 import { PlannerPage } from '@/pages/PlannerPage';
 import { ProfilePage } from '@/pages/ProfilePage';
+import { SettingsPage } from '@/pages/SettingsPage';
 import { ProtectedRoute } from '@/routes/ProtectedRoute';
 
 export function AppRouter() {
@@ -22,6 +23,7 @@ export function AppRouter() {
             <Route path={APP_ROUTES.ASSISTANT} element={<AssistantPage />} />
             <Route path={APP_ROUTES.IMPACT} element={<ImpactPage />} />
             <Route path={APP_ROUTES.PROFILE} element={<ProfilePage />} />
+            <Route path={APP_ROUTES.SETTINGS} element={<SettingsPage />} />
           </Route>
         </Route>
         <Route path="*" element={<Navigate to={APP_ROUTES.HOME} replace />} />

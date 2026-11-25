@@ -4,15 +4,22 @@ import {
   Leaf,
   LogOut,
   MapPin,
+  Settings,
   Sparkles,
-  Users,
+  User,
   Wind,
 } from 'lucide-react';
-import { NavLink, Outlet, useLocation } from 'react-router-dom';
+import { Link, NavLink, Outlet, useLocation } from 'react-router-dom';
 
 import { LocationPickerModal } from '@/components/shared/LocationPickerModal';
 import { ThemeToggle } from '@/components/shared/ThemeToggle';
-import { getNavItemByPath, PRIMARY_NAV_ITEMS, type NavItemConfig } from '@/config/routes';
+import {
+  APP_ROUTES,
+  getNavItemByPath,
+  PRIMARY_NAV_ITEMS,
+  SECONDARY_NAV_ITEMS,
+  type NavItemConfig,
+} from '@/config/routes';
 import { useAuth } from '@/hooks/useAuth';
 import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import { useSelectedLocation } from '@/hooks/useSelectedLocation';
@@ -23,7 +30,8 @@ const NAV_ICONS: Record<NavItemConfig['iconKey'], typeof LayoutDashboard> = {
   planner: CalendarCheck2,
   assistant: Sparkles,
   impact: Leaf,
-  profile: Users,
+  profile: User,
+  settings: Settings,
 };
 
 /**
@@ -77,6 +85,29 @@ export function PortalLayout() {
               </NavLink>
             );
           })}
+
+          <div className="my-2 border-t border-zinc-100 pt-2 dark:border-zinc-900">
+            {SECONDARY_NAV_ITEMS.map((item) => {
+              const Icon = NAV_ICONS[item.iconKey];
+              return (
+                <NavLink
+                  key={item.to}
+                  to={item.to}
+                  className={({ isActive }) =>
+                    cn(
+                      'flex items-center gap-3 rounded-xl px-3.5 py-2.5 text-sm font-medium transition-all',
+                      isActive
+                        ? 'bg-emerald-500/12 text-emerald-800 ring-1 ring-emerald-500/20 dark:bg-emerald-400/15 dark:text-emerald-300 dark:ring-emerald-400/25'
+                        : 'text-zinc-600 hover:bg-zinc-100 hover:text-zinc-950 dark:text-zinc-400 dark:hover:bg-zinc-900 dark:hover:text-zinc-100',
+                    )
+                  }
+                >
+                  <Icon className="h-4 w-4 shrink-0" aria-hidden="true" />
+                  <span>{item.label}</span>
+                </NavLink>
+              );
+            })}
+          </div>
         </nav>
 
         <div className="space-y-3 border-t border-zinc-100 p-4 dark:border-zinc-900">
@@ -84,14 +115,17 @@ export function PortalLayout() {
 
           {user ? (
             <div className="flex items-center justify-between gap-2 rounded-xl border border-zinc-200/80 bg-zinc-50/70 p-2.5 dark:border-zinc-800/80 dark:bg-zinc-900/70">
-              <div className="min-w-0">
+              <Link
+                to={APP_ROUTES.PROFILE}
+                className="min-w-0 flex-1 rounded-lg transition-opacity hover:opacity-80"
+              >
                 <p className="truncate text-xs font-semibold text-zinc-900 dark:text-zinc-100">
                   {user.displayName || 'Family Account'}
                 </p>
                 <p className="truncate text-[11px] text-zinc-500 dark:text-zinc-400">
                   {user.email}
                 </p>
-              </div>
+              </Link>
               <button
                 type="button"
                 onClick={() => void signOut()}
@@ -141,16 +175,21 @@ export function PortalLayout() {
 
             <ThemeToggle className="md:hidden" />
 
-            {user ? (
-              <button
-                type="button"
-                onClick={() => void signOut()}
-                aria-label="Sign out"
-                className="flex h-9 w-9 cursor-pointer items-center justify-center rounded-xl border border-zinc-200/90 bg-white text-zinc-600 hover:bg-zinc-100 md:hidden dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-800"
-              >
-                <LogOut className="h-4 w-4" aria-hidden="true" />
-              </button>
-            ) : null}
+            <NavLink
+              to={APP_ROUTES.SETTINGS}
+              aria-label="Settings"
+              title="Settings"
+              className={({ isActive }) =>
+                cn(
+                  'flex h-9 w-9 items-center justify-center rounded-xl border transition-all md:hidden',
+                  isActive
+                    ? 'border-emerald-500/40 bg-emerald-500/15 text-emerald-700 dark:border-emerald-400/40 dark:bg-emerald-400/20 dark:text-emerald-300'
+                    : 'border-zinc-200/90 bg-white text-zinc-600 hover:bg-zinc-100 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-800',
+                )
+              }
+            >
+              <Settings className="h-4 w-4" aria-hidden="true" />
+            </NavLink>
           </div>
         </header>
 

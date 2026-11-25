@@ -4,6 +4,7 @@ export const APP_ROUTES = {
   ASSISTANT: '/assistant',
   IMPACT: '/impact',
   PROFILE: '/profile',
+  SETTINGS: '/settings',
   LOGIN: '/login',
   ONBOARDING: '/onboarding',
 } as const;
@@ -14,13 +15,13 @@ export interface NavItemConfig {
   documentTitle: string;
   subtitle: string;
   to: string;
-  iconKey: 'dashboard' | 'planner' | 'assistant' | 'impact' | 'profile';
+  iconKey: 'dashboard' | 'planner' | 'assistant' | 'impact' | 'profile' | 'settings';
 }
 
 export const PRIMARY_NAV_ITEMS: readonly NavItemConfig[] = [
   {
     label: 'Dashboard',
-    shortLabel: 'Dashboard',
+    shortLabel: 'Home',
     documentTitle: 'Dashboard | BreatheWise AI',
     subtitle: 'India CPCB NAQI · Grounded Environmental Intelligence',
     to: APP_ROUTES.HOME,
@@ -36,7 +37,7 @@ export const PRIMARY_NAV_ITEMS: readonly NavItemConfig[] = [
   },
   {
     label: 'AI Assistant',
-    shortLabel: 'Assistant',
+    shortLabel: 'Ask AI',
     documentTitle: 'AI Assistant | BreatheWise AI',
     subtitle: 'Grounded environmental guidance with verified sources',
     to: APP_ROUTES.ASSISTANT,
@@ -51,17 +52,31 @@ export const PRIMARY_NAV_ITEMS: readonly NavItemConfig[] = [
     iconKey: 'impact',
   },
   {
-    label: 'Family Profile',
-    shortLabel: 'Family',
-    documentTitle: 'Family Profile | BreatheWise AI',
-    subtitle: 'Household members, commute habits & indoor equipment',
+    label: 'Profile',
+    shortLabel: 'Profile',
+    documentTitle: 'Profile | BreatheWise AI',
+    subtitle: 'Account identity, household members, commute & indoor gear',
     to: APP_ROUTES.PROFILE,
     iconKey: 'profile',
   },
 ] as const;
 
+export const SECONDARY_NAV_ITEMS: readonly NavItemConfig[] = [
+  {
+    label: 'Settings',
+    shortLabel: 'Settings',
+    documentTitle: 'Settings | BreatheWise AI',
+    subtitle: 'Appearance, AQI scale, default location & privacy preferences',
+    to: APP_ROUTES.SETTINGS,
+    iconKey: 'settings',
+  },
+] as const;
+
+export const ALL_NAV_ITEMS: readonly NavItemConfig[] = [
+  ...PRIMARY_NAV_ITEMS,
+  ...SECONDARY_NAV_ITEMS,
+] as const;
+
 export function getNavItemByPath(pathname: string): NavItemConfig {
-  return (
-    PRIMARY_NAV_ITEMS.find((item) => item.to === pathname) ?? PRIMARY_NAV_ITEMS[0]
-  );
+  return ALL_NAV_ITEMS.find((item) => item.to === pathname) ?? PRIMARY_NAV_ITEMS[0];
 }

@@ -6,6 +6,7 @@ import {
   Pencil,
   Plus,
   Save,
+  Settings as SettingsIcon,
   Trash2,
   User,
   Users,
@@ -179,20 +180,43 @@ export function ProfilePage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-zinc-950 dark:text-zinc-50">
-            Family Profile
+            Profile &amp; Household
           </h1>
           <p className="text-sm text-zinc-600 dark:text-zinc-400">
-            Personalize clean-air routines for every member of your household.
+            Personalize clean-air routines for you and every member of your household.
           </p>
         </div>
-        <Link to={APP_ROUTES.PLANNER}>
-          <Button variant="outline" size="sm">
-            View Personalized Daily Plan
-          </Button>
-        </Link>
+        <div className="flex flex-wrap items-center gap-2">
+          <div
+            className="inline-flex items-center gap-1 rounded-xl border border-zinc-200/80 bg-white p-1 shadow-2xs dark:border-zinc-800 dark:bg-zinc-900"
+            role="tablist"
+            aria-label="Account sections"
+          >
+            <Link
+              to={APP_ROUTES.PROFILE}
+              aria-current="page"
+              className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-500/15 px-3 py-1.5 text-xs font-semibold text-emerald-800 dark:bg-emerald-400/20 dark:text-emerald-300"
+            >
+              <User className="h-3.5 w-3.5" aria-hidden="true" />
+              Profile
+            </Link>
+            <Link
+              to={APP_ROUTES.SETTINGS}
+              className="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium text-zinc-600 transition-colors hover:text-zinc-950 dark:text-zinc-400 dark:hover:text-zinc-50"
+            >
+              <SettingsIcon className="h-3.5 w-3.5" aria-hidden="true" />
+              Settings
+            </Link>
+          </div>
+          <Link to={APP_ROUTES.PLANNER}>
+            <Button variant="outline" size="sm">
+              Daily Plan
+            </Button>
+          </Link>
+        </div>
       </div>
 
       {/* 1. Personal Account Details */}
