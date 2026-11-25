@@ -3,6 +3,7 @@ import { Lock, Mail, User, Wind } from 'lucide-react';
 import { useState, type FormEvent } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 
+import { ThemeToggle } from '@/components/shared/ThemeToggle';
 import { Alert } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -27,13 +28,16 @@ function mapAuthError(err: unknown): string {
         return 'This domain is not authorized in Firebase Console → Authentication → Settings.';
       case 'auth/operation-not-allowed':
       case 'auth/configuration-not-found':
-        return 'Firebase Authentication providers are not enabled yet on this project. Enable Email/Password and Google Sign-In in Firebase Console → Authentication.';
+        return 'Firebase Authentication providers are not enabled yet on this project.';
       default:
         return err.message;
     }
   }
   return err instanceof Error ? err.message : 'Unable to sign in. Please try again.';
 }
+
+const INPUT_CLASS =
+  'w-full rounded-xl border border-zinc-200 bg-zinc-50 py-2.5 pr-3 pl-9 text-sm text-zinc-950 outline-none transition-colors focus:border-emerald-500 focus:bg-white focus:ring-2 focus:ring-emerald-500/20 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-50 dark:placeholder:text-zinc-500';
 
 export function LoginPage() {
   useDocumentTitle('Sign In | BreatheWise AI');
@@ -82,10 +86,20 @@ export function LoginPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-slate-50 px-4 py-8">
-      <Card className="w-full max-w-md">
+    <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-zinc-50 px-4 py-10 dark:bg-zinc-950">
+      {/* Subtle YC-style ambient radial glow */}
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute -top-40 left-1/2 h-96 w-[36rem] -translate-x-1/2 rounded-full bg-emerald-500/12 blur-3xl dark:bg-emerald-500/10"
+      />
+
+      <div className="absolute top-4 right-4">
+        <ThemeToggle />
+      </div>
+
+      <Card className="relative w-full max-w-md shadow-lg dark:shadow-none">
         <CardHeader className="items-center text-center">
-          <div className="mb-2 flex h-12 w-12 items-center justify-center rounded-2xl bg-teal-700 text-white shadow-xs">
+          <div className="mb-2 flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-600 text-white shadow-sm dark:bg-emerald-500 dark:text-zinc-950">
             <Wind className="h-6 w-6" aria-hidden="true" />
           </div>
           <CardTitle className="text-xl">
@@ -110,18 +124,22 @@ export function LoginPage() {
           </Button>
 
           <div className="relative flex items-center justify-center">
-            <div className="w-full border-t border-slate-200" />
-            <span className="bg-white px-3 text-xs text-slate-400">or with email</span>
-            <div className="w-full border-t border-slate-200" />
+            <div className="w-full border-t border-zinc-200 dark:border-zinc-800" />
+            <span className="bg-white px-3 text-xs text-zinc-400 dark:bg-zinc-900">
+              or with email
+            </span>
+            <div className="w-full border-t border-zinc-200 dark:border-zinc-800" />
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-3">
             {mode === 'signup' ? (
               <label className="block space-y-1">
-                <span className="text-xs font-medium text-slate-700">Your Name</span>
+                <span className="text-xs font-medium text-zinc-700 dark:text-zinc-300">
+                  Your Name
+                </span>
                 <div className="relative">
                   <User
-                    className="pointer-events-none absolute top-3 left-3 h-4 w-4 text-slate-400"
+                    className="pointer-events-none absolute top-3 left-3 h-4 w-4 text-zinc-400"
                     aria-hidden="true"
                   />
                   <input
@@ -131,17 +149,17 @@ export function LoginPage() {
                     value={displayName}
                     onChange={(e) => setDisplayName(e.target.value)}
                     placeholder="e.g. Amina Sharma"
-                    className="w-full rounded-lg border border-slate-300 bg-white py-2.5 pr-3 pl-9 text-sm text-slate-900 outline-none focus:border-teal-600 focus:ring-2 focus:ring-teal-600/20"
+                    className={INPUT_CLASS}
                   />
                 </div>
               </label>
             ) : null}
 
             <label className="block space-y-1">
-              <span className="text-xs font-medium text-slate-700">Email</span>
+              <span className="text-xs font-medium text-zinc-700 dark:text-zinc-300">Email</span>
               <div className="relative">
                 <Mail
-                  className="pointer-events-none absolute top-3 left-3 h-4 w-4 text-slate-400"
+                  className="pointer-events-none absolute top-3 left-3 h-4 w-4 text-zinc-400"
                   aria-hidden="true"
                 />
                 <input
@@ -150,16 +168,18 @@ export function LoginPage() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="you@example.com"
-                  className="w-full rounded-lg border border-slate-300 bg-white py-2.5 pr-3 pl-9 text-sm text-slate-900 outline-none focus:border-teal-600 focus:ring-2 focus:ring-teal-600/20"
+                  className={INPUT_CLASS}
                 />
               </div>
             </label>
 
             <label className="block space-y-1">
-              <span className="text-xs font-medium text-slate-700">Password</span>
+              <span className="text-xs font-medium text-zinc-700 dark:text-zinc-300">
+                Password
+              </span>
               <div className="relative">
                 <Lock
-                  className="pointer-events-none absolute top-3 left-3 h-4 w-4 text-slate-400"
+                  className="pointer-events-none absolute top-3 left-3 h-4 w-4 text-zinc-400"
                   aria-hidden="true"
                 />
                 <input
@@ -169,21 +189,17 @@ export function LoginPage() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="At least 6 characters"
-                  className="w-full rounded-lg border border-slate-300 bg-white py-2.5 pr-3 pl-9 text-sm text-slate-900 outline-none focus:border-teal-600 focus:ring-2 focus:ring-teal-600/20"
+                  className={INPUT_CLASS}
                 />
               </div>
             </label>
 
             <Button type="submit" className="w-full" disabled={submitting}>
-              {submitting
-                ? 'Please wait…'
-                : mode === 'signin'
-                  ? 'Sign In'
-                  : 'Create Account'}
+              {submitting ? 'Please wait…' : mode === 'signin' ? 'Sign In' : 'Create Account'}
             </Button>
           </form>
 
-          <p className="text-center text-xs text-slate-600">
+          <p className="text-center text-xs text-zinc-600 dark:text-zinc-400">
             {mode === 'signin' ? "Don't have an account? " : 'Already have an account? '}
             <button
               type="button"
@@ -191,13 +207,13 @@ export function LoginPage() {
                 setError(null);
                 setMode(mode === 'signin' ? 'signup' : 'signin');
               }}
-              className="font-semibold text-teal-700 hover:underline"
+              className="cursor-pointer font-semibold text-emerald-700 hover:underline dark:text-emerald-400"
             >
               {mode === 'signin' ? 'Create one' : 'Sign in'}
             </button>
           </p>
 
-          <p className="rounded-xl bg-slate-50 p-3 text-center text-[11px] text-slate-500">
+          <p className="rounded-xl bg-zinc-100/80 p-3 text-center text-[11px] text-zinc-500 dark:bg-zinc-950/70 dark:text-zinc-400">
             Your family profile stays private and is used solely to personalize clean-air guidance.
           </p>
         </CardContent>

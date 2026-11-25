@@ -40,22 +40,32 @@ function RecommendationCard({
   onToggle: () => void;
 }) {
   return (
-    <Card className={completed ? 'border-emerald-200 bg-emerald-50/30' : undefined}>
+    <Card
+      className={
+        completed
+          ? 'border-emerald-300/70 bg-emerald-50/40 dark:border-emerald-800/60 dark:bg-emerald-950/20'
+          : undefined
+      }
+    >
       <CardHeader className="pb-2">
         <div className="flex items-start justify-between gap-3">
           <button
             type="button"
             onClick={onToggle}
-            className="flex items-start gap-2.5 text-left"
+            className="flex cursor-pointer items-start gap-2.5 text-left"
           >
             {completed ? (
-              <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-emerald-600" />
+              <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-emerald-600 dark:text-emerald-400" />
             ) : (
-              <Circle className="mt-0.5 h-5 w-5 shrink-0 text-slate-400 hover:text-teal-700" />
+              <Circle className="mt-0.5 h-5 w-5 shrink-0 text-zinc-400 hover:text-emerald-600 dark:text-zinc-500 dark:hover:text-emerald-400" />
             )}
             <div>
               <CardTitle
-                className={completed ? 'line-through text-slate-500' : 'text-slate-900'}
+                className={
+                  completed
+                    ? 'line-through text-zinc-500 dark:text-zinc-500'
+                    : 'text-zinc-950 dark:text-zinc-50'
+                }
               >
                 {item.title}
               </CardTitle>
@@ -77,28 +87,29 @@ function RecommendationCard({
 
       <CardContent className="space-y-2.5 pl-12 text-sm">
         <div>
-          <p className="text-[11px] font-semibold uppercase tracking-wide text-teal-800">
+          <p className="text-[11px] font-semibold uppercase tracking-wide text-emerald-700 dark:text-emerald-400">
             What to do
           </p>
-          <p className="text-slate-800">{item.whatToDo}</p>
+          <p className="text-zinc-800 dark:text-zinc-200">{item.whatToDo}</p>
         </div>
 
         <div>
-          <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+          <p className="text-[11px] font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
             Why it’s recommended
           </p>
-          <p className="text-slate-600">{item.why}</p>
+          <p className="text-zinc-600 dark:text-zinc-400">{item.why}</p>
         </div>
 
-        <div className="rounded-xl bg-slate-50 p-2.5">
-          <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+        <div className="rounded-xl border border-zinc-200/70 bg-zinc-50 p-2.5 dark:border-zinc-800 dark:bg-zinc-950/60">
+          <p className="text-[11px] font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
             Practical Alternative
           </p>
-          <p className="text-slate-700">{item.alternative}</p>
+          <p className="text-zinc-700 dark:text-zinc-300">{item.alternative}</p>
         </div>
 
-        <p className="text-xs text-slate-500">
-          <span className="font-medium text-slate-600">Supporting data:</span> {item.supportingData}
+        <p className="text-xs text-zinc-500 dark:text-zinc-400">
+          <span className="font-medium text-zinc-700 dark:text-zinc-300">Supporting data:</span>{' '}
+          {item.supportingData}
         </p>
       </CardContent>
     </Card>
@@ -117,23 +128,24 @@ export function PlannerPage() {
     ? allItems.filter((item) => plan.completedItemIds.includes(item.itemId)).length
     : 0;
 
-  const sectionsToRender: { key: 'morning' | 'afternoon' | 'evening'; label: string; items: RecommendationItem[] }[] =
-    plan
-      ? (
-          [
-            { key: 'morning' as const, label: 'Morning', items: plan.sections.morning },
-            { key: 'afternoon' as const, label: 'Afternoon', items: plan.sections.afternoon },
-            { key: 'evening' as const, label: 'Evening', items: plan.sections.evening },
-          ] as const
-        ).filter((s) => activeTab === 'all' || activeTab === s.key)
-      : [];
+  const sectionsToRender = plan
+    ? (
+        [
+          { key: 'morning' as const, label: 'Morning', items: plan.sections.morning },
+          { key: 'afternoon' as const, label: 'Afternoon', items: plan.sections.afternoon },
+          { key: 'evening' as const, label: 'Evening', items: plan.sections.evening },
+        ] as const
+      ).filter((s) => activeTab === 'all' || activeTab === s.key)
+    : [];
 
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-slate-900">Daily Plan</h1>
-          <p className="text-sm text-slate-600">
+          <h1 className="text-2xl font-bold tracking-tight text-zinc-950 dark:text-zinc-50">
+            Daily Plan
+          </h1>
+          <p className="text-sm text-zinc-600 dark:text-zinc-400">
             Personalized Morning, Afternoon & Evening routines for {selectedLocation.city}.
           </p>
         </div>
@@ -158,7 +170,10 @@ export function PlannerPage() {
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <CalendarCheck2 className="h-5 w-5 text-teal-700" aria-hidden="true" />
+                <CalendarCheck2
+                  className="h-5 w-5 text-emerald-600 dark:text-emerald-400"
+                  aria-hidden="true"
+                />
                 No Clean-Air Plan Generated Yet for Today
               </CardTitle>
               <CardDescription>
@@ -175,16 +190,15 @@ export function PlannerPage() {
           </Card>
         ) : (
           <div className="space-y-5">
-            {/* Plan Context Bar */}
-            <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-white p-4">
+            <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-zinc-200/80 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900/80">
               <div className="flex flex-wrap items-center gap-2.5">
                 <AqiBadge
                   category={plan.environmentalSnapshot.category}
                   aqi={plan.environmentalSnapshot.aqi}
                 />
-                <span className="text-xs text-slate-600">
-                  Date: <strong>{plan.planDate}</strong> · Source:{' '}
-                  {plan.environmentalSnapshot.source}
+                <span className="text-xs text-zinc-600 dark:text-zinc-400">
+                  Date: <strong className="text-zinc-900 dark:text-zinc-100">{plan.planDate}</strong>{' '}
+                  · Source: {plan.environmentalSnapshot.source}
                 </span>
               </div>
               <Badge variant="default">
@@ -199,7 +213,7 @@ export function PlannerPage() {
                   <p className="font-semibold">Generated with Verified Deterministic Guidelines</p>
                   <p className="text-xs opacity-90">
                     All recommendations strictly obey CPCB NAQI risk rules and your household
-                    profile while Gemini is unavailable or unconfigured.
+                    profile.
                   </p>
                 </div>
               </Alert>
@@ -218,7 +232,6 @@ export function PlannerPage() {
               </Alert>
             ) : null}
 
-            {/* Window Filter Tabs */}
             <div className="flex flex-wrap gap-2" role="tablist" aria-label="Time of day filter">
               {(
                 [
@@ -234,10 +247,10 @@ export function PlannerPage() {
                   role="tab"
                   aria-selected={activeTab === tab.id}
                   onClick={() => setActiveTab(tab.id)}
-                  className={`min-h-[36px] cursor-pointer rounded-full px-4 py-1.5 text-xs font-semibold transition-colors ${
+                  className={`min-h-[36px] cursor-pointer rounded-full px-4 py-1.5 text-xs font-semibold transition-all ${
                     activeTab === tab.id
-                      ? 'bg-teal-700 text-white'
-                      : 'border border-slate-200 bg-white text-slate-700 hover:bg-slate-50'
+                      ? 'bg-zinc-950 text-white dark:bg-emerald-500 dark:text-zinc-950'
+                      : 'border border-zinc-200 bg-white text-zinc-700 hover:bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-800'
                   }`}
                 >
                   {tab.label}
@@ -245,11 +258,10 @@ export function PlannerPage() {
               ))}
             </div>
 
-            {/* Sections */}
             <div className="space-y-6">
               {sectionsToRender.map((section) => (
                 <section key={section.key} className="space-y-3">
-                  <h2 className="text-sm font-bold uppercase tracking-wider text-slate-500">
+                  <h2 className="text-xs font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
                     {section.label}
                   </h2>
                   <div className="space-y-3">
@@ -266,12 +278,14 @@ export function PlannerPage() {
               ))}
             </div>
 
-            {/* Verified RAG Citations */}
             {plan.citations.length > 0 ? (
               <Card>
                 <CardHeader className="pb-2">
                   <CardTitle className="flex items-center gap-2 text-sm">
-                    <BookOpen className="h-4 w-4 text-teal-700" aria-hidden="true" />
+                    <BookOpen
+                      className="h-4 w-4 text-emerald-600 dark:text-emerald-400"
+                      aria-hidden="true"
+                    />
                     Verified Knowledge Sources Used
                   </CardTitle>
                 </CardHeader>
@@ -288,12 +302,11 @@ export function PlannerPage() {
         )}
       </DataStateWrapper>
 
-      {/* Indoor Air Advisor Teaser (Phase 4) */}
       <Card>
         <CardHeader>
           <div className="flex flex-wrap items-center justify-between gap-2">
             <CardTitle className="flex items-center gap-2 text-base">
-              <Home className="h-4 w-4 text-teal-700" aria-hidden="true" />
+              <Home className="h-4 w-4 text-emerald-600 dark:text-emerald-400" aria-hidden="true" />
               Indoor Air Quality Advisor
             </CardTitle>
             <Badge variant="warning">Estimated (Questionnaire-Based)</Badge>

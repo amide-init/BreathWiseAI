@@ -11,6 +11,7 @@ import {
 
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { useTheme } from '@/hooks/useTheme';
 import type { ForecastPoint } from '@/types';
 
 interface ChartDatum {
@@ -28,6 +29,9 @@ function formatHourLabel(iso: string): string {
 }
 
 export function ForecastChart({ forecasts }: { forecasts: ForecastPoint[] }) {
+  const { resolvedTheme } = useTheme();
+  const isDark = resolvedTheme === 'dark';
+
   const chartData: ChartDatum[] = forecasts
     .filter((pt) => pt.estimatedNaqi !== null)
     .slice(0, 18)
@@ -37,12 +41,19 @@ export function ForecastChart({ forecasts }: { forecasts: ForecastPoint[] }) {
       pm25: pt.pm25,
     }));
 
+  const strokeColor = isDark ? '#34d399' : '#059669';
+  const gridColor = isDark ? '#27272a' : '#e4e4e7';
+  const tickColor = isDark ? '#a1a1aa' : '#71717a';
+
   return (
     <Card>
       <CardHeader>
         <div className="flex flex-wrap items-center justify-between gap-2">
           <CardTitle className="flex items-center gap-2">
-            <TrendingUp className="h-4 w-4 text-teal-700" aria-hidden="true" />
+            <TrendingUp
+              className="h-4 w-4 text-emerald-600 dark:text-emerald-400"
+              aria-hidden="true"
+            />
             Upcoming Air-Quality Trend
           </CardTitle>
           <Badge variant="outline">Forecast (Estimated)</Badge>
@@ -54,7 +65,7 @@ export function ForecastChart({ forecasts }: { forecasts: ForecastPoint[] }) {
       </CardHeader>
       <CardContent>
         {chartData.length === 0 ? (
-          <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50 px-4 py-8 text-center text-xs text-slate-500">
+          <div className="rounded-xl border border-dashed border-zinc-300 bg-zinc-50 px-4 py-8 text-center text-xs text-zinc-500 dark:border-zinc-700 dark:bg-zinc-950/60 dark:text-zinc-400">
             Hourly pollution forecast is currently unavailable for this location. We never fabricate
             safe time windows without forecast data.
           </div>
@@ -64,21 +75,23 @@ export function ForecastChart({ forecasts }: { forecasts: ForecastPoint[] }) {
               <AreaChart data={chartData} margin={{ top: 8, right: 8, left: -20, bottom: 0 }}>
                 <defs>
                   <linearGradient id="naqiFill" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#0f766e" stopOpacity={0.3} />
-                    <stop offset="95%" stopColor="#0f766e" stopOpacity={0.02} />
+                    <stop offset="5%" stopColor={strokeColor} stopOpacity={0.32} />
+                    <stop offset="95%" stopColor={strokeColor} stopOpacity={0.02} />
                   </linearGradient>
                 </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+                <CartesianGrid strokeDasharray="3 3" stroke={gridColor} />
                 <XAxis
                   dataKey="timeLabel"
-                  tick={{ fontSize: 11, fill: '#64748b' }}
+                  tick={{ fontSize: 11, fill: tickColor }}
                   interval="preserveStartEnd"
                 />
-                <YAxis tick={{ fontSize: 11, fill: '#64748b' }} domain={[0, 'auto']} />
+                <YAxis tick={{ fontSize: 11, fill: tickColor }} domain={[0, 'auto']} />
                 <Tooltip
                   contentStyle={{
                     borderRadius: '12px',
-                    borderColor: '#e2e8f0',
+                    borderColor: isDark ? '#3f3f46' : '#e4e4e7',
+                    backgroundColor: isDark ? '#18181b' : '#ffffff',
+                    color: isDark ? '#fafafa' : '#09090b',
                     fontSize: '12px',
                   }}
                 />
@@ -86,8 +99,8 @@ export function ForecastChart({ forecasts }: { forecasts: ForecastPoint[] }) {
                   type="monotone"
                   dataKey="naqi"
                   name="Est. CPCB NAQI"
-                  stroke="#0f766e"
-                  strokeWidth={2}
+                  stroke={strokeColor}
+                  strokeWidth={2.25}
                   fill="url(#naqiFill)"
                 />
               </AreaChart>

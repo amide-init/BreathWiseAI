@@ -33,6 +33,11 @@ import {
 } from '@/models/family.model';
 import type { AqiScalePreference } from '@/models/user.model';
 
+const FIELD_CLASS =
+  'w-full rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm text-zinc-950 outline-none transition-colors focus:border-emerald-500 focus:bg-white focus:ring-2 focus:ring-emerald-500/20 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-50';
+
+const LABEL_CLASS = 'text-xs font-medium text-zinc-700 dark:text-zinc-300';
+
 export function ProfilePage() {
   const { user, userProfile, updateUser } = useAuth();
   const { selectedLocation, openPicker } = useSelectedLocation();
@@ -48,7 +53,6 @@ export function ProfilePage() {
     reload,
   } = useFamilyProfile();
 
-  // Account (`users/{uid}`) state
   const [displayName, setDisplayName] = useState(
     userProfile?.displayName ?? user?.displayName ?? '',
   );
@@ -59,7 +63,6 @@ export function ProfilePage() {
   const [accountFeedback, setAccountFeedback] = useState<string | null>(null);
   const [accountError, setAccountError] = useState<string | null>(null);
 
-  // Household (`families/{familyId}`) state
   const [householdName, setHouseholdName] = useState('My Family');
   const [primaryMode, setPrimaryMode] = useState<TransportMode>('personal_car');
   const [dailyCommuteKm, setDailyCommuteKm] = useState('18');
@@ -78,7 +81,6 @@ export function ProfilePage() {
   const [householdFeedback, setHouseholdFeedback] = useState<string | null>(null);
   const [householdError, setHouseholdError] = useState<string | null>(null);
 
-  // Member modal state
   const [memberModalOpen, setMemberModalOpen] = useState(false);
   const [editingMember, setEditingMember] = useState<FamilyMemberModel | null>(null);
 
@@ -179,8 +181,10 @@ export function ProfilePage() {
     <div className="space-y-6">
       <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-slate-900">Family Profile</h1>
-          <p className="text-sm text-slate-600">
+          <h1 className="text-2xl font-bold tracking-tight text-zinc-950 dark:text-zinc-50">
+            Family Profile
+          </h1>
+          <p className="text-sm text-zinc-600 dark:text-zinc-400">
             Personalize clean-air routines for every member of your household.
           </p>
         </div>
@@ -191,12 +195,12 @@ export function ProfilePage() {
         </Link>
       </div>
 
-      {/* 1. Personal Account Details (`users/{uid}`) */}
+      {/* 1. Personal Account Details */}
       <Card>
         <CardHeader>
           <div className="flex flex-wrap items-center justify-between gap-2">
             <CardTitle className="flex items-center gap-2">
-              <User className="h-5 w-5 text-teal-700" aria-hidden="true" />
+              <User className="h-5 w-5 text-emerald-600 dark:text-emerald-400" aria-hidden="true" />
               Personal Account Details
             </CardTitle>
             <Badge variant="neutral">Private Account</Badge>
@@ -215,33 +219,33 @@ export function ProfilePage() {
 
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
               <label className="block space-y-1">
-                <span className="text-xs font-medium text-slate-700">Display Name</span>
+                <span className={LABEL_CLASS}>Display Name</span>
                 <input
                   type="text"
                   required
                   maxLength={100}
                   value={displayName}
                   onChange={(e) => setDisplayName(e.target.value)}
-                  className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:border-teal-600 focus:ring-2 focus:ring-teal-600/20"
+                  className={FIELD_CLASS}
                 />
               </label>
 
               <label className="block space-y-1">
-                <span className="text-xs font-medium text-slate-700">Email</span>
+                <span className={LABEL_CLASS}>Email</span>
                 <input
                   type="email"
                   disabled
                   value={userProfile?.email ?? user?.email ?? ''}
-                  className="w-full rounded-lg border border-slate-200 bg-slate-100 px-3 py-2 text-sm text-slate-500"
+                  className="w-full rounded-xl border border-zinc-200 bg-zinc-100 px-3 py-2 text-sm text-zinc-500 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-500"
                 />
               </label>
 
               <label className="block space-y-1">
-                <span className="text-xs font-medium text-slate-700">Preferred AQI Scale</span>
+                <span className={LABEL_CLASS}>Preferred AQI Scale</span>
                 <select
                   value={aqiScale}
                   onChange={(e) => setAqiScale(e.target.value as AqiScalePreference)}
-                  className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:border-teal-600"
+                  className={FIELD_CLASS}
                 >
                   <option value="CPCB_NAQI">India CPCB NAQI (0–500 · Recommended)</option>
                   <option value="US_EPA">US EPA AQI (0–500)</option>
@@ -249,10 +253,13 @@ export function ProfilePage() {
               </label>
 
               <div className="space-y-1">
-                <span className="block text-xs font-medium text-slate-700">Primary City</span>
-                <div className="flex items-center justify-between gap-2 rounded-lg border border-slate-300 bg-slate-50 px-3 py-1.5">
-                  <span className="flex min-w-0 items-center gap-2 text-sm text-slate-800">
-                    <MapPin className="h-4 w-4 shrink-0 text-teal-700" aria-hidden="true" />
+                <span className={`block ${LABEL_CLASS}`}>Primary City</span>
+                <div className="flex items-center justify-between gap-2 rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-1.5 dark:border-zinc-800 dark:bg-zinc-950">
+                  <span className="flex min-w-0 items-center gap-2 text-sm text-zinc-800 dark:text-zinc-200">
+                    <MapPin
+                      className="h-4 w-4 shrink-0 text-emerald-600 dark:text-emerald-400"
+                      aria-hidden="true"
+                    />
                     <span className="truncate">{selectedLocation.label}</span>
                   </span>
                   <Button type="button" variant="outline" size="sm" onClick={openPicker}>
@@ -274,11 +281,14 @@ export function ProfilePage() {
 
       <DataStateWrapper isLoading={isLoading} error={familyLoadError} onRetry={() => void reload()}>
         <div className="space-y-6">
-          {/* 2. Household Commute, Exercise & Indoor Air Equipment (`families/{familyId}`) */}
+          {/* 2. Household Profile */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <Home className="h-5 w-5 text-teal-700" aria-hidden="true" />
+                <Home
+                  className="h-5 w-5 text-emerald-600 dark:text-emerald-400"
+                  aria-hidden="true"
+                />
                 Household, Commute & Indoor Air Equipment
               </CardTitle>
               <CardDescription>
@@ -298,7 +308,7 @@ export function ProfilePage() {
 
                 <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
                   <label className="block space-y-1">
-                    <span className="text-xs font-medium text-slate-700">Household Name</span>
+                    <span className={LABEL_CLASS}>Household Name</span>
                     <input
                       type="text"
                       required
@@ -306,16 +316,16 @@ export function ProfilePage() {
                       value={householdName}
                       onChange={(e) => setHouseholdName(e.target.value)}
                       placeholder="e.g. Sharma Family"
-                      className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-teal-600"
+                      className={FIELD_CLASS}
                     />
                   </label>
 
                   <label className="block space-y-1">
-                    <span className="text-xs font-medium text-slate-700">Primary Commute</span>
+                    <span className={LABEL_CLASS}>Primary Commute</span>
                     <select
                       value={primaryMode}
                       onChange={(e) => setPrimaryMode(e.target.value as TransportMode)}
-                      className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:border-teal-600"
+                      className={FIELD_CLASS}
                     >
                       {(Object.keys(TRANSPORT_LABELS) as TransportMode[]).map((mode) => (
                         <option key={mode} value={mode}>
@@ -326,9 +336,7 @@ export function ProfilePage() {
                   </label>
 
                   <label className="block space-y-1">
-                    <span className="text-xs font-medium text-slate-700">
-                      Daily Commute Distance (km)
-                    </span>
+                    <span className={LABEL_CLASS}>Daily Commute Distance (km)</span>
                     <input
                       type="number"
                       min={0}
@@ -336,18 +344,18 @@ export function ProfilePage() {
                       step={1}
                       value={dailyCommuteKm}
                       onChange={(e) => setDailyCommuteKm(e.target.value)}
-                      className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-teal-600"
+                      className={FIELD_CLASS}
                     />
                   </label>
                 </div>
 
                 <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
                   <label className="block space-y-1">
-                    <span className="text-xs font-medium text-slate-700">Vehicle Fuel Type</span>
+                    <span className={LABEL_CLASS}>Vehicle Fuel Type</span>
                     <select
                       value={vehicleFuelType}
                       onChange={(e) => setVehicleFuelType(e.target.value)}
-                      className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:border-teal-600"
+                      className={FIELD_CLASS}
                     >
                       <option value="petrol">Petrol</option>
                       <option value="diesel">Diesel</option>
@@ -357,36 +365,34 @@ export function ProfilePage() {
                   </label>
 
                   <label className="block space-y-1">
-                    <span className="text-xs font-medium text-slate-700">
-                      Typical Car Occupancy
-                    </span>
+                    <span className={LABEL_CLASS}>Typical Car Occupancy</span>
                     <input
                       type="number"
                       min={1}
                       max={10}
                       value={occupancy}
                       onChange={(e) => setOccupancy(e.target.value)}
-                      className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-teal-600"
+                      className={FIELD_CLASS}
                     />
                   </label>
 
                   <label className="block space-y-1">
-                    <span className="text-xs font-medium text-slate-700">
-                      Preferred Exercise Routine
-                    </span>
+                    <span className={LABEL_CLASS}>Preferred Exercise Routine</span>
                     <div className="flex items-center gap-2 pt-1.5">
                       <input
                         type="checkbox"
                         checked={prefersOutdoor}
                         onChange={(e) => setPrefersOutdoor(e.target.checked)}
-                        className="h-4 w-4 accent-teal-700"
+                        className="h-4 w-4 accent-emerald-600"
                       />
-                      <span className="text-sm text-slate-700">Outdoor {activityType}</span>
+                      <span className="text-sm text-zinc-700 dark:text-zinc-300">
+                        Outdoor {activityType}
+                      </span>
                       <select
                         value={preferredWindow}
                         onChange={(e) => setPreferredWindow(e.target.value)}
                         aria-label="Exercise time window"
-                        className="ml-auto rounded-lg border border-slate-300 bg-white px-2 py-1 text-xs"
+                        className="ml-auto rounded-lg border border-zinc-200 bg-white px-2 py-1 text-xs dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-200"
                       >
                         <option value="morning">Morning</option>
                         <option value="afternoon">Afternoon</option>
@@ -396,24 +402,23 @@ export function ProfilePage() {
                   </label>
                 </div>
 
-                {/* Indoor Equipment Toggles */}
-                <div className="rounded-xl border border-slate-200 bg-slate-50/70 p-4">
-                  <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-slate-500">
+                <div className="rounded-xl border border-zinc-200/80 bg-zinc-50/70 p-4 dark:border-zinc-800 dark:bg-zinc-950/60">
+                  <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
                     Indoor Air Equipment
                   </p>
                   <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                    <label className="flex items-center gap-2 text-sm text-slate-800">
+                    <label className="flex items-center gap-2 text-sm text-zinc-800 dark:text-zinc-200">
                       <input
                         type="checkbox"
                         checked={hasHepaPurifier}
                         onChange={(e) => setHasHepaPurifier(e.target.checked)}
-                        className="h-4 w-4 accent-teal-700"
+                        className="h-4 w-4 accent-emerald-600"
                       />
                       HEPA Air Purifier Available
                     </label>
 
                     {hasHepaPurifier ? (
-                      <label className="flex items-center gap-2 text-sm text-slate-800">
+                      <label className="flex items-center gap-2 text-sm text-zinc-800 dark:text-zinc-200">
                         <span>Units:</span>
                         <input
                           type="number"
@@ -421,47 +426,47 @@ export function ProfilePage() {
                           max={20}
                           value={purifierRoomsCount}
                           onChange={(e) => setPurifierRoomsCount(e.target.value)}
-                          className="w-16 rounded-lg border border-slate-300 bg-white px-2 py-1 text-sm"
+                          className="w-16 rounded-lg border border-zinc-200 bg-white px-2 py-1 text-sm dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-100"
                         />
                       </label>
                     ) : null}
 
-                    <label className="flex items-center gap-2 text-sm text-slate-800">
+                    <label className="flex items-center gap-2 text-sm text-zinc-800 dark:text-zinc-200">
                       <input
                         type="checkbox"
                         checked={hasKitchenExhaust}
                         onChange={(e) => setHasKitchenExhaust(e.target.checked)}
-                        className="h-4 w-4 accent-teal-700"
+                        className="h-4 w-4 accent-emerald-600"
                       />
                       Kitchen Exhaust / Chimney
                     </label>
 
-                    <label className="flex items-center gap-2 text-sm text-slate-800">
+                    <label className="flex items-center gap-2 text-sm text-zinc-800 dark:text-zinc-200">
                       <input
                         type="checkbox"
                         checked={hasCrossVentilation}
                         onChange={(e) => setHasCrossVentilation(e.target.checked)}
-                        className="h-4 w-4 accent-teal-700"
+                        className="h-4 w-4 accent-emerald-600"
                       />
                       Cross-Ventilation Windows
                     </label>
 
-                    <label className="flex items-center gap-2 text-sm text-slate-800">
+                    <label className="flex items-center gap-2 text-sm text-zinc-800 dark:text-zinc-200">
                       <input
                         type="checkbox"
                         checked={hasN95Masks}
                         onChange={(e) => setHasN95Masks(e.target.checked)}
-                        className="h-4 w-4 accent-teal-700"
+                        className="h-4 w-4 accent-emerald-600"
                       />
                       N95 / KN95 Masks at Home
                     </label>
 
-                    <label className="flex items-center gap-2 text-sm text-slate-800">
+                    <label className="flex items-center gap-2 text-sm text-zinc-800 dark:text-zinc-200">
                       <input
                         type="checkbox"
                         checked={indoorSmokingPresent}
                         onChange={(e) => setIndoorSmokingPresent(e.target.checked)}
-                        className="h-4 w-4 accent-teal-700"
+                        className="h-4 w-4 accent-emerald-600"
                       />
                       Indoor Smoking Present
                     </label>
@@ -478,13 +483,16 @@ export function ProfilePage() {
             </CardContent>
           </Card>
 
-          {/* 3. Family Members List (`families/{familyId}/members`) */}
+          {/* 3. Household Members */}
           <Card>
             <CardHeader>
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <div>
                   <CardTitle className="flex items-center gap-2">
-                    <Users className="h-5 w-5 text-teal-700" aria-hidden="true" />
+                    <Users
+                      className="h-5 w-5 text-emerald-600 dark:text-emerald-400"
+                      aria-hidden="true"
+                    />
                     Household Members ({members.length})
                   </CardTitle>
                   <CardDescription>
@@ -512,7 +520,7 @@ export function ProfilePage() {
                   Save your Household Profile above first, then add family members here.
                 </Alert>
               ) : members.length === 0 ? (
-                <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50 px-4 py-8 text-center text-sm text-slate-500">
+                <div className="rounded-xl border border-dashed border-zinc-300 bg-zinc-50 px-4 py-8 text-center text-sm text-zinc-500 dark:border-zinc-700 dark:bg-zinc-950/60 dark:text-zinc-400">
                   No family members added yet. Add a school-going child, working parent, or elderly
                   member to personalize your Daily Plan.
                 </div>
@@ -521,22 +529,24 @@ export function ProfilePage() {
                   {members.map((member) => (
                     <div
                       key={member.memberId}
-                      className="flex items-start justify-between gap-3 rounded-xl border border-slate-200 bg-slate-50/50 p-4"
+                      className="flex items-start justify-between gap-3 rounded-xl border border-zinc-200/80 bg-zinc-50/70 p-4 dark:border-zinc-800 dark:bg-zinc-950/60"
                     >
                       <div className="min-w-0 space-y-1.5">
                         <div className="flex flex-wrap items-center gap-2">
-                          <p className="font-semibold text-slate-900">{member.nickname}</p>
+                          <p className="font-semibold text-zinc-950 dark:text-zinc-50">
+                            {member.nickname}
+                          </p>
                           <Badge variant="default">{ROLE_LABELS[member.role]}</Badge>
                           <Badge variant="outline">{AGE_GROUP_LABELS[member.ageGroup]}</Badge>
                         </div>
                         {member.schedule?.leaveHomeTime || member.schedule?.returnHomeTime ? (
-                          <p className="text-xs text-slate-600">
+                          <p className="text-xs text-zinc-600 dark:text-zinc-400">
                             Schedule: {member.schedule?.leaveHomeTime || '—'} →{' '}
                             {member.schedule?.returnHomeTime || '—'}
                           </p>
                         ) : null}
                         {member.optionalHealthProfile ? (
-                          <p className="inline-flex items-center gap-1 text-[11px] font-medium text-teal-800">
+                          <p className="inline-flex items-center gap-1 text-[11px] font-medium text-emerald-700 dark:text-emerald-400">
                             <Lock className="h-3 w-3" aria-hidden="true" />
                             Private sensitivity flags active
                           </p>
@@ -551,7 +561,7 @@ export function ProfilePage() {
                             setEditingMember(member);
                             setMemberModalOpen(true);
                           }}
-                          className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-500 hover:bg-slate-200/70 hover:text-slate-900"
+                          className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-lg text-zinc-500 hover:bg-zinc-200/70 hover:text-zinc-950 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-50"
                         >
                           <Pencil className="h-3.5 w-3.5" />
                         </button>
@@ -559,7 +569,7 @@ export function ProfilePage() {
                           type="button"
                           aria-label={`Remove ${member.nickname}`}
                           onClick={() => void removeMember(member.memberId)}
-                          className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-500 hover:bg-red-100 hover:text-red-700"
+                          className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-lg text-zinc-500 hover:bg-red-100 hover:text-red-700 dark:text-zinc-400 dark:hover:bg-red-950/60 dark:hover:text-red-400"
                         >
                           <Trash2 className="h-3.5 w-3.5" />
                         </button>

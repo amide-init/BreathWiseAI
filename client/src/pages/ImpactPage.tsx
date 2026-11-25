@@ -8,8 +8,10 @@ export function ImpactPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold tracking-tight text-slate-900">My Impact</h1>
-        <p className="text-sm text-slate-600">
+        <h1 className="text-2xl font-bold tracking-tight text-zinc-950 dark:text-zinc-50">
+          My Impact
+        </h1>
+        <p className="text-sm text-zinc-600 dark:text-zinc-400">
           Environmental emissions avoided and personal exposure protection are always tracked and
           displayed separately.
         </p>
@@ -20,7 +22,7 @@ export function ImpactPage() {
           <CardHeader>
             <div className="flex items-center justify-between gap-2">
               <CardTitle className="flex items-center gap-2">
-                <Leaf className="h-5 w-5 text-emerald-700" aria-hidden="true" />
+                <Leaf className="h-5 w-5 text-emerald-600 dark:text-emerald-400" aria-hidden="true" />
                 Environmental Emissions Avoided
               </CardTitle>
               <Badge variant="default">Estimate</Badge>
@@ -31,8 +33,10 @@ export function ImpactPage() {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-2">
-            <p className="text-3xl font-bold text-slate-900">{formatCo2Kg(0)}</p>
-            <p className="text-xs text-slate-500">
+            <p className="text-3xl font-bold tabular-nums text-zinc-950 dark:text-zinc-50">
+              {formatCo2Kg(0)}
+            </p>
+            <p className="text-xs text-zinc-500 dark:text-zinc-400">
               Every logged action displays its exact formula and emission-factor assumptions.
             </p>
           </CardContent>
@@ -42,7 +46,10 @@ export function ImpactPage() {
           <CardHeader>
             <div className="flex items-center justify-between gap-2">
               <CardTitle className="flex items-center gap-2">
-                <Shield className="h-5 w-5 text-teal-700" aria-hidden="true" />
+                <Shield
+                  className="h-5 w-5 text-emerald-600 dark:text-emerald-400"
+                  aria-hidden="true"
+                />
                 Personal Exposure Protection
               </CardTitle>
               <Badge variant="neutral">Separate Metric</Badge>
@@ -53,9 +60,11 @@ export function ImpactPage() {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-2">
-            <p className="text-3xl font-bold text-slate-900">0 actions</p>
-            <p className="text-xs text-slate-500">
-              Weekly progress Recharts visualization activates once impact logs are connected.
+            <p className="text-3xl font-bold tabular-nums text-zinc-950 dark:text-zinc-50">
+              0 actions
+            </p>
+            <p className="text-xs text-zinc-500 dark:text-zinc-400">
+              Interactive action logging and weekly Recharts progress chart activate next in Phase 4.
             </p>
           </CardContent>
         </Card>

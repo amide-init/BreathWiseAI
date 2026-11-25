@@ -18,14 +18,14 @@ export function FreshnessBanner({ freshnessStatus, observedAt, source }: Freshne
 
   if (freshnessStatus === 'fresh') {
     return (
-      <div className="inline-flex flex-wrap items-center gap-2 text-xs text-slate-600">
-        <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2.5 py-0.5 font-medium text-emerald-800">
+      <div className="inline-flex flex-wrap items-center gap-2 text-xs text-zinc-600 dark:text-zinc-400">
+        <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/12 px-2.5 py-0.5 font-medium text-emerald-700 ring-1 ring-emerald-500/20 dark:bg-emerald-400/15 dark:text-emerald-300">
           <Radio className="h-3 w-3" aria-hidden="true" />
           Live
         </span>
         <span>Updated {relative}</span>
-        <span className="text-slate-400">•</span>
-        <span>Source: {source}</span>
+        <span className="text-zinc-300 dark:text-zinc-700">•</span>
+        <span className="truncate">Source: {source}</span>
       </div>
     );
   }

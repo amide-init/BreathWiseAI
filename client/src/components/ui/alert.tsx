@@ -6,10 +6,13 @@ import { cn } from '@/lib/cn';
 const alertVariants = cva('flex items-start gap-3 rounded-xl border p-3.5 text-sm', {
   variants: {
     variant: {
-      info: 'border-teal-200 bg-teal-50/70 text-teal-900',
-      warning: 'border-amber-300 bg-amber-50 text-amber-950',
-      danger: 'border-red-300 bg-red-50 text-red-950',
-      neutral: 'border-slate-200 bg-slate-100 text-slate-800',
+      info: 'border-emerald-200/80 bg-emerald-50/70 text-emerald-950 dark:border-emerald-800/60 dark:bg-emerald-950/35 dark:text-emerald-200',
+      warning:
+        'border-amber-300/80 bg-amber-50/80 text-amber-950 dark:border-amber-800/60 dark:bg-amber-950/35 dark:text-amber-200',
+      danger:
+        'border-red-300/80 bg-red-50/80 text-red-950 dark:border-red-800/60 dark:bg-red-950/35 dark:text-red-200',
+      neutral:
+        'border-zinc-200/90 bg-zinc-100/80 text-zinc-800 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-300',
     },
   },
   defaultVariants: {
