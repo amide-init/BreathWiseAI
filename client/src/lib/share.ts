@@ -15,7 +15,7 @@ export function buildDailyAirShareText(params: {
   url?: string;
 }): string {
   const shareUrl =
-    params.url ?? (typeof window !== 'undefined' ? window.location.origin : 'https://agentora-ai-v2.web.app');
+    params.url ?? (typeof window !== 'undefined' ? window.location.origin : 'https://breathwise-ai.web.app');
   const scoreLine =
     params.aqi !== null
       ? `Air Quality in ${params.city}: ${params.aqi} (${params.category} · India CPCB)`
@@ -40,7 +40,7 @@ export function buildImpactShareText(params: {
   url?: string;
 }): string {
   const shareUrl =
-    params.url ?? (typeof window !== 'undefined' ? window.location.origin : 'https://agentora-ai-v2.web.app');
+    params.url ?? (typeof window !== 'undefined' ? window.location.origin : 'https://breathwise-ai.web.app');
   const lines = [
     '🌿 My BreathWiseAI 14-Day Clean-Air Update:',
     `• Estimated CO₂ avoided: ${params.estimatedCo2Kg.toFixed(2)} kg CO₂e (estimate)`,

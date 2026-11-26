@@ -21,6 +21,7 @@
     }
   ],
   "hosting": {
+    "site": "breathwise-ai",
     "public": "client/dist",
     "ignore": [
       "firebase.json",
