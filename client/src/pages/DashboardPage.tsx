@@ -271,6 +271,14 @@ export function DashboardPage() {
                       </p>
                     </div>
                   </div>
+
+                  <div className="border-t border-slate-200/60 pt-2.5 dark:border-white/[0.06]">
+                    <FreshnessBanner
+                      freshnessStatus={current.freshnessStatus}
+                      observedAt={current.observedAt}
+                      source={current.source}
+                    />
+                  </div>
                 </CardContent>
               </Card>
 
@@ -365,12 +373,6 @@ export function DashboardPage() {
                 </Card>
               </div>
             </div>
-
-            <FreshnessBanner
-              freshnessStatus={current.freshnessStatus}
-              observedAt={current.observedAt}
-              source={current.source}
-            />
 
             {/* 2. Everyday Human Quick Verdicts */}
             <QuickDecisionsStrip decisions={activeQuickDecisions} category={current.category} />

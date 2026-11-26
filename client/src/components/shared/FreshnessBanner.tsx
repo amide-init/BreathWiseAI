@@ -1,6 +1,5 @@
 import { Clock, CloudOff, Radio } from 'lucide-react';
 
-import { Alert } from '@/components/ui/alert';
 import { formatObservedRelative } from '@/lib/formatters';
 import type { FreshnessStatus } from '@/types';
 
@@ -11,50 +10,48 @@ export interface FreshnessBannerProps {
 }
 
 /**
- * Enforces PRD §9 data freshness transparency across all environmental views.
+ * Compact, whisper-quiet freshness metadata line enforcing PRD §9 transparency
+ * (status + relative observation timestamp + source) without cluttering the UI.
  */
 export function FreshnessBanner({ freshnessStatus, observedAt, source }: FreshnessBannerProps) {
   const relative = formatObservedRelative(observedAt);
 
   if (freshnessStatus === 'fresh') {
     return (
-      <div className="inline-flex flex-wrap items-center gap-2 text-xs text-zinc-600 dark:text-zinc-400">
-        <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/12 px-2.5 py-0.5 font-medium text-emerald-700 ring-1 ring-emerald-500/20 dark:bg-emerald-400/15 dark:text-emerald-300">
-          <Radio className="h-3 w-3" aria-hidden="true" />
+      <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] text-slate-500 dark:text-[#8E9AA8]">
+        <span className="inline-flex items-center gap-1 rounded-full bg-teal-500/10 px-2 py-0.5 text-[10px] font-semibold text-teal-700 ring-1 ring-teal-500/20 dark:bg-teal-400/12 dark:text-teal-300 dark:ring-teal-400/20">
+          <Radio className="h-2.5 w-2.5" aria-hidden="true" />
           Live
         </span>
         <span>Updated {relative}</span>
-        <span className="text-zinc-300 dark:text-zinc-700">•</span>
-        <span className="truncate">Source: {source}</span>
+        <span className="text-slate-300 dark:text-white/15">·</span>
+        <span className="truncate">{source}</span>
       </div>
     );
   }
 
   if (freshnessStatus === 'stale') {
     return (
-      <Alert variant="warning">
-        <Clock className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
-        <div>
-          <p className="font-semibold">Showing cached data ({relative})</p>
-          <p className="text-xs opacity-90">
-            Live station updates from {source} are temporarily unreachable. Avoid treating cached
-            numbers as current readings.
-          </p>
-        </div>
-      </Alert>
+      <div
+        title={`Showing cached station data from ${source} (${relative}). Avoid treating cached figures as live readings.`}
+        className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] text-slate-500 dark:text-[#8E9AA8]"
+      >
+        <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/12 px-2 py-0.5 text-[10px] font-semibold text-amber-700 ring-1 ring-amber-500/20 dark:bg-amber-400/12 dark:text-amber-300 dark:ring-amber-400/20">
+          <Clock className="h-2.5 w-2.5" aria-hidden="true" />
+          Cached ({relative})
+        </span>
+        <span className="truncate">Not live · {source}</span>
+      </div>
     );
   }
 
   return (
-    <Alert variant="neutral">
-      <CloudOff className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
-      <div>
-        <p className="font-semibold">Live air-quality data currently unavailable</p>
-        <p className="text-xs opacity-90">
-          We never fabricate AQI or pollutant readings. Please retry shortly or check official local
-          CPCB advisories.
-        </p>
-      </div>
-    </Alert>
+    <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] text-slate-500 dark:text-[#8E9AA8]">
+      <span className="inline-flex items-center gap-1 rounded-full bg-slate-200/80 px-2 py-0.5 text-[10px] font-semibold text-slate-700 dark:bg-white/[0.08] dark:text-[#CBD5E1]">
+        <CloudOff className="h-2.5 w-2.5" aria-hidden="true" />
+        Unavailable
+      </span>
+      <span>Live station data unavailable — no readings fabricated</span>
+    </div>
   );
 }
