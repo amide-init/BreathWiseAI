@@ -47,6 +47,7 @@ export interface DailyPlanModel {
   completedItemIds: string[];
   fallbackMode: boolean;
   citations: Citation[];
+  agentTrace?: string[];
   createdAt?: string | null;
 }
 

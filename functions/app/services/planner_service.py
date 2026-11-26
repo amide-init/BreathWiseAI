@@ -76,6 +76,7 @@ class PlannerService:
             "completedItemIds": [],
             "fallbackMode": bool(result_state.get("fallback_mode", False)),
             "citations": citations,
+            "agentTrace": list(result_state.get("agent_trace") or []),
         }
 
         return self._plan_repo.save_plan(user_id=user_id, plan_payload=plan_payload)

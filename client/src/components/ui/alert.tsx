@@ -3,16 +3,16 @@ import type { HTMLAttributes } from 'react';
 
 import { cn } from '@/lib/cn';
 
-const alertVariants = cva('flex items-start gap-3 rounded-xl border p-3.5 text-sm', {
+const alertVariants = cva('flex items-start gap-3 rounded-2xl border p-3.5 text-sm', {
   variants: {
     variant: {
-      info: 'border-emerald-200/80 bg-emerald-50/70 text-emerald-950 dark:border-emerald-800/60 dark:bg-emerald-950/35 dark:text-emerald-200',
+      info: 'border-[#4285F4]/25 bg-[#4285F4]/[0.07] text-[#174EA6] dark:border-[#8AB4F8]/25 dark:bg-[#4285F4]/[0.11] dark:text-[#D2E3FC]',
       warning:
-        'border-amber-300/80 bg-amber-50/80 text-amber-950 dark:border-amber-800/60 dark:bg-amber-950/35 dark:text-amber-200',
+        'border-[#FBBC05]/35 bg-[#FBBC05]/[0.10] text-[#7A4F01] dark:border-[#FDD663]/25 dark:bg-[#FBBC05]/[0.10] dark:text-[#FEEFC3]',
       danger:
-        'border-red-300/80 bg-red-50/80 text-red-950 dark:border-red-800/60 dark:bg-red-950/35 dark:text-red-200',
+        'border-[#EA4335]/30 bg-[#EA4335]/[0.08] text-[#A50E0E] dark:border-[#F28B82]/30 dark:bg-[#EA4335]/[0.12] dark:text-[#FAD2CF]',
       neutral:
-        'border-zinc-200/90 bg-zinc-100/80 text-zinc-800 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-300',
+        'border-[#DADCE0] bg-[#F1F3F4]/80 text-[#3C4043] dark:border-white/[0.09] dark:bg-[#282A2C] dark:text-[#E3E3E3]',
     },
   },
   defaultVariants: {

@@ -18,12 +18,13 @@ class ChatRequest(ApiModel):
 
 
 class ChatReply(ApiModel):
-    """Structured assistant response with citations and grounding metadata."""
+    """Structured assistant response with citations, reasoning trace, and grounding metadata."""
 
     content: str
     follow_up_suggestions: list[str] = Field(default_factory=list)
     citations: list[Citation] = Field(default_factory=list)
     environmental_snapshot: CurrentAirQuality | None = None
+    agent_trace: list[str] = Field(default_factory=list)
     medical_disclaimer_shown: bool = False
     fallback_mode: bool = False
 

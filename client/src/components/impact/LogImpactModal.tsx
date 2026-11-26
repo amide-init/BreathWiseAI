@@ -3,6 +3,7 @@ import { useState, type FormEvent } from 'react';
 
 import { Alert } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
+import { ModalPortal } from '@/components/ui/modal-portal';
 import {
   BASELINE_VEHICLE_OPTIONS,
   EMISSIONS_ACTION_LABELS,
@@ -14,9 +15,9 @@ import {
 } from '@/models/impact.model';
 
 const FIELD_CLASS =
-  'w-full rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm text-zinc-950 outline-none transition-colors focus:border-emerald-500 focus:bg-white focus:ring-2 focus:ring-emerald-500/20 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-50';
+  'w-full rounded-xl border border-[#DADCE0] bg-[#F8F9FA] px-3 py-2 text-sm text-[#202124] outline-none transition-colors focus:border-[#4285F4] focus:bg-white focus:ring-2 focus:ring-[#4285F4]/25 dark:border-white/[0.12] dark:bg-[#131314] dark:text-[#E3E3E3] dark:focus:border-[#8AB4F8]';
 
-const LABEL_CLASS = 'text-xs font-medium text-zinc-700 dark:text-zinc-300';
+const LABEL_CLASS = 'text-xs font-medium text-[#3C4043] dark:text-[#C4C7C5]';
 
 type EmissionsAction = keyof typeof EMISSIONS_ACTION_LABELS;
 type ExposureAction = keyof typeof EXPOSURE_ACTION_LABELS;
@@ -105,19 +106,22 @@ export function LogImpactModal({
   }
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-zinc-950/60 p-4 backdrop-blur-xs"
+    <ModalPortal>
+      <div
+        className="fixed inset-0 z-[100] flex items-center justify-center bg-black/55 p-4 backdrop-blur-xs"
       role="dialog"
       aria-modal="true"
       aria-label="Log clean-air or sustainable action"
     >
-      <div className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-2xl border border-zinc-200 bg-white p-5 shadow-xl dark:border-zinc-800 dark:bg-zinc-900">
+      <div className="cloud-card max-h-[90vh] w-full max-w-lg overflow-hidden rounded-3xl border border-white/80 bg-white dark:border-white/[0.1] dark:bg-[#1E1F20]">
+        <div className="google-ribbon h-[3px] w-full" aria-hidden="true" />
+        <div className="max-h-[calc(90vh-3px)] overflow-y-auto p-5">
         <div className="flex items-center justify-between gap-2 pb-4">
           <div>
-            <h2 className="text-lg font-bold text-zinc-950 dark:text-zinc-50">
+            <h2 className="font-display text-lg font-bold text-[#202124] dark:text-[#E3E3E3]">
               Log Clean-Air Action
             </h2>
-            <p className="text-xs text-zinc-500 dark:text-zinc-400">
+            <p className="text-xs text-[#5F6368] dark:text-[#9AA0A6]">
               Emissions avoided and personal exposure protection are strictly tracked separately.
             </p>
           </div>
@@ -125,21 +129,21 @@ export function LogImpactModal({
             type="button"
             onClick={onClose}
             aria-label="Close modal"
-            className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-lg text-zinc-500 hover:bg-zinc-100 hover:text-zinc-950 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-50"
+            className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-full text-[#5F6368] hover:bg-[#F1F3F4] hover:text-[#202124] dark:text-[#9AA0A6] dark:hover:bg-white/[0.08] dark:hover:text-[#E3E3E3]"
           >
             <X className="h-4 w-4" />
           </button>
         </div>
 
         {/* Domain Selector */}
-        <div className="mb-4 grid grid-cols-2 gap-2 rounded-xl border border-zinc-200 bg-zinc-50 p-1 dark:border-zinc-800 dark:bg-zinc-950">
+        <div className="mb-4 grid grid-cols-2 gap-2 rounded-full border border-[#E8EAED] bg-[#F8F9FA] p-1 dark:border-white/[0.1] dark:bg-[#131314]">
           <button
             type="button"
             onClick={() => setDomain('emissions_reduction')}
-            className={`flex cursor-pointer items-center justify-center gap-1.5 rounded-lg px-3 py-2 text-xs font-semibold transition-all ${
+            className={`flex cursor-pointer items-center justify-center gap-1.5 rounded-full px-3 py-2 text-xs font-semibold transition-all ${
               domain === 'emissions_reduction'
-                ? 'bg-emerald-600 text-white shadow-2xs dark:bg-emerald-500 dark:text-zinc-950'
-                : 'text-zinc-600 hover:text-zinc-950 dark:text-zinc-400 dark:hover:text-zinc-100'
+                ? 'bg-[#34A853] text-white shadow-2xs'
+                : 'text-[#5F6368] hover:text-[#202124] dark:text-[#9AA0A6] dark:hover:text-[#E3E3E3]'
             }`}
           >
             <Leaf className="h-3.5 w-3.5" />
@@ -148,10 +152,10 @@ export function LogImpactModal({
           <button
             type="button"
             onClick={() => setDomain('exposure_reduction')}
-            className={`flex cursor-pointer items-center justify-center gap-1.5 rounded-lg px-3 py-2 text-xs font-semibold transition-all ${
+            className={`flex cursor-pointer items-center justify-center gap-1.5 rounded-full px-3 py-2 text-xs font-semibold transition-all ${
               domain === 'exposure_reduction'
-                ? 'bg-sky-600 text-white shadow-2xs dark:bg-sky-500 dark:text-zinc-950'
-                : 'text-zinc-600 hover:text-zinc-950 dark:text-zinc-400 dark:hover:text-zinc-100'
+                ? 'bg-[#4285F4] text-white shadow-2xs'
+                : 'text-[#5F6368] hover:text-[#202124] dark:text-[#9AA0A6] dark:hover:text-[#E3E3E3]'
             }`}
           >
             <Shield className="h-3.5 w-3.5" />
@@ -348,7 +352,9 @@ export function LogImpactModal({
             </Button>
           </div>
         </form>
+        </div>
       </div>
     </div>
+    </ModalPortal>
   );
 }

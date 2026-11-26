@@ -5,6 +5,7 @@ export interface ChatReplyPayload {
   followUpSuggestions: string[];
   citations: Citation[];
   environmentalSnapshot: CurrentAirQuality | null;
+  agentTrace?: string[];
   medicalDisclaimerShown: boolean;
   fallbackMode: boolean;
 }
@@ -18,6 +19,7 @@ export interface ChatMessageItem {
   citations: Citation[];
   followUpSuggestions: string[];
   environmentalSnapshot: CurrentAirQuality | null;
+  agentTrace?: string[];
   medicalEscalationRequired: boolean;
   fallbackMode: boolean;
 }
@@ -38,9 +40,9 @@ export interface SendChatMessageResponse {
 }
 
 export const STARTER_PROMPTS = [
-  'What is the current air quality in my location?',
-  'Can my child play outside today?',
-  'Should I go jogging this morning?',
-  'How can I improve indoor air quality?',
-  'How can I reduce pollution from my commute?',
+  'Someone smokes at home & AQI is high — how do we lower the harm?',
+  'How can I keep indoor air cleaner without a HEPA purifier?',
+  'Can my child play outside in my city right now?',
+  'I ride a two-wheeler daily — what actually reduces smog intake?',
+  'What is the cleanest time window in my city today?',
 ] as const;

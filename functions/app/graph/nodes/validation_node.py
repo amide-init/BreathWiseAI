@@ -157,7 +157,7 @@ def validate_draft_output(state: BreatheWiseState) -> list[str]:
     return errors
 
 
-def _build_deterministic_fallback(state: BreatheWiseState) -> dict[str, Any]:
+def _build_deterministic_fallback(state: BreatheWiseState, trace: list[str]) -> dict[str, Any]:
     mode = state["workflow_mode"]
     context = state["sanitized_context"]
     env = state["environment_data"]
@@ -174,36 +174,50 @@ def _build_deterministic_fallback(state: BreatheWiseState) -> dict[str, Any]:
     if mode == "indoor_advisor":
         return build_fallback_indoor_assessment(
             questionnaire=state.get("indoor_answers") or IndoorQuestionnaire(),
+            context=context,
             env=env,
             risk=risk,
             retrieved_docs=docs,
+            agent_trace=trace,
         ).model_dump(by_alias=True)
     return build_fallback_chat_reply(
         env=env,
         risk=risk,
         retrieved_docs=docs,
+        agent_trace=trace,
     ).model_dump(by_alias=True)
 
 
 def validation_node(state: BreatheWiseState) -> dict[str, Any]:
-    """Node 5 gate: accept valid LLM output, request bounded retry, or emit safe fallback."""
+    """Node 7 gate: accept valid LLM output, request bounded retry, or emit safe fallback."""
     max_retries = get_settings().graph_max_validation_retries
     retries_used = int(state.get("retry_count", 0))
+    trace = list(state.get("agent_trace") or [])
 
     # Immediate safe fallback if LLM failed/timed out or unconfigured
     if state.get("llm_failed"):
+        final_trace = [
+            *trace,
+            "Served deterministic safety-verified guidance (AI provider fallback)",
+        ]
         return {
             "validation_errors": ["LLM provider unavailable; served deterministic fallback."],
             "fallback_mode": True,
-            "final_output": _build_deterministic_fallback(state),
+            "agent_trace": final_trace,
+            "final_output": _build_deterministic_fallback(state, final_trace),
         }
 
     errors = validate_draft_output(state)
     if not errors:
+        final_trace = [*trace, "Verified against CPCB safety & numeric grounding rules"]
+        final_payload = dict(state["draft_output"] or {})
+        if state["workflow_mode"] in ("indoor_advisor", "chat"):
+            final_payload["agentTrace"] = final_trace
         return {
             "validation_errors": [],
             "fallback_mode": False,
-            "final_output": state["draft_output"],
+            "agent_trace": final_trace,
+            "final_output": final_payload,
         }
 
     if retries_used < max_retries:
@@ -213,8 +227,13 @@ def validation_node(state: BreatheWiseState) -> dict[str, Any]:
             "fallback_mode": False,
         }
 
+    final_trace = [
+        *trace,
+        "Enforced deterministic safety fallback after validation check",
+    ]
     return {
         "validation_errors": errors,
         "fallback_mode": True,
-        "final_output": _build_deterministic_fallback(state),
+        "agent_trace": final_trace,
+        "final_output": _build_deterministic_fallback(state, final_trace),
     }

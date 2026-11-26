@@ -1,10 +1,12 @@
-"""5-Node LangGraph Workflow compilation (PRD §7.2 & docs/AI_WORKFLOW.md).
+"""7-Node Agentic LangGraph Workflow compilation (Planning + Reasoning + Tools + Safety Gate).
 
 Topology:
-  context_agent -> environment_agent -> risk_assessment -> recommendation_agent -> validation_node
-                                                                   ^                      |
-                                                                   +--- (retry <= 1) -----+
-                                                                                          +-> END
+  context_agent -> environment_agent -> risk_assessment
+    -> planning_reasoning_agent -> tool_executor_node
+    -> recommendation_agent -> validation_node
+                 ^                   |
+                 +--- (retry <= 1) --+
+                                     +-> END
 """
 
 from __future__ import annotations
@@ -15,8 +17,10 @@ from langgraph.graph import END, START, StateGraph
 
 from app.graph.nodes.context_node import build_context_node
 from app.graph.nodes.environment_node import build_environment_node
+from app.graph.nodes.planning_node import planning_reasoning_node
 from app.graph.nodes.recommendation_node import build_recommendation_node
 from app.graph.nodes.risk_node import risk_assessment_node
+from app.graph.nodes.tool_executor_node import tool_executor_node
 from app.graph.nodes.validation_node import validation_node
 from app.graph.state import BreatheWiseState
 from app.providers.base import StructuredLLMProvider
@@ -38,12 +42,14 @@ def compile_breathewise_graph(
     llm_provider: StructuredLLMProvider | None = None,
     retriever: KnowledgeRetriever | None = None,
 ) -> Any:
-    """Compile the 5-node LangGraph workflow with injectable dependencies for testability."""
+    """Compile the 7-node LangGraph workflow with injectable dependencies for testability."""
     builder = StateGraph(BreatheWiseState)
 
     builder.add_node("context_agent", build_context_node(family_repo))
     builder.add_node("environment_agent", build_environment_node(air_quality_service))
     builder.add_node("risk_assessment", risk_assessment_node)
+    builder.add_node("planning_reasoning_agent", planning_reasoning_node)
+    builder.add_node("tool_executor_node", tool_executor_node)
     builder.add_node(
         "recommendation_agent",
         build_recommendation_node(llm_provider=llm_provider, retriever=retriever),
@@ -53,7 +59,9 @@ def compile_breathewise_graph(
     builder.add_edge(START, "context_agent")
     builder.add_edge("context_agent", "environment_agent")
     builder.add_edge("environment_agent", "risk_assessment")
-    builder.add_edge("risk_assessment", "recommendation_agent")
+    builder.add_edge("risk_assessment", "planning_reasoning_agent")
+    builder.add_edge("planning_reasoning_agent", "tool_executor_node")
+    builder.add_edge("tool_executor_node", "recommendation_agent")
     builder.add_edge("recommendation_agent", "validation_node")
     builder.add_conditional_edges(
         "validation_node",

@@ -14,9 +14,11 @@ import {
 import { useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 
+import { PlanCalendarIllustration } from '@/components/illustrations/GoogleAirIllustrations';
 import { IndoorAdvisorPanel } from '@/components/planner/IndoorAdvisorPanel';
 import { RECOMMENDATION_CATEGORY_META } from '@/components/planner/recommendation-meta';
 import { RecommendationDetailModal } from '@/components/planner/RecommendationDetailModal';
+import { AgentTracePill } from '@/components/shared/AgentTracePill';
 import { AqiBadge } from '@/components/shared/AqiBadge';
 import { DataStateWrapper } from '@/components/shared/DataStateWrapper';
 import { MedicalDisclaimer } from '@/components/shared/MedicalDisclaimer';
@@ -119,7 +121,11 @@ function CompactActionCard({
                 onClick={onOpenDetails}
                 className="inline-flex cursor-pointer items-center gap-1 text-xs font-semibold text-emerald-700 hover:text-emerald-800 dark:text-emerald-400 dark:hover:text-emerald-300"
               >
-                <span>Read more · Why &amp; Backup Plan</span>
+                <span>
+                  {item.ifYouContinue
+                    ? 'Read more · Lower-Loss Steps & Why'
+                    : 'Read more · Why & Backup Plan'}
+                </span>
                 <ChevronRight className="h-3.5 w-3.5" aria-hidden="true" />
               </button>
             </div>
@@ -171,18 +177,21 @@ export function PlannerPage() {
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight text-zinc-950 dark:text-zinc-50">
-            Daily Plan &amp; Indoor Advisor
-          </h1>
-          <p className="text-sm text-zinc-600 dark:text-zinc-400">
-            Short, time-aware clean-air steps for {selectedLocation.city} — starting with right now.
-          </p>
+        <div className="flex items-center gap-3">
+          <PlanCalendarIllustration className="hidden h-14 w-20 shrink-0 sm:block" />
+          <div>
+            <h1 className="font-display text-2xl font-bold tracking-tight text-[#202124] dark:text-[#E3E3E3]">
+              Plan &amp; Indoor Advisor
+            </h1>
+            <p className="text-sm text-[#5F6368] dark:text-[#9AA0A6]">
+              Short, realistic clean-air steps for {selectedLocation.city} — starting with right now.
+            </p>
+          </div>
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
           <div
-            className="inline-flex items-center gap-1 rounded-xl border border-zinc-200/80 bg-white p-1 shadow-2xs dark:border-zinc-800 dark:bg-zinc-900"
+            className="cloud-card inline-flex items-center gap-1 rounded-full border border-[#DADCE0] bg-white p-1 dark:border-white/[0.1] dark:bg-[#1E1F20]"
             role="tablist"
             aria-label="Planner mode"
           >
@@ -191,10 +200,10 @@ export function PlannerPage() {
               role="tab"
               aria-selected={modeTab === 'routine'}
               onClick={() => handleModeTabChange('routine')}
-              className={`inline-flex cursor-pointer items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors ${
+              className={`inline-flex cursor-pointer items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-semibold transition-colors ${
                 modeTab === 'routine'
-                  ? 'bg-emerald-500/15 text-emerald-800 dark:bg-emerald-400/20 dark:text-emerald-300'
-                  : 'text-zinc-600 hover:text-zinc-950 dark:text-zinc-400 dark:hover:text-zinc-50'
+                  ? 'bg-[#34A853]/15 text-[#1E8E3E] dark:bg-[#81C995]/20 dark:text-[#81C995]'
+                  : 'text-[#5F6368] hover:text-[#202124] dark:text-[#9AA0A6] dark:hover:text-[#E3E3E3]'
               }`}
             >
               <CalendarCheck2 className="h-3.5 w-3.5" aria-hidden="true" />
@@ -205,10 +214,10 @@ export function PlannerPage() {
               role="tab"
               aria-selected={modeTab === 'indoor'}
               onClick={() => handleModeTabChange('indoor')}
-              className={`inline-flex cursor-pointer items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors ${
+              className={`inline-flex cursor-pointer items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-semibold transition-colors ${
                 modeTab === 'indoor'
-                  ? 'bg-emerald-500/15 text-emerald-800 dark:bg-emerald-400/20 dark:text-emerald-300'
-                  : 'text-zinc-600 hover:text-zinc-950 dark:text-zinc-400 dark:hover:text-zinc-50'
+                  ? 'bg-[#4285F4]/15 text-[#1A73E8] dark:bg-[#8AB4F8]/20 dark:text-[#8AB4F8]'
+                  : 'text-[#5F6368] hover:text-[#202124] dark:text-[#9AA0A6] dark:hover:text-[#E3E3E3]'
               }`}
             >
               <Home className="h-3.5 w-3.5" aria-hidden="true" />
@@ -266,8 +275,13 @@ export function PlannerPage() {
             </Card>
           ) : (
             <div className="space-y-5">
+              <AgentTracePill
+                trace={plan.agentTrace}
+                cityLabel={plan.locationName ?? selectedLocation.city}
+              />
+
               {/* Compact Status Bar */}
-              <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-zinc-200/80 bg-white px-4 py-3 dark:border-zinc-800 dark:bg-zinc-900/80">
+              <div className="cloud-card flex flex-wrap items-center justify-between gap-3 rounded-3xl border border-white/80 bg-white/95 px-4 py-3 dark:border-white/[0.09] dark:bg-[#1E1F20]/95">
                 <div className="flex flex-wrap items-center gap-2">
                   <AqiBadge
                     category={plan.environmentalSnapshot.category}

@@ -64,5 +64,8 @@ class IndoorAdvisorService:
         assessment["questionnaire"] = questionnaire.model_dump(by_alias=True)
         assessment["environmentalSnapshot"] = env.current.model_dump(by_alias=True)
         assessment["riskAssessment"] = risk.model_dump(by_alias=True)
+        assessment["agentTrace"] = list(
+            assessment.get("agentTrace") or result_state.get("agent_trace") or []
+        )
         assessment["savedToFamilyId"] = resolved_family_id if saved_to_family else None
         return assessment

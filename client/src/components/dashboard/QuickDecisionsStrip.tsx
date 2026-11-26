@@ -15,35 +15,31 @@ const STATUS_STYLES: Record<
   { card: string; pill: string; iconBg: string; pillLabel: string }
 > = {
   good: {
-    card: 'border-emerald-200/80 bg-emerald-50/55 dark:border-emerald-900/50 dark:bg-emerald-950/25',
-    pill: 'bg-emerald-500/15 text-emerald-800 dark:bg-emerald-400/20 dark:text-emerald-300',
-    iconBg: 'bg-emerald-500/15 text-emerald-700 dark:bg-emerald-400/20 dark:text-emerald-300',
+    card: 'border-[#34A853]/25 bg-white/95 dark:border-[#81C995]/20 dark:bg-[#1E1F20]/95',
+    pill: 'bg-[#34A853]/12 text-[#1E8E3E] dark:bg-[#81C995]/15 dark:text-[#81C995]',
+    iconBg: 'bg-[#34A853]/12 text-[#1E8E3E] dark:bg-[#81C995]/15 dark:text-[#81C995]',
     pillLabel: 'OK',
   },
   caution: {
-    card: 'border-amber-200/80 bg-amber-50/55 dark:border-amber-900/50 dark:bg-amber-950/25',
-    pill: 'bg-amber-500/15 text-amber-800 dark:bg-amber-400/20 dark:text-amber-300',
-    iconBg: 'bg-amber-500/15 text-amber-700 dark:bg-amber-400/20 dark:text-amber-300',
+    card: 'border-[#FBBC05]/35 bg-white/95 dark:border-[#FDD663]/20 dark:bg-[#1E1F20]/95',
+    pill: 'bg-[#FBBC05]/18 text-[#9A6700] dark:bg-[#FDD663]/15 dark:text-[#FDD663]',
+    iconBg: 'bg-[#FBBC05]/18 text-[#B06000] dark:bg-[#FDD663]/15 dark:text-[#FDD663]',
     pillLabel: 'Careful',
   },
   avoid: {
-    card: 'border-red-200/80 bg-red-50/55 dark:border-red-900/50 dark:bg-red-950/25',
-    pill: 'bg-red-500/15 text-red-800 dark:bg-red-400/20 dark:text-red-300',
-    iconBg: 'bg-red-500/15 text-red-700 dark:bg-red-400/20 dark:text-red-300',
+    card: 'border-[#EA4335]/28 bg-white/95 dark:border-[#F28B82]/22 dark:bg-[#1E1F20]/95',
+    pill: 'bg-[#EA4335]/12 text-[#C5221F] dark:bg-[#F28B82]/15 dark:text-[#F28B82]',
+    iconBg: 'bg-[#EA4335]/12 text-[#C5221F] dark:bg-[#F28B82]/15 dark:text-[#F28B82]',
     pillLabel: 'Avoid',
   },
   unknown: {
-    card: 'border-zinc-200/80 bg-zinc-50/70 dark:border-zinc-800 dark:bg-zinc-900/60',
-    pill: 'bg-zinc-200/70 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300',
-    iconBg: 'bg-zinc-200/70 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300',
+    card: 'border-[#4285F4]/25 bg-white/95 dark:border-[#8AB4F8]/20 dark:bg-[#1E1F20]/95',
+    pill: 'bg-[#4285F4]/12 text-[#1A73E8] dark:bg-[#8AB4F8]/15 dark:text-[#8AB4F8]',
+    iconBg: 'bg-[#4285F4]/12 text-[#1A73E8] dark:bg-[#8AB4F8]/15 dark:text-[#8AB4F8]',
     pillLabel: 'Check',
   },
 };
 
-/**
- * Deterministic fallback verdicts derived strictly from CPCB category if a cached
- * API response predates `quickDecisions`.
- */
 function deriveFallbackDecisions(category: AqiCategory): QuickDecision[] {
   if (category === 'Unavailable') {
     return [
@@ -188,7 +184,7 @@ export function QuickDecisionsStrip({
   return (
     <section aria-label="Right now everyday guidance" className="space-y-2.5">
       <div className="flex items-center justify-between">
-        <h2 className="text-xs font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
+        <h2 className="text-xs font-bold uppercase tracking-wider text-[#5F6368] dark:text-[#9AA0A6]">
           Right Now — Everyday Answers
         </h2>
       </div>
@@ -200,14 +196,14 @@ export function QuickDecisionsStrip({
             <div
               key={item.id}
               className={cn(
-                'flex flex-col justify-between gap-2 rounded-2xl border p-3.5 transition-colors',
+                'cloud-card flex flex-col justify-between gap-2.5 rounded-3xl border p-4 backdrop-blur-sm',
                 style.card,
               )}
             >
               <div className="flex items-center justify-between gap-2">
                 <span
                   className={cn(
-                    'flex h-8 w-8 items-center justify-center rounded-xl',
+                    'flex h-8 w-8 items-center justify-center rounded-2xl',
                     style.iconBg,
                   )}
                 >
@@ -215,7 +211,7 @@ export function QuickDecisionsStrip({
                 </span>
                 <span
                   className={cn(
-                    'rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide',
+                    'rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wide',
                     style.pill,
                   )}
                 >
@@ -224,13 +220,13 @@ export function QuickDecisionsStrip({
               </div>
 
               <div>
-                <p className="text-[11px] font-medium text-zinc-500 dark:text-zinc-400">
+                <p className="text-[11px] font-medium text-[#5F6368] dark:text-[#9AA0A6]">
                   {item.label}
                 </p>
-                <p className="font-display mt-0.5 text-sm font-bold leading-snug text-zinc-950 dark:text-zinc-50">
+                <p className="font-display mt-0.5 text-sm font-bold leading-snug text-[#202124] dark:text-[#E3E3E3]">
                   {item.verdict}
                 </p>
-                <p className="mt-1 text-[11px] leading-snug text-zinc-600 dark:text-zinc-400">
+                <p className="mt-1 text-[11px] leading-snug text-[#5F6368] dark:text-[#9AA0A6]">
                   {item.shortReason}
                 </p>
               </div>

@@ -4,20 +4,20 @@ import type { HTMLAttributes } from 'react';
 import { cn } from '@/lib/cn';
 
 const badgeVariants = cva(
-  'inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium tracking-tight',
+  'inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-semibold tracking-tight',
   {
     variants: {
       variant: {
         default:
-          'bg-emerald-500/12 text-emerald-700 ring-1 ring-emerald-500/20 dark:bg-emerald-400/15 dark:text-emerald-300 dark:ring-emerald-400/25',
+          'bg-[#34A853]/12 text-[#1E8E3E] ring-1 ring-[#34A853]/25 dark:bg-[#81C995]/15 dark:text-[#81C995] dark:ring-[#81C995]/25',
         neutral:
-          'bg-zinc-100 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300',
+          'bg-[#F1F3F4] text-[#5F6368] dark:bg-white/[0.08] dark:text-[#BDC1C6]',
         warning:
-          'bg-amber-500/15 text-amber-800 ring-1 ring-amber-500/25 dark:bg-amber-400/15 dark:text-amber-300 dark:ring-amber-400/25',
+          'bg-[#FBBC05]/18 text-[#9A6700] ring-1 ring-[#FBBC05]/35 dark:bg-[#FDD663]/15 dark:text-[#FDD663] dark:ring-[#FDD663]/25',
         danger:
-          'bg-red-500/12 text-red-700 ring-1 ring-red-500/25 dark:bg-red-500/20 dark:text-red-300 dark:ring-red-400/30',
+          'bg-[#EA4335]/12 text-[#C5221F] ring-1 ring-[#EA4335]/25 dark:bg-[#F28B82]/15 dark:text-[#F28B82] dark:ring-[#F28B82]/25',
         outline:
-          'border border-zinc-200 text-zinc-700 dark:border-zinc-700 dark:text-zinc-300',
+          'border border-[#DADCE0] text-[#5F6368] dark:border-white/[0.12] dark:text-[#BDC1C6]',
       },
     },
     defaultVariants: {

@@ -1,5 +1,7 @@
 import {
   CheckCircle2,
+  ChevronDown,
+  ChevronUp,
   Home,
   Lock,
   MapPin,
@@ -7,6 +9,7 @@ import {
   Plus,
   Save,
   Settings as SettingsIcon,
+  SlidersHorizontal,
   Trash2,
   User,
   Users,
@@ -14,7 +17,10 @@ import {
 import { useEffect, useState, type FormEvent } from 'react';
 import { Link } from 'react-router-dom';
 
+import { FamilyHomeIllustration } from '@/components/illustrations/GoogleAirIllustrations';
+import { AiFamilyInput } from '@/components/profile/AiFamilyInput';
 import { MemberFormModal } from '@/components/profile/MemberFormModal';
+import type { ParsedHouseholdDraft } from '@/services/profile-ai.service';
 import { DataStateWrapper } from '@/components/shared/DataStateWrapper';
 import { Alert } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
@@ -84,6 +90,85 @@ export function ProfilePage() {
 
   const [memberModalOpen, setMemberModalOpen] = useState(false);
   const [editingMember, setEditingMember] = useState<FamilyMemberModel | null>(null);
+  const [showManualForms, setShowManualForms] = useState(false);
+
+  async function handleApplyAiDraft(draft: ParsedHouseholdDraft) {
+    setHouseholdError(null);
+    setHouseholdFeedback(null);
+    const saved = await saveFamily({
+      householdName: draft.householdName || householdName || 'My Family',
+      location: selectedLocation,
+      transportationHabits: {
+        primaryMode: draft.primaryCommuteMode,
+        dailyCommuteKm: draft.dailyCommuteKm,
+        vehicleFuelType: 'petrol',
+        occupancy: 1,
+      },
+      exercisePreferences: {
+        prefersOutdoor: draft.prefersOutdoorExercise,
+        preferredWindow: 'morning',
+        activityType: draft.exerciseActivityType || 'walk',
+      },
+      indoorEquipment: {
+        hasHepaPurifier: draft.hasHepaPurifier,
+        purifierRoomsCount: draft.hasHepaPurifier ? 1 : 0,
+        hasKitchenExhaust: draft.hasKitchenExhaust,
+        hasCrossVentilation: true,
+        hasN95Masks: hasN95Masks,
+        indoorSmokingPresent: draft.indoorSmokingPresent,
+      },
+    });
+
+    let addedCount = 0;
+    const failedNames: string[] = [];
+
+    if (saved.familyId && draft.members.length > 0) {
+      const existingNames = new Set(members.map((m) => m.nickname.trim().toLowerCase()));
+      const newOnes = draft.members.filter(
+        (m) => !existingNames.has(m.nickname.trim().toLowerCase()),
+      );
+      const results = await Promise.allSettled(
+        newOnes.map((m) =>
+          createMember(
+            {
+              nickname: m.nickname,
+              role: m.role,
+              ageGroup: m.ageGroup,
+              optionalHealthProfile:
+                m.hasRespiratorySensitivity || m.hasCardiacSensitivity || m.isPregnant
+                  ? {
+                      hasRespiratorySensitivity: m.hasRespiratorySensitivity,
+                      hasCardiacSensitivity: m.hasCardiacSensitivity,
+                      isPregnant: m.isPregnant,
+                      notes: null,
+                    }
+                  : null,
+            },
+            saved.familyId,
+          ),
+        ),
+      );
+      results.forEach((res, idx) => {
+        if (res.status === 'fulfilled') {
+          addedCount += 1;
+        } else {
+          failedNames.push(newOnes[idx]?.nickname ?? 'Member');
+        }
+      });
+    }
+
+    if (failedNames.length > 0) {
+      setHouseholdError(`Household saved, but could not add: ${failedNames.join(', ')}.`);
+    } else if (addedCount > 0) {
+      setHouseholdFeedback(
+        `AI updated your household & added ${addedCount} new member profile${addedCount === 1 ? '' : 's'}. Refresh your Daily Plan to apply!`,
+      );
+    } else {
+      setHouseholdFeedback(
+        'AI updated your household habits (all mentioned members were already in your family list).',
+      );
+    }
+  }
 
   useEffect(() => {
     if (userProfile) {
@@ -181,13 +266,16 @@ export function ProfilePage() {
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight text-zinc-950 dark:text-zinc-50">
-            Profile &amp; Household
-          </h1>
-          <p className="text-sm text-zinc-600 dark:text-zinc-400">
-            Personalize clean-air routines for you and every member of your household.
-          </p>
+        <div className="flex items-center gap-3">
+          <FamilyHomeIllustration className="hidden h-14 w-20 shrink-0 sm:block" />
+          <div>
+            <h1 className="font-display text-2xl font-bold tracking-tight text-[#202124] dark:text-[#E3E3E3]">
+              Family &amp; Home
+            </h1>
+            <p className="text-sm text-[#5F6368] dark:text-[#9AA0A6]">
+              Personalize clean-air routines for you and every member of your household.
+            </p>
+          </div>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <div
@@ -219,8 +307,38 @@ export function ProfilePage() {
         </div>
       </div>
 
-      {/* 1. Personal Account Details */}
-      <Card>
+      {/* AI-First Natural-Language Family & Home Setup */}
+      <AiFamilyInput onApplyDraft={handleApplyAiDraft} />
+
+      {householdFeedback ? (
+        <Alert variant="info" className="items-center">
+          <CheckCircle2 className="h-4 w-4 shrink-0" aria-hidden="true" />
+          <span>{householdFeedback}</span>
+        </Alert>
+      ) : null}
+
+      <div className="flex items-center justify-between">
+        <p className="text-xs font-medium text-slate-500 dark:text-[#8E9AA8]">
+          Prefer editing individual fields directly?
+        </p>
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          onClick={() => setShowManualForms((prev) => !prev)}
+        >
+          <SlidersHorizontal className="h-3.5 w-3.5" aria-hidden="true" />
+          <span>{showManualForms ? 'Hide Manual Form' : 'Edit Details Manually'}</span>
+          {showManualForms ? (
+            <ChevronUp className="h-3.5 w-3.5" />
+          ) : (
+            <ChevronDown className="h-3.5 w-3.5" />
+          )}
+        </Button>
+      </div>
+
+      {/* 1. Personal Account Details (collapsed by default so AI setup stays clean) */}
+      {showManualForms ? <Card>
         <CardHeader>
           <div className="flex flex-wrap items-center justify-between gap-2">
             <CardTitle className="flex items-center gap-2">
@@ -301,12 +419,12 @@ export function ProfilePage() {
             </div>
           </form>
         </CardContent>
-      </Card>
+      </Card> : null}
 
       <DataStateWrapper isLoading={isLoading} error={familyLoadError} onRetry={() => void reload()}>
         <div className="space-y-6">
-          {/* 2. Household Profile */}
-          <Card>
+          {/* 2. Household Profile (collapsed by default behind "Edit Details Manually") */}
+          {showManualForms ? <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Home
@@ -505,7 +623,7 @@ export function ProfilePage() {
                 </div>
               </form>
             </CardContent>
-          </Card>
+          </Card> : null}
 
           {/* 3. Household Members */}
           <Card>

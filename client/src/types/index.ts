@@ -107,6 +107,7 @@ export interface RecommendationItem {
   targetMembers: string[];
   whatToDo: string;
   why: string;
+  ifYouContinue?: string | null;
   alternative: string;
   supportingData: string;
 }

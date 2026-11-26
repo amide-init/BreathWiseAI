@@ -14,6 +14,7 @@ import { useState } from 'react';
 
 import { Alert } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
+import { ModalPortal } from '@/components/ui/modal-portal';
 import { QUICK_PICK_CITIES } from '@/config/cities';
 import { useAuth } from '@/hooks/useAuth';
 import { useDailyPlan } from '@/hooks/useDailyPlan';
@@ -180,11 +181,12 @@ export function QuickOnboardingModal() {
   }
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-end justify-center bg-zinc-950/65 p-3 backdrop-blur-xs sm:items-center sm:p-4"
+    <ModalPortal>
+      <div
+        className="fixed inset-0 z-[100] flex items-end justify-center bg-black/65 p-3 backdrop-blur-xs sm:items-center sm:p-4"
       role="dialog"
       aria-modal="true"
-      aria-label="Personalize BreatheWise AI in 30 seconds"
+      aria-label="Personalize BreathWiseAI in 30 seconds"
     >
       <div className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-2xl border border-zinc-200 bg-white p-5 shadow-2xl dark:border-zinc-800 dark:bg-zinc-900">
         {/* Header */}
@@ -416,5 +418,6 @@ export function QuickOnboardingModal() {
         </div>
       </div>
     </div>
+    </ModalPortal>
   );
 }

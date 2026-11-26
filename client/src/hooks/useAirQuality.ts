@@ -107,7 +107,7 @@ export function useAirQuality(): UseAirQualityResult {
           const message =
             err instanceof Error
               ? err.message
-              : 'Unable to reach the BreatheWise environmental service.';
+              : 'Unable to reach the BreathWiseAI environmental service.';
           setError(message);
         }
       } finally {

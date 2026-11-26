@@ -1,6 +1,6 @@
 {
-  "name": "BreatheWise AI",
-  "short_name": "BreatheWise",
+  "name": "BreathWiseAI",
+  "short_name": "BreathWiseAI",
   "description": "AI-powered personal clean-air assistant for families.",
   "start_url": "/",
   "display": "standalone",

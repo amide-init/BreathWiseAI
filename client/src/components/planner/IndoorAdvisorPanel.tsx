@@ -10,17 +10,21 @@ import {
   RefreshCw,
   SlidersHorizontal,
   Sparkles,
+  Users,
 } from 'lucide-react';
 import { useEffect, useState, type FormEvent } from 'react';
+import { Link } from 'react-router-dom';
 
 import { RECOMMENDATION_CATEGORY_META } from '@/components/planner/recommendation-meta';
 import { RecommendationDetailModal } from '@/components/planner/RecommendationDetailModal';
+import { AgentTracePill } from '@/components/shared/AgentTracePill';
 import { AqiBadge } from '@/components/shared/AqiBadge';
 import { MetricInfoButton } from '@/components/shared/MetricInfoModal';
 import { Alert } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { APP_ROUTES } from '@/config/routes';
 import { useAuth } from '@/hooks/useAuth';
 import { useFamilyProfile } from '@/hooks/useFamilyProfile';
 import { useSelectedLocation } from '@/hooks/useSelectedLocation';
@@ -46,9 +50,9 @@ import { assessIndoorAir } from '@/services/indoor.service';
 import type { RecommendationItem } from '@/types';
 
 const FIELD_CLASS =
-  'w-full rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm text-zinc-950 outline-none transition-colors focus:border-emerald-500 focus:bg-white focus:ring-2 focus:ring-emerald-500/20 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-50';
+  'w-full rounded-2xl border border-[#DADCE0] bg-[#F8F9FA] px-3.5 py-2 text-sm text-[#202124] outline-none transition-colors focus:border-[#4285F4] focus:bg-white focus:ring-2 focus:ring-[#4285F4]/20 dark:border-white/[0.1] dark:bg-[#131314] dark:text-[#E3E3E3] dark:focus:border-[#8AB4F8]';
 
-const LABEL_CLASS = 'text-xs font-medium text-zinc-700 dark:text-zinc-300';
+const LABEL_CLASS = 'text-xs font-semibold text-[#3C4043] dark:text-[#BDC1C6]';
 
 const RISK_BADGE_VARIANT: Record<IndoorRiskLevel, 'default' | 'neutral' | 'warning' | 'danger'> = {
   low: 'default',
@@ -57,8 +61,8 @@ const RISK_BADGE_VARIANT: Record<IndoorRiskLevel, 'default' | 'neutral' | 'warni
   high: 'danger',
 };
 
-function indoorCacheKey(uid: string, locationId: string): string {
-  return `indoor_plan:${uid}:${locationId}`;
+function indoorCacheKey(uid: string, locationId: string, familySig: string): string {
+  return `indoor_plan:${uid}:${locationId}:${familySig}`;
 }
 
 function questionnairesMatch(
@@ -82,9 +86,30 @@ function questionnairesMatch(
 export function IndoorAdvisorPanel() {
   const { user } = useAuth();
   const { selectedLocation } = useSelectedLocation();
-  const { family } = useFamilyProfile();
+  const { family, members } = useFamilyProfile();
 
-  const cacheKey = user ? indoorCacheKey(user.uid, selectedLocation.locationId) : null;
+  const familyGroups: string[] = [];
+  if (members.some((m) => m.role === 'child_toddler' || m.ageGroup === '0_5')) {
+    familyGroups.push('Toddlers');
+  } else if (members.some((m) => m.role === 'child_school' || m.ageGroup === '6_12')) {
+    familyGroups.push('Children');
+  }
+  if (members.some((m) => m.role === 'elderly' || m.ageGroup === '60_plus')) {
+    familyGroups.push('Older adults');
+  }
+  if (
+    members.some(
+      (m) =>
+        m.optionalHealthProfile?.hasRespiratorySensitivity ||
+        m.optionalHealthProfile?.hasCardiacSensitivity ||
+        m.optionalHealthProfile?.isPregnant,
+    )
+  ) {
+    familyGroups.push('Sensitive lungs');
+  }
+  const familySig = `${family?.familyId ?? 'none'}:${members.length}:${familyGroups.join(',')}`;
+
+  const cacheKey = user ? indoorCacheKey(user.uid, selectedLocation.locationId, familySig) : null;
 
   const [assessment, setAssessment] = useState<IndoorAssessmentResult | null>(() =>
     cacheKey ? getSessionCached<IndoorAssessmentResult>(cacheKey) : null,
@@ -177,16 +202,45 @@ export function IndoorAdvisorPanel() {
         <div>
           <p className="font-semibold">Estimated (Questionnaire-Based) Assessment</p>
           <p className="text-xs opacity-90">
-            BreatheWise AI estimates indoor air risk from your home setup and current outdoor AQI in{' '}
-            <strong>{selectedLocation.city}</strong> — never as a substitute for a physical indoor
-            PM2.5 sensor.
+            BreathWiseAI estimates indoor air risk from your home setup, family profile, and
+            current outdoor AQI in <strong>{selectedLocation.city}</strong> — never as a substitute
+            for a physical indoor PM2.5 sensor.
           </p>
         </div>
       </Alert>
 
+      {/* Active Family Profile Context Strip */}
+      <div className="cloud-card flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-[#4285F4]/20 bg-[#E8F0FE]/60 px-3.5 py-2.5 text-xs dark:border-[#8AB4F8]/20 dark:bg-[#4285F4]/10">
+        <div className="flex flex-wrap items-center gap-2 text-[#202124] dark:text-[#E3E3E3]">
+          <Users className="h-4 w-4 shrink-0 text-[#4285F4] dark:text-[#8AB4F8]" aria-hidden="true" />
+          {members.length > 0 ? (
+            <span>
+              Using your saved family profile:{' '}
+              <strong>
+                {members.length} member{members.length === 1 ? '' : 's'}
+              </strong>
+              {familyGroups.length > 0 ? ` · ${familyGroups.join(', ')}` : ''}
+            </span>
+          ) : (
+            <span className="text-[#5F6368] dark:text-[#9AA0A6]">
+              No family members saved yet — add kids, parents, or sensitivities for tailored indoor
+              risk protection.
+            </span>
+          )}
+        </div>
+        <Link
+          to={APP_ROUTES.PROFILE}
+          className="font-semibold text-[#1A73E8] hover:underline dark:text-[#8AB4F8]"
+        >
+          {members.length > 0 ? 'Edit family' : 'Add family'}
+        </Link>
+      </div>
+
       {/* Saved / Generated Estimated Indoor Plan (Displayed First When Ready!) */}
       {assessment ? (
         <div className="space-y-4">
+          <AgentTracePill trace={assessment.agentTrace} cityLabel={selectedLocation.city} />
+
           <Card>
             <CardHeader>
               <div className="flex flex-wrap items-center justify-between gap-2">

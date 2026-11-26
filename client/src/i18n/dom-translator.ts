@@ -49,6 +49,8 @@ const SKIP_EXACT_TOKENS = new Set([
   'km/h',
   'kg CO2e',
   'kg CO₂e',
+  'BreathWiseAI',
+  'BreathWise',
   'BreatheWise AI',
   'EN',
   'हि',

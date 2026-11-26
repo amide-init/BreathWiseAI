@@ -271,7 +271,7 @@ export const METRIC_EXPLAINERS: Record<MetricKey, MetricExplainerConfig> = {
     title: 'Estimated Home Air Risk',
     friendlySubtitle: 'Questionnaire-based estimate—not a physical indoor sensor reading',
     whatIsIt:
-      'Because most homes do not have a dedicated indoor PM2.5 monitor, BreatheWise AI estimates indoor air risk by combining today’s outdoor pollution with your 7 home answers (cooking exhaust, incense, cleaning method, sealing, and HEPA purifier).',
+      'Because most homes do not have a dedicated indoor PM2.5 monitor, BreathWiseAI estimates indoor air risk by combining today’s outdoor pollution with your 7 home answers (cooking exhaust, incense, cleaning method, sealing, and HEPA purifier).',
     whyItMatters: [
       'Even with windows closed, cooking without an exhaust fan or burning incense can spike indoor smoke fast.',
       'Simple habits like wet-mopping and running a chimney cut everyday exposure significantly.',

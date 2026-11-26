@@ -1,4 +1,4 @@
-"""Shared LangGraph state contract across all 5 BreatheWise AI nodes (docs/AI_WORKFLOW.md)."""
+"""Shared LangGraph state contract across the 7 BreatheWise AI nodes."""
 
 from __future__ import annotations
 
@@ -6,14 +6,19 @@ from typing import Any, Literal, TypedDict
 
 from app.rag.seed_data import KnowledgeDocument
 from app.schemas.environment import AirQualityResponse
-from app.schemas.planner import IndoorQuestionnaire, RiskAssessmentResult
+from app.schemas.planner import (
+    AgentReasoningPlan,
+    IndoorQuestionnaire,
+    RiskAssessmentResult,
+    ToolExecutionBundle,
+)
 from app.schemas.profile import SanitizedContext
 
 WorkflowMode = Literal["daily_plan", "indoor_advisor", "chat"]
 
 
 class BreatheWiseState(TypedDict, total=False):
-    """Typed state flowing through the 5-node LangGraph state machine."""
+    """Typed state flowing through the 7-node Planning + Reasoning + Tool-Using LangGraph."""
 
     # Request inputs
     workflow_mode: WorkflowMode
@@ -39,12 +44,21 @@ class BreatheWiseState(TypedDict, total=False):
     # Node 3 output (risk_assessment — deterministic only)
     risk_assessment: RiskAssessmentResult
 
-    # Node 4 output (recommendation_agent — RAG + Gemini)
+    # Node 4 output (planning_reasoning_agent — compound risk analysis & tool selection)
+    reasoning_plan: AgentReasoningPlan
+
+    # Node 5 output (tool_executor_node — bounded deterministic domain tools)
+    tool_results: ToolExecutionBundle
+
+    # User-visible PII-free agent trace across nodes
+    agent_trace: list[str]
+
+    # Node 6 output (recommendation_agent — RAG + Gemini synthesis)
     retrieved_docs: list[KnowledgeDocument]
     draft_output: dict[str, Any] | None
     llm_failed: bool
 
-    # Node 5 output (validation_node)
+    # Node 7 output (validation_node)
     validation_errors: list[str]
     retry_count: int
     fallback_mode: bool

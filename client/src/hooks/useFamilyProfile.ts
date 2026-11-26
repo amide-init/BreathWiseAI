@@ -35,7 +35,7 @@ export interface UseFamilyProfileResult {
   isLoading: boolean;
   error: string | null;
   saveFamily: (input: SaveFamilyInput) => Promise<FamilyModel>;
-  createMember: (input: SaveMemberInput) => Promise<FamilyMemberModel>;
+  createMember: (input: SaveMemberInput, targetFamilyId?: string) => Promise<FamilyMemberModel>;
   editMember: (memberId: string, input: SaveMemberInput) => Promise<FamilyMemberModel>;
   removeMember: (memberId: string) => Promise<void>;
   reload: () => Promise<void>;
@@ -135,14 +135,23 @@ export function useFamilyProfile(): UseFamilyProfileResult {
   );
 
   const createMember = useCallback(
-    async (input: SaveMemberInput): Promise<FamilyMemberModel> => {
-      if (!user || !family) {
+    async (input: SaveMemberInput, targetFamilyId?: string): Promise<FamilyMemberModel> => {
+      const resolvedFamilyId = targetFamilyId ?? family?.familyId;
+      if (!user || !resolvedFamilyId) {
         throw new Error('Save your household profile first before adding family members.');
       }
-      const created = await addFamilyMember(user.uid, family.familyId, input);
+      const created = await addFamilyMember(user.uid, resolvedFamilyId, input);
       setMembers((prev) => {
         const next = [...prev, created];
-        setCached(familyCacheKey(user.uid), { family, members: next }, FAMILY_CACHE_TTL_MS);
+        const currentFamily =
+          family ?? getCached<FamilyBundle>(familyCacheKey(user.uid))?.value.family ?? null;
+        if (currentFamily) {
+          setCached(
+            familyCacheKey(user.uid),
+            { family: currentFamily, members: next },
+            FAMILY_CACHE_TTL_MS,
+          );
+        }
         return next;
       });
       return created;

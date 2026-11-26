@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 
+import { ImpactGlobeIllustration } from '@/components/illustrations/GoogleAirIllustrations';
 import { ImpactProgressChart } from '@/components/impact/ImpactProgressChart';
 import { LogImpactModal } from '@/components/impact/LogImpactModal';
 import { DataStateWrapper } from '@/components/shared/DataStateWrapper';
@@ -52,7 +53,7 @@ function ImpactLogRow({
   const isEmissions = record.impactDomain === 'emissions_reduction';
 
   return (
-    <div className="rounded-xl border border-zinc-200/80 bg-zinc-50/70 p-4 dark:border-zinc-800 dark:bg-zinc-950/60">
+    <div className="rounded-2xl border border-[#DADCE0]/80 bg-[#F8F9FA] p-4 dark:border-white/[0.08] dark:bg-[#131314]/80">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0 space-y-1.5">
           <div className="flex flex-wrap items-center gap-2">
@@ -244,7 +245,7 @@ export function ImpactPage() {
       protectiveActions: summary.exposure.totalProtectiveActions,
       streakDays,
     });
-    const outcome = await shareTextMessage('My BreatheWise AI Clean-Air Impact', text);
+    const outcome = await shareTextMessage('My BreathWiseAI Clean-Air Impact', text);
     if (outcome === 'shared' || outcome === 'copied') {
       setShareFeedback(outcome);
       window.setTimeout(() => setShareFeedback(null), 2500);
@@ -254,22 +255,25 @@ export function ImpactPage() {
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-        <div>
-          <div className="flex flex-wrap items-center gap-2">
-            <h1 className="text-2xl font-bold tracking-tight text-zinc-950 dark:text-zinc-50">
-              My Impact
-            </h1>
-            {streakDays > 0 ? (
-              <Badge variant="default" className="gap-1">
-                <Flame className="h-3.5 w-3.5" aria-hidden="true" />
-                {streakDays}-Day Clean-Air Streak
-              </Badge>
-            ) : null}
+        <div className="flex items-center gap-3">
+          <ImpactGlobeIllustration className="hidden h-14 w-20 shrink-0 sm:block" />
+          <div>
+            <div className="flex flex-wrap items-center gap-2">
+              <h1 className="font-display text-2xl font-bold tracking-tight text-[#202124] dark:text-[#E3E3E3]">
+                My Impact
+              </h1>
+              {streakDays > 0 ? (
+                <Badge variant="warning" className="gap-1">
+                  <Flame className="h-3.5 w-3.5" aria-hidden="true" />
+                  {streakDays}-Day Clean-Air Streak
+                </Badge>
+              ) : null}
+            </div>
+            <p className="text-sm text-[#5F6368] dark:text-[#9AA0A6]">
+              Environmental CO₂ avoided and personal exposure protection are strictly tracked and
+              reported separately.
+            </p>
           </div>
-          <p className="text-sm text-zinc-600 dark:text-zinc-400">
-            Environmental CO₂ avoided and personal exposure protection are strictly tracked and
-            reported separately.
-          </p>
         </div>
 
         <div className="flex flex-wrap gap-2">
@@ -318,12 +322,12 @@ export function ImpactPage() {
           <div className="space-y-6">
             {/* Strictly Separated Metric Cards */}
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-              <Card className="border-emerald-200/80 dark:border-emerald-900/60">
+              <Card className="border-[#34A853]/30 dark:border-[#81C995]/25">
                 <CardHeader>
                   <div className="flex items-center justify-between gap-2">
                     <CardTitle className="flex items-center gap-2">
                       <Leaf
-                        className="h-5 w-5 text-emerald-600 dark:text-emerald-400"
+                        className="h-5 w-5 text-[#34A853] dark:text-[#81C995]"
                         aria-hidden="true"
                       />
                       <span>Environmental Emissions Avoided</span>
@@ -341,10 +345,10 @@ export function ImpactPage() {
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-2">
-                  <p className="font-display text-3xl font-extrabold tabular-nums text-emerald-700 dark:text-emerald-400">
+                  <p className="font-display text-3xl font-bold tabular-nums text-[#1E8E3E] dark:text-[#81C995]">
                     {formatCo2Kg(summary.emissions.totalEstimatedCo2AvoidedKg)}
                   </p>
-                  <p className="text-xs text-zinc-500 dark:text-zinc-400">
+                  <p className="text-xs text-[#5F6368] dark:text-[#9AA0A6]">
                     Across {summary.emissions.actionCount} sustainable commute or energy action
                     {summary.emissions.actionCount === 1 ? '' : 's'}. Tap “How this is estimated” on
                     any log below for full assumptions.
@@ -352,12 +356,12 @@ export function ImpactPage() {
                 </CardContent>
               </Card>
 
-              <Card className="border-sky-200/80 dark:border-sky-900/60">
+              <Card className="border-[#4285F4]/30 dark:border-[#8AB4F8]/25">
                 <CardHeader>
                   <div className="flex items-center justify-between gap-2">
                     <CardTitle className="flex items-center gap-2">
                       <Shield
-                        className="h-5 w-5 text-sky-600 dark:text-sky-400"
+                        className="h-5 w-5 text-[#4285F4] dark:text-[#8AB4F8]"
                         aria-hidden="true"
                       />
                       Personal Exposure Protection

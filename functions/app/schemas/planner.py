@@ -1,8 +1,8 @@
-"""Risk assessment, daily planner, and indoor air advisor schemas (PRD Modules 3 & 4)."""
+"""Risk assessment, agent planning, daily planner, and indoor air advisor schemas."""
 
 from __future__ import annotations
 
-from typing import Literal
+from typing import Any, Literal
 
 from pydantic import Field
 
@@ -35,8 +35,28 @@ class RiskAssessmentResult(ApiModel):
     quick_decisions: list[QuickDecision] = Field(default_factory=list)
 
 
+class AgentReasoningPlan(ApiModel):
+    """Structured planning output produced by Node 4 (`planning_reasoning_agent`)."""
+
+    city_aqi_summary: str
+    compound_factors: list[str] = Field(default_factory=list)
+    selected_tools: list[str] = Field(default_factory=list)
+    personalization_rules: list[str] = Field(default_factory=list)
+    must_cite_city_aqi: bool = True
+
+
+class ToolExecutionBundle(ApiModel):
+    """Structured outputs collected by Node 5 (`tool_executor_node`)."""
+
+    tools_executed: list[str] = Field(default_factory=list)
+    forecast_window_analysis: dict[str, Any] = Field(default_factory=dict)
+    indoor_outdoor_interaction: dict[str, Any] = Field(default_factory=dict)
+    harm_reduction_playbooks: list[dict[str, str]] = Field(default_factory=list)
+    commute_analysis: dict[str, Any] = Field(default_factory=dict)
+
+
 class RecommendationItem(ApiModel):
-    """Single clean-air action item enforcing PRD §6 Module 3's 4-part structure."""
+    """Single clean-air action item with honest harm-reduction & city-AQI grounding."""
 
     item_id: str
     title: str
@@ -52,6 +72,7 @@ class RecommendationItem(ApiModel):
     target_members: list[str] = Field(default_factory=list)
     what_to_do: str = Field(min_length=5)
     why: str = Field(min_length=5)
+    if_you_continue: str | None = None
     alternative: str = Field(min_length=5)
     supporting_data: str = Field(min_length=3)
 
@@ -88,4 +109,5 @@ class IndoorAssessmentResponse(ApiModel):
     key_indoor_sources: list[str] = Field(default_factory=list)
     recommendations: list[RecommendationItem] = Field(default_factory=list)
     citations: list[Citation] = Field(default_factory=list)
+    agent_trace: list[str] = Field(default_factory=list)
     fallback_mode: bool = False

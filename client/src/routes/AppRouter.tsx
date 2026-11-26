@@ -1,13 +1,19 @@
 import { lazy, Suspense } from 'react';
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 
+import { BreatheWiseLogoMark } from '@/components/illustrations/GoogleAirIllustrations';
 import { Skeleton } from '@/components/ui/skeleton';
 import { APP_ROUTES } from '@/config/routes';
+import { useAuth } from '@/hooks/useAuth';
 import { PortalLayout } from '@/layouts/PortalLayout';
 import { DashboardPage } from '@/pages/DashboardPage';
+import { LandingPage } from '@/pages/LandingPage';
 import { LoginPage } from '@/pages/LoginPage';
 import { ProtectedRoute } from '@/routes/ProtectedRoute';
 
+const OnboardingPage = lazy(() =>
+  import('@/pages/OnboardingPage').then((m) => ({ default: m.OnboardingPage })),
+);
 const PlannerPage = lazy(() =>
   import('@/pages/PlannerPage').then((m) => ({ default: m.PlannerPage })),
 );
@@ -34,17 +40,54 @@ function RouteFallback() {
   );
 }
 
+/**
+ * Root `/` entry:
+ * - Signed-out visitors see the dedicated Google-illustrated Landing Page (no dashboard sidebar).
+ * - Signed-in users go straight to Onboarding (if new) or the Today dashboard inside PortalLayout.
+ */
+function HomeEntryLayout() {
+  const { user, userProfile, isLoading } = useAuth();
+
+  if (isLoading) {
+    return (
+      <div className="bw-illustrated-bg flex min-h-screen flex-col items-center justify-center gap-3 text-[#5F6368] dark:text-[#9AA0A6]">
+        <BreatheWiseLogoMark className="h-12 w-12 animate-pulse" />
+        <p className="font-display text-sm font-semibold">Loading BreathWiseAI…</p>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return <LandingPage />;
+  }
+
+  if (userProfile && !userProfile.onboardingCompleted) {
+    return <Navigate to={APP_ROUTES.ONBOARDING} replace />;
+  }
+
+  return <PortalLayout />;
+}
+
 export function AppRouter() {
   return (
     <BrowserRouter>
       <Routes>
         <Route path={APP_ROUTES.LOGIN} element={<LoginPage />} />
-        {/* Public Guest Preview on Home Dashboard so visitors see live value before signing in */}
-        <Route element={<PortalLayout />}>
+        <Route path="/welcome" element={<LandingPage />} />
+        {/* Root: Dedicated Landing Page for guests, Portal Dashboard for signed-in users */}
+        <Route element={<HomeEntryLayout />}>
           <Route path={APP_ROUTES.HOME} element={<DashboardPage />} />
         </Route>
-        {/* Authenticated Personalization, AI & Impact Screens */}
+        {/* Authenticated Personalization, Onboarding, AI & Impact Screens */}
         <Route element={<ProtectedRoute />}>
+          <Route
+            path={APP_ROUTES.ONBOARDING}
+            element={
+              <Suspense fallback={<RouteFallback />}>
+                <OnboardingPage />
+              </Suspense>
+            }
+          />
           <Route element={<PortalLayout />}>
             <Route
               path={APP_ROUTES.PLANNER}

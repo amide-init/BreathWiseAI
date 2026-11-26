@@ -74,8 +74,8 @@ function serializeTimestamp(value: unknown): string | null {
  */
 export function buildUserCreatePayload(user: User): FirestoreUserCreatePayload {
   const email = user.email?.trim() ?? '';
-  const fallbackName = email.includes('@') ? email.split('@')[0] : 'BreatheWise User';
-  const displayName = (user.displayName?.trim() || fallbackName || 'BreatheWise User').slice(0, 100);
+  const fallbackName = email.includes('@') ? email.split('@')[0] : 'BreathWiseAI User';
+  const displayName = (user.displayName?.trim() || fallbackName || 'BreathWiseAI User').slice(0, 100);
 
   return {
     uid: user.uid,
@@ -99,7 +99,7 @@ export function mapFirestoreDocToUserModel(uid: string, data: DocumentData): Use
 
   return {
     uid: typeof data.uid === 'string' ? data.uid : uid,
-    displayName: typeof data.displayName === 'string' ? data.displayName : 'BreatheWise User',
+    displayName: typeof data.displayName === 'string' ? data.displayName : 'BreathWiseAI User',
     email: typeof data.email === 'string' ? data.email : '',
     defaultFamilyId: typeof data.defaultFamilyId === 'string' ? data.defaultFamilyId : null,
     primaryLocation: normalizeLocation(data.primaryLocation as LocationOption | null | undefined),

@@ -1,32 +1,34 @@
 import {
+  ArrowUp,
   BookOpen,
   ChevronDown,
   ChevronUp,
+  Home,
   Loader2,
+  MapPin,
   MessageSquarePlus,
-  Send,
   ShieldAlert,
   Sparkles,
   Trash2,
+  Users,
+  Wind,
 } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState, type FormEvent } from 'react';
 import { useSearchParams } from 'react-router-dom';
 
+import {
+  CopilotChatIllustration,
+  GoogleSparkleMark,
+} from '@/components/illustrations/GoogleAirIllustrations';
+import { AgentTracePill } from '@/components/shared/AgentTracePill';
 import { AqiBadge } from '@/components/shared/AqiBadge';
-import { MedicalDisclaimer } from '@/components/shared/MedicalDisclaimer';
 import { Alert } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAuth } from '@/hooks/useAuth';
 import { useFamilyProfile } from '@/hooks/useFamilyProfile';
 import { useSelectedLocation } from '@/hooks/useSelectedLocation';
 import { getCached, invalidateCached, setCached } from '@/lib/client-cache';
-import {
-  STARTER_PROMPTS,
-  type ChatMessageItem,
-  type ChatSessionSummary,
-} from '@/models/chat.model';
+import type { ChatMessageItem, ChatSessionSummary } from '@/models/chat.model';
 import {
   deleteChatSession,
   listCachedSessionMessages,
@@ -51,11 +53,11 @@ function AssistantMessageCard({
 
   return (
     <div className="flex justify-start">
-      <div className="max-w-[92%] space-y-3 rounded-2xl border border-zinc-200/80 bg-white p-4 shadow-2xs sm:max-w-[85%] dark:border-zinc-800 dark:bg-zinc-900/90">
+      <div className="cloud-card w-full max-w-[95%] space-y-3 rounded-3xl rounded-tl-lg border border-white/80 bg-white/95 p-4 backdrop-blur-sm sm:max-w-[86%] sm:p-5 dark:border-white/[0.09] dark:bg-[#1E1F20]/95">
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-700 dark:text-emerald-400">
-            <Sparkles className="h-3.5 w-3.5" aria-hidden="true" />
-            BreatheWise AI
+          <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#1A73E8] dark:text-[#8AB4F8]">
+            <GoogleSparkleMark className="h-4 w-4" />
+            BreathWiseAI
           </span>
           <div className="flex flex-wrap items-center gap-1.5">
             {msg.environmentalSnapshot ? (
@@ -74,25 +76,27 @@ function AssistantMessageCard({
             <div>
               <p className="font-semibold">Seek Qualified Medical Care Promptly</p>
               <p>
-                BreatheWise AI cannot diagnose or prescribe medication. Follow official local
+                BreathWiseAI cannot diagnose or prescribe medication. Follow official local
                 advisories or contact medical/emergency services for acute symptoms.
               </p>
             </div>
           </Alert>
         ) : null}
 
-        <p className="whitespace-pre-line text-sm leading-relaxed text-zinc-800 dark:text-zinc-200">
+        <p className="whitespace-pre-line text-sm leading-relaxed text-[#202124] dark:text-[#E3E3E3]">
           {msg.content}
         </p>
 
+        <AgentTracePill trace={msg.agentTrace} />
+
         {msg.citations.length > 0 ? (
-          <div className="border-t border-zinc-100 pt-2.5 dark:border-zinc-800">
+          <div className="border-t border-[#E8EAED] pt-2.5 dark:border-white/[0.08]">
             <button
               type="button"
               onClick={() => setCitationsOpen((prev) => !prev)}
-              className="inline-flex cursor-pointer items-center gap-1.5 text-xs font-medium text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100"
+              className="inline-flex cursor-pointer items-center gap-1.5 text-xs font-medium text-[#5F6368] hover:text-[#202124] dark:text-[#9AA0A6] dark:hover:text-[#E3E3E3]"
             >
-              <BookOpen className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
+              <BookOpen className="h-3.5 w-3.5 text-[#34A853] dark:text-[#81C995]" />
               <span>
                 {msg.citations.length} verified source{msg.citations.length === 1 ? '' : 's'} used
               </span>
@@ -123,7 +127,7 @@ function AssistantMessageCard({
                 type="button"
                 disabled={disabled}
                 onClick={() => onFollowUpClick(suggestion)}
-                className="cursor-pointer rounded-full border border-emerald-500/25 bg-emerald-500/8 px-3 py-1 text-left text-xs font-medium text-emerald-800 transition-colors hover:bg-emerald-500/15 disabled:opacity-50 dark:border-emerald-400/25 dark:bg-emerald-400/10 dark:text-emerald-300 dark:hover:bg-emerald-400/20"
+                className="cursor-pointer rounded-full border border-[#4285F4]/25 bg-[#4285F4]/[0.08] px-3 py-1.5 text-left text-xs font-medium text-[#1A73E8] transition-colors hover:bg-[#4285F4]/15 disabled:opacity-50 dark:border-[#8AB4F8]/25 dark:bg-[#8AB4F8]/12 dark:text-[#8AB4F8] dark:hover:bg-[#8AB4F8]/20"
               >
                 {suggestion}
               </button>
@@ -136,9 +140,9 @@ function AssistantMessageCard({
 }
 
 export function AssistantPage() {
-  const { user } = useAuth();
+  const { user, userProfile } = useAuth();
   const { selectedLocation } = useSelectedLocation();
-  const { family } = useFamilyProfile();
+  const { family, members } = useFamilyProfile();
   const [searchParams, setSearchParams] = useSearchParams();
 
   const initialSessions = user
@@ -161,12 +165,24 @@ export function AssistantPage() {
   const [error, setError] = useState<string | null>(null);
 
   const bottomRef = useRef<HTMLDivElement | null>(null);
+  const textareaRef = useRef<HTMLTextAreaElement | null>(null);
+
+  // Auto-resize composer textarea cleanly up to 128px
+  useEffect(() => {
+    const el = textareaRef.current;
+    if (!el) {
+      return;
+    }
+    el.style.height = 'auto';
+    el.style.height = `${Math.min(el.scrollHeight, 128)}px`;
+  }, [input]);
 
   useEffect(() => {
     const prefilled = searchParams.get('q');
     if (prefilled && prefilled.trim()) {
       setInput(prefilled.trim());
       setSearchParams({}, { replace: true });
+      textareaRef.current?.focus();
     }
   }, [searchParams, setSearchParams]);
 
@@ -204,7 +220,9 @@ export function AssistantPage() {
   }, [refreshSessions]);
 
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+    if (messages.length > 0 || sending) {
+      bottomRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
+    }
   }, [messages, sending]);
 
   async function handleSelectSession(sessionId: string) {
@@ -252,6 +270,7 @@ export function AssistantPage() {
     if (user) {
       invalidateCached(`chat_active:${user.uid}`);
     }
+    textareaRef.current?.focus();
   }
 
   async function handleDeleteSession(sessionId: string) {
@@ -314,6 +333,7 @@ export function AssistantPage() {
         citations: response.reply.citations ?? [],
         followUpSuggestions: response.reply.followUpSuggestions ?? [],
         environmentalSnapshot: response.reply.environmentalSnapshot ?? null,
+        agentTrace: response.reply.agentTrace ?? [],
         medicalEscalationRequired: response.medicalEscalationRequired,
         fallbackMode: response.reply.fallbackMode,
       };
@@ -328,7 +348,6 @@ export function AssistantPage() {
       void refreshSessions(true);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to reach AI Assistant.');
-      // Roll back optimistic message on failure so user can retry easily
       setMessages((prev) => prev.filter((m) => m.messageId !== optimisticUserMsg.messageId));
       setInput(cleaned);
     } finally {
@@ -341,44 +360,89 @@ export function AssistantPage() {
     void submitPrompt(input);
   }
 
+  const firstName =
+    userProfile?.displayName?.split(' ')[0] ?? user?.displayName?.split(' ')[0] ?? 'there';
+
+  const starterCards = [
+    {
+      label: 'Outdoor & Play',
+      prompt: `Is it safe for kids to play outside or go for a walk in ${selectedLocation.city} today?`,
+      icon: Wind,
+      accent:
+        'bg-[#4285F4]/12 text-[#1A73E8] border-[#4285F4]/25 dark:bg-[#8AB4F8]/15 dark:text-[#8AB4F8] dark:border-[#8AB4F8]/25',
+    },
+    {
+      label: 'Indoor Fixes (No HEPA)',
+      prompt: `What are the best zero-cost ways to keep indoor air cleaner in ${selectedLocation.city} without a HEPA purifier?`,
+      icon: Home,
+      accent:
+        'bg-[#34A853]/12 text-[#1E8E3E] border-[#34A853]/25 dark:bg-[#81C995]/15 dark:text-[#81C995] dark:border-[#81C995]/25',
+    },
+    {
+      label: 'Harm-Reduction',
+      prompt: `Someone smokes or lights dhoop at home while ${selectedLocation.city} AQI is elevated — what are realistic lower-loss steps?`,
+      icon: Sparkles,
+      accent:
+        'bg-[#FBBC05]/18 text-[#9A6700] border-[#FBBC05]/30 dark:bg-[#FDD663]/15 dark:text-[#FDD663] dark:border-[#FDD663]/25',
+    },
+    {
+      label: 'Commute Protection',
+      prompt: `How should I protect myself during my daily commute in ${selectedLocation.city} today?`,
+      icon: MapPin,
+      accent:
+        'bg-[#EA4335]/12 text-[#C5221F] border-[#EA4335]/25 dark:bg-[#F28B82]/15 dark:text-[#F28B82] dark:border-[#F28B82]/25',
+    },
+  ];
+
   return (
-    <div className="space-y-5">
-      {/* Header */}
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight text-zinc-950 dark:text-zinc-50">
-            AI Clean-Air Assistant
-          </h1>
-          <p className="text-sm text-zinc-600 dark:text-zinc-400">
-            Grounded in live {selectedLocation.city} AQI, your family profile, and verified
-            public-health guidance.
-          </p>
+    <div className="mx-auto flex max-w-3xl flex-col pb-44 md:pb-36">
+      {/* Compact Top Copilot Context Bar */}
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-2.5">
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="inline-flex items-center gap-1.5 rounded-full border border-[#4285F4]/25 bg-white/90 px-3 py-1 text-xs font-semibold text-[#202124] shadow-2xs dark:border-white/[0.1] dark:bg-[#1E1F20]/90 dark:text-[#E3E3E3]">
+            <GoogleSparkleMark className="h-3.5 w-3.5" />
+            Ask BreathWiseAI
+          </span>
+          <span className="inline-flex items-center gap-1 rounded-full bg-[#4285F4]/10 px-2.5 py-1 text-[11px] font-medium text-[#1A73E8] dark:bg-[#8AB4F8]/14 dark:text-[#8AB4F8]">
+            <MapPin className="h-3 w-3" aria-hidden="true" />
+            {selectedLocation.city}
+          </span>
+          {members.length > 0 ? (
+            <span className="inline-flex items-center gap-1 rounded-full bg-[#34A853]/10 px-2.5 py-1 text-[11px] font-medium text-[#137333] dark:bg-[#81C995]/14 dark:text-[#81C995]">
+              <Users className="h-3 w-3" aria-hidden="true" />
+              {members.length} family member{members.length === 1 ? '' : 's'}
+            </span>
+          ) : null}
         </div>
 
-        <Button type="button" variant="outline" size="sm" onClick={handleNewChat}>
-          <MessageSquarePlus className="h-4 w-4" aria-hidden="true" />
+        <button
+          type="button"
+          onClick={handleNewChat}
+          className="inline-flex cursor-pointer items-center gap-1.5 rounded-full border border-[#DADCE0] bg-white/95 px-3.5 py-1.5 text-xs font-semibold text-[#3C4043] transition-colors hover:border-[#4285F4]/50 hover:text-[#1A73E8] dark:border-white/[0.12] dark:bg-[#1E1F20] dark:text-[#E3E3E3] dark:hover:border-[#8AB4F8]/50 dark:hover:text-[#8AB4F8]"
+        >
+          <MessageSquarePlus className="h-3.5 w-3.5" aria-hidden="true" />
           New Chat
-        </Button>
+        </button>
       </div>
 
-      {/* Recent Conversations Bar */}
+      {/* Recent Conversations Strip */}
       {sessions.length > 0 ? (
-        <div className="flex items-center gap-2 overflow-x-auto pb-1">
+        <div className="mb-4 flex items-center gap-2 overflow-x-auto pb-1">
           {sessions.slice(0, 6).map((sess) => {
             const active = sess.sessionId === activeSessionId;
             return (
               <div
                 key={sess.sessionId}
-                className={`inline-flex shrink-0 items-center gap-1 rounded-full border pl-3 pr-1.5 py-1 text-xs transition-colors ${
+                className={`inline-flex shrink-0 items-center gap-1 rounded-full border py-1 pr-1.5 pl-3 text-xs transition-colors ${
                   active
-                    ? 'border-emerald-500/40 bg-emerald-500/12 text-emerald-800 dark:border-emerald-400/40 dark:bg-emerald-400/15 dark:text-emerald-300'
-                    : 'border-zinc-200 bg-white text-zinc-600 hover:border-zinc-300 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-300'
+                    ? 'border-[#4285F4]/40 bg-[#4285F4]/12 text-[#1A73E8] dark:border-[#8AB4F8]/40 dark:bg-[#8AB4F8]/15 dark:text-[#8AB4F8]'
+                    : 'border-[#DADCE0] bg-white/90 text-[#5F6368] hover:border-[#4285F4]/40 dark:border-white/[0.1] dark:bg-[#1E1F20]/90 dark:text-[#BDC1C6]'
                 }`}
               >
                 <button
                   type="button"
                   onClick={() => void handleSelectSession(sess.sessionId)}
-                  className="max-w-[170px] cursor-pointer truncate font-medium"
+                  className="max-w-[165px] cursor-pointer truncate font-medium"
                 >
                   {sess.title}
                 </button>
@@ -386,7 +450,7 @@ export function AssistantPage() {
                   type="button"
                   aria-label={`Delete conversation ${sess.title}`}
                   onClick={() => void handleDeleteSession(sess.sessionId)}
-                  className="flex h-5 w-5 cursor-pointer items-center justify-center rounded-full text-zinc-400 hover:bg-red-100 hover:text-red-600 dark:hover:bg-red-950/60 dark:hover:text-red-400"
+                  className="flex h-5 w-5 cursor-pointer items-center justify-center rounded-full text-[#9AA0A6] hover:bg-[#EA4335]/15 hover:text-[#EA4335] dark:hover:text-[#F28B82]"
                 >
                   <Trash2 className="h-3 w-3" />
                 </button>
@@ -396,48 +460,63 @@ export function AssistantPage() {
         </div>
       ) : null}
 
-      {error ? <Alert variant="danger">{error}</Alert> : null}
+      {error ? (
+        <div className="mb-4">
+          <Alert variant="danger">{error}</Alert>
+        </div>
+      ) : null}
 
-      {/* Conversation Thread */}
+      {/* Conversation Area OR Gemini-Style Welcome Canvas */}
       {messages.length === 0 && !loadingThread ? (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Sparkles className="h-5 w-5 text-emerald-600 dark:text-emerald-400" aria-hidden="true" />
-              Ask About Today’s Air in {selectedLocation.city}
-            </CardTitle>
-            <CardDescription>
-              Tap a starter question below or type your own. Every answer checks deterministic CPCB
-              NAQI safety rules before responding.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="flex flex-wrap gap-2">
-            {STARTER_PROMPTS.map((prompt) => (
-              <button
-                key={prompt}
-                type="button"
-                disabled={sending}
-                onClick={() => void submitPrompt(prompt)}
-                className="inline-flex cursor-pointer items-center gap-1.5 rounded-full border border-emerald-500/25 bg-emerald-500/10 px-3.5 py-2 text-left text-xs font-medium text-emerald-800 transition-colors hover:bg-emerald-500/20 disabled:opacity-50 dark:border-emerald-400/25 dark:bg-emerald-400/10 dark:text-emerald-300 dark:hover:bg-emerald-400/20"
-              >
-                <Sparkles className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
-                {prompt}
-              </button>
-            ))}
-          </CardContent>
-        </Card>
+        <div className="flex flex-1 flex-col items-center justify-center py-4 sm:py-8">
+          <CopilotChatIllustration className="mb-3 h-16 w-24" />
+          <h1 className="font-display text-center text-2xl font-bold tracking-tight text-[#202124] sm:text-3xl dark:text-[#E3E3E3]">
+            Hi <span className="text-[#4285F4] dark:text-[#8AB4F8]">{firstName}</span>, how can I
+            help today?
+          </h1>
+          <p className="mt-1.5 max-w-lg text-center text-sm text-[#5F6368] dark:text-[#9AA0A6]">
+            Ask anything about live <strong>{selectedLocation.city}</strong> air quality, kids’
+            play, indoor fixes, or commute swaps.
+          </p>
+
+          {/* 4-Color Starter Suggestion Grid */}
+          <div className="mt-6 grid w-full grid-cols-1 gap-3 sm:grid-cols-2">
+            {starterCards.map((card) => {
+              const Icon = card.icon;
+              return (
+                <button
+                  key={card.label}
+                  type="button"
+                  disabled={sending}
+                  onClick={() => void submitPrompt(card.prompt)}
+                  className="cloud-card group flex cursor-pointer flex-col items-start gap-2 rounded-3xl border border-white/80 bg-white/95 p-4 text-left backdrop-blur-sm transition-all hover:-translate-y-0.5 hover:border-[#4285F4]/40 disabled:opacity-50 dark:border-white/[0.09] dark:bg-[#1E1F20]/95 dark:hover:border-[#8AB4F8]/40"
+                >
+                  <span
+                    className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-[11px] font-semibold ${card.accent}`}
+                  >
+                    <Icon className="h-3 w-3" aria-hidden="true" />
+                    {card.label}
+                  </span>
+                  <span className="text-xs leading-relaxed font-medium text-[#3C4043] group-hover:text-[#202124] dark:text-[#C4C7C5] dark:group-hover:text-[#E3E3E3]">
+                    {card.prompt}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
       ) : (
         <div className="space-y-4">
           {loadingThread ? (
-            <div className="flex items-center justify-center py-10 text-sm text-zinc-500">
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            <div className="flex items-center justify-center py-12 text-sm text-[#5F6368] dark:text-[#9AA0A6]">
+              <Loader2 className="mr-2 h-4 w-4 animate-spin text-[#4285F4]" />
               Loading conversation…
             </div>
           ) : (
             messages.map((msg) =>
               msg.role === 'user' ? (
                 <div key={msg.messageId} className="flex justify-end">
-                  <div className="max-w-[85%] rounded-2xl rounded-br-md bg-zinc-950 px-4 py-3 text-sm text-white shadow-xs sm:max-w-[75%] dark:bg-emerald-500 dark:text-zinc-950">
+                  <div className="cloud-card max-w-[85%] rounded-3xl rounded-br-md bg-[#4285F4] px-4 py-3 text-sm leading-relaxed text-white sm:max-w-[75%] dark:bg-[#8AB4F8] dark:text-[#131314]">
                     {msg.content}
                   </div>
                 </div>
@@ -454,49 +533,62 @@ export function AssistantPage() {
 
           {sending ? (
             <div className="flex justify-start">
-              <div className="inline-flex items-center gap-2 rounded-2xl border border-zinc-200/80 bg-white px-4 py-3 text-xs text-zinc-500 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-400">
-                <Loader2 className="h-3.5 w-3.5 animate-spin text-emerald-600 dark:text-emerald-400" />
-                Checking live AQI, risk rules &amp; verified sources…
+              <div className="cloud-card inline-flex items-center gap-2.5 rounded-3xl border border-white/80 bg-white/95 px-4 py-3 text-xs font-medium text-[#5F6368] dark:border-white/[0.09] dark:bg-[#1E1F20] dark:text-[#9AA0A6]">
+                <GoogleSparkleMark className="h-4 w-4 animate-pulse" />
+                <span>Planning with live {selectedLocation.city} AQI &amp; verified tools…</span>
               </div>
             </div>
           ) : null}
 
-          <div ref={bottomRef} />
+          <div ref={bottomRef} className="h-4" />
         </div>
       )}
 
-      {/* Composer */}
-      <form
-        onSubmit={handleFormSubmit}
-        className="sticky bottom-[76px] z-10 rounded-2xl border border-zinc-200/90 bg-white/95 p-2.5 shadow-sm backdrop-blur-xl md:bottom-4 dark:border-zinc-800 dark:bg-zinc-900/95"
-      >
-        <div className="flex items-end gap-2">
-          <textarea
-            rows={2}
-            maxLength={1000}
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault();
-                void submitPrompt(input);
-              }
-            }}
-            placeholder={`Ask about ${selectedLocation.city} air quality, outdoor plans, indoor ventilation, or commute swaps…`}
-            className="max-h-32 flex-1 resize-none rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm text-zinc-950 outline-none focus:border-emerald-500 focus:bg-white focus:ring-2 focus:ring-emerald-500/20 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-50"
-          />
-          <Button type="submit" disabled={sending || !input.trim()} className="shrink-0">
-            {sending ? (
-              <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
-            ) : (
-              <Send className="h-4 w-4" aria-hidden="true" />
-            )}
-            <span className="hidden sm:inline">Send</span>
-          </Button>
-        </div>
-      </form>
+      {/* Fixed Bottom Floating Gemini-Style Chat Composer Dock */}
+      <div className="pointer-events-none fixed right-0 bottom-[66px] left-0 z-30 bg-gradient-to-t from-[#F8F9FA] via-[#F8F9FA]/95 to-transparent px-3 pt-6 pb-2.5 md:bottom-0 md:left-60 md:px-8 md:pb-4 dark:from-[#131314] dark:via-[#131314]/95">
+        <div className="pointer-events-auto mx-auto w-full max-w-3xl">
+          <form
+            onSubmit={handleFormSubmit}
+            className="cloud-card relative overflow-hidden rounded-[28px] border border-[#DADCE0] bg-white/98 p-2 transition-all focus-within:border-[#4285F4]/70 focus-within:ring-2 focus-within:ring-[#4285F4]/20 dark:border-white/[0.12] dark:bg-[#1E1F20]/98 dark:focus-within:border-[#8AB4F8]/70 dark:focus-within:ring-[#8AB4F8]/20"
+          >
+            <div className="google-ribbon h-[2px] w-full opacity-75" aria-hidden="true" />
+            <div className="flex items-end gap-2 px-2 pt-1.5 pb-1">
+              <textarea
+                ref={textareaRef}
+                rows={1}
+                maxLength={1000}
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    void submitPrompt(input);
+                  }
+                }}
+                placeholder={`Ask BreathWiseAI about ${selectedLocation.city} air, home fixes, or kids’ play…`}
+                className="max-h-32 min-h-[40px] flex-1 resize-none bg-transparent py-2 pl-1 text-sm text-[#202124] outline-none placeholder:text-[#5F6368] dark:text-[#E3E3E3] dark:placeholder:text-[#9AA0A6]"
+              />
+              <button
+                type="submit"
+                disabled={sending || !input.trim()}
+                aria-label="Send message"
+                className="flex h-10 w-10 shrink-0 cursor-pointer items-center justify-center rounded-full bg-[#4285F4] text-white shadow-sm transition-all hover:bg-[#3367D6] active:scale-95 disabled:cursor-not-allowed disabled:bg-[#DADCE0] disabled:text-[#9AA0A6] dark:bg-[#8AB4F8] dark:text-[#131314] dark:hover:bg-[#A8C7FA] dark:disabled:bg-white/[0.1] dark:disabled:text-[#5F6368]"
+              >
+                {sending ? (
+                  <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+                ) : (
+                  <ArrowUp className="h-4.5 w-4.5" strokeWidth={2.4} aria-hidden="true" />
+                )}
+              </button>
+            </div>
+          </form>
 
-      <MedicalDisclaimer />
+          <p className="mt-1.5 text-center text-[10px] text-[#5F6368] dark:text-[#9AA0A6]">
+            BreathWiseAI grounds answers in live {selectedLocation.city} AQI &amp; verified
+            guidelines — general guidance only, not medical diagnosis.
+          </p>
+        </div>
+      </div>
     </div>
   );
 }

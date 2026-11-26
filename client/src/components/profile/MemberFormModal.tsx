@@ -4,6 +4,7 @@ import { useState, type FormEvent } from 'react';
 import { Alert } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { ModalPortal } from '@/components/ui/modal-portal';
 import {
   AGE_GROUP_LABELS,
   ROLE_LABELS,
@@ -33,7 +34,7 @@ const COMMUTE_OPTIONS: { value: '' | MemberCommuteMode; label: string }[] = [
 ];
 
 const FIELD_CLASS =
-  'w-full rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm text-zinc-950 outline-none focus:border-emerald-500 focus:bg-white focus:ring-2 focus:ring-emerald-500/20 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-50';
+  'w-full rounded-xl border border-[#DADCE0] bg-[#F8F9FA] px-3 py-2 text-sm text-[#202124] outline-none transition-colors focus:border-[#4285F4] focus:bg-white focus:ring-2 focus:ring-[#4285F4]/25 dark:border-white/[0.12] dark:bg-[#131314] dark:text-[#E3E3E3] dark:focus:border-[#8AB4F8]';
 
 export function MemberFormModal({ initial, onClose, onSubmit }: MemberFormModalProps) {
   const [nickname, setNickname] = useState(initial?.nickname ?? '');
@@ -94,19 +95,22 @@ export function MemberFormModal({ initial, onClose, onSubmit }: MemberFormModalP
   }
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-end justify-center bg-zinc-950/60 p-0 backdrop-blur-xs sm:items-center sm:p-4"
+    <ModalPortal>
+      <div
+        className="fixed inset-0 z-[100] flex items-end justify-center bg-black/55 p-0 backdrop-blur-xs sm:items-center sm:p-4"
       role="dialog"
       aria-modal="true"
       aria-label={initial ? 'Edit family member' : 'Add family member'}
     >
-      <div className="max-h-[92vh] w-full max-w-lg overflow-y-auto rounded-t-3xl border border-zinc-200/80 bg-white p-5 shadow-2xl sm:rounded-2xl dark:border-zinc-800 dark:bg-zinc-900">
+      <div className="cloud-card max-h-[92vh] w-full max-w-lg overflow-hidden rounded-t-3xl border border-white/80 bg-white sm:rounded-3xl dark:border-white/[0.1] dark:bg-[#1E1F20]">
+        <div className="google-ribbon h-[3px] w-full" aria-hidden="true" />
+        <div className="max-h-[calc(92vh-3px)] overflow-y-auto p-5">
         <div className="flex items-center justify-between pb-3">
           <div>
-            <h2 className="text-base font-semibold tracking-tight text-zinc-950 dark:text-zinc-50">
+            <h2 className="font-display text-base font-bold tracking-tight text-[#202124] dark:text-[#E3E3E3]">
               {initial ? 'Edit Family Member' : 'Add Family Member'}
             </h2>
-            <p className="text-xs text-zinc-500 dark:text-zinc-400">
+            <p className="text-xs text-[#5F6368] dark:text-[#9AA0A6]">
               Used to tailor deterministic exposure protection and daily clean-air routines.
             </p>
           </div>
@@ -114,7 +118,7 @@ export function MemberFormModal({ initial, onClose, onSubmit }: MemberFormModalP
             type="button"
             onClick={onClose}
             aria-label="Close member modal"
-            className="flex h-9 w-9 cursor-pointer items-center justify-center rounded-xl text-zinc-500 hover:bg-zinc-100 dark:text-zinc-400 dark:hover:bg-zinc-800"
+            className="flex h-9 w-9 cursor-pointer items-center justify-center rounded-full text-[#5F6368] hover:bg-[#F1F3F4] dark:text-[#9AA0A6] dark:hover:bg-white/[0.08]"
           >
             <X className="h-4 w-4" />
           </button>
@@ -225,63 +229,63 @@ export function MemberFormModal({ initial, onClose, onSubmit }: MemberFormModalP
             </label>
           </div>
 
-          <div className="rounded-xl border border-zinc-200/80 bg-zinc-50/80 p-3 dark:border-zinc-800 dark:bg-zinc-950/70">
+          <div className="rounded-2xl border border-[#E8EAED] bg-[#F8F9FA] p-3 dark:border-white/[0.1] dark:bg-[#131314]/80">
             <button
               type="button"
               onClick={() => setShowHealth((prev) => !prev)}
               className="flex w-full cursor-pointer items-center justify-between text-left"
             >
-              <span className="flex items-center gap-2 text-xs font-semibold text-zinc-800 dark:text-zinc-200">
-                <Lock className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" aria-hidden="true" />
+              <span className="flex items-center gap-2 text-xs font-semibold text-[#202124] dark:text-[#E3E3E3]">
+                <Lock className="h-3.5 w-3.5 text-[#4285F4] dark:text-[#8AB4F8]" aria-hidden="true" />
                 Health Sensitivities
                 <Badge variant="neutral">Optional & Private</Badge>
               </span>
               {showHealth ? (
-                <ChevronUp className="h-4 w-4 text-zinc-500" />
+                <ChevronUp className="h-4 w-4 text-[#5F6368] dark:text-[#9AA0A6]" />
               ) : (
-                <ChevronDown className="h-4 w-4 text-zinc-500" />
+                <ChevronDown className="h-4 w-4 text-[#5F6368] dark:text-[#9AA0A6]" />
               )}
             </button>
 
             {showHealth ? (
-              <div className="mt-3 space-y-2.5 border-t border-zinc-200 pt-3 dark:border-zinc-800">
-                <p className="text-[11px] text-zinc-500 dark:text-zinc-400">
+              <div className="mt-3 space-y-2.5 border-t border-[#E8EAED] pt-3 dark:border-white/[0.08]">
+                <p className="text-[11px] text-[#5F6368] dark:text-[#9AA0A6]">
                   Private to your account and excluded from logs. Used only to apply more
                   conservative general guidance — never medical diagnosis.
                 </p>
 
-                <label className="flex items-center gap-2 text-xs text-zinc-800 dark:text-zinc-200">
+                <label className="flex items-center gap-2 text-xs text-[#202124] dark:text-[#E3E3E3]">
                   <input
                     type="checkbox"
                     checked={hasRespiratory}
                     onChange={(e) => setHasRespiratory(e.target.checked)}
-                    className="h-4 w-4 accent-emerald-600"
+                    className="h-4 w-4 accent-[#4285F4]"
                   />
                   Respiratory sensitivity (e.g., sensitive airways / smoke irritation)
                 </label>
 
-                <label className="flex items-center gap-2 text-xs text-zinc-800 dark:text-zinc-200">
+                <label className="flex items-center gap-2 text-xs text-[#202124] dark:text-[#E3E3E3]">
                   <input
                     type="checkbox"
                     checked={hasCardiac}
                     onChange={(e) => setHasCardiac(e.target.checked)}
-                    className="h-4 w-4 accent-emerald-600"
+                    className="h-4 w-4 accent-[#4285F4]"
                   />
                   Cardiovascular sensitivity
                 </label>
 
-                <label className="flex items-center gap-2 text-xs text-zinc-800 dark:text-zinc-200">
+                <label className="flex items-center gap-2 text-xs text-[#202124] dark:text-[#E3E3E3]">
                   <input
                     type="checkbox"
                     checked={isPregnant}
                     onChange={(e) => setIsPregnant(e.target.checked)}
-                    className="h-4 w-4 accent-emerald-600"
+                    className="h-4 w-4 accent-[#4285F4]"
                   />
                   Pregnancy precaution
                 </label>
 
                 <label className="block space-y-1">
-                  <span className="text-[11px] font-medium text-zinc-700 dark:text-zinc-300">
+                  <span className="text-[11px] font-medium text-[#3C4043] dark:text-[#C4C7C5]">
                     Optional Notes (max 200 chars)
                   </span>
                   <textarea
@@ -290,7 +294,7 @@ export function MemberFormModal({ initial, onClose, onSubmit }: MemberFormModalP
                     value={healthNotes}
                     onChange={(e) => setHealthNotes(e.target.value)}
                     placeholder="e.g., Prefers indoor play on high-smog days"
-                    className="w-full rounded-xl border border-zinc-200 bg-white px-2.5 py-1.5 text-xs text-zinc-950 outline-none focus:border-emerald-500 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-50"
+                    className="w-full rounded-xl border border-[#DADCE0] bg-white px-2.5 py-1.5 text-xs text-[#202124] outline-none focus:border-[#4285F4] dark:border-white/[0.12] dark:bg-[#1E1F20] dark:text-[#E3E3E3] dark:focus:border-[#8AB4F8]"
                   />
                 </label>
               </div>
@@ -306,7 +310,9 @@ export function MemberFormModal({ initial, onClose, onSubmit }: MemberFormModalP
             </Button>
           </div>
         </form>
+        </div>
       </div>
     </div>
+    </ModalPortal>
   );
 }
