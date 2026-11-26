@@ -289,6 +289,19 @@ export function PortalLayout() {
         </div>
       </nav>
 
+      {/* Floating AI Chat Button (hidden when already on Ask AI page) */}
+      {pathname !== APP_ROUTES.ASSISTANT ? (
+        <Link
+          to={APP_ROUTES.ASSISTANT}
+          aria-label="Ask BreatheWise AI"
+          title="Ask BreatheWise AI"
+          className="fixed right-4 bottom-20 z-30 inline-flex h-12 items-center gap-2 rounded-full bg-teal-600 px-4 text-sm font-semibold text-white shadow-lg shadow-teal-950/20 transition-all hover:scale-[1.03] hover:bg-teal-700 active:scale-[0.98] md:right-6 md:bottom-6 dark:bg-teal-400 dark:text-[#0B0E12] dark:shadow-black/40 dark:hover:bg-teal-300"
+        >
+          <Sparkles className="h-4 w-4 shrink-0" aria-hidden="true" />
+          <span className="hidden sm:inline">Ask AI</span>
+        </Link>
+      ) : null}
+
       <LocationPickerModal />
     </div>
   );

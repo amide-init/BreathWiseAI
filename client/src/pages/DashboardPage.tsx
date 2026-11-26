@@ -8,15 +8,14 @@ import {
   LogIn,
   MapPin,
   RefreshCw,
-  Send,
   Share2,
   ShieldCheck,
   Sparkles,
   Thermometer,
   Wind,
 } from 'lucide-react';
-import { useState, type FormEvent } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useState } from 'react';
+import { Link } from 'react-router-dom';
 
 import { ForecastChart } from '@/components/dashboard/ForecastChart';
 import { QuickDecisionsStrip } from '@/components/dashboard/QuickDecisionsStrip';
@@ -42,30 +41,11 @@ import { buildDailyAirShareText, shareTextMessage } from '@/lib/share';
 import { getCurrentTimeWindow, TIME_WINDOW_META } from '@/lib/time-window';
 
 export function DashboardPage() {
-  const navigate = useNavigate();
-  const { user, userProfile } = useAuth();
+  const { user } = useAuth();
   const { selectedLocation, openPicker } = useSelectedLocation();
   const { data, isLoading, isRefreshing, error, refresh } = useAirQuality();
   const { plan } = useDailyPlan();
   const [shareFeedback, setShareFeedback] = useState<'shared' | 'copied' | null>(null);
-  const [copilotQuery, setCopilotQuery] = useState('');
-
-  function handleAskCopilot(rawPrompt: string) {
-    const cleaned = rawPrompt.trim();
-    if (!cleaned) {
-      return;
-    }
-    if (!user) {
-      navigate(APP_ROUTES.LOGIN);
-      return;
-    }
-    navigate(`${APP_ROUTES.ASSISTANT}?q=${encodeURIComponent(cleaned)}`);
-  }
-
-  function handleCopilotSubmit(e: FormEvent<HTMLFormElement>) {
-    e.preventDefault();
-    handleAskCopilot(copilotQuery);
-  }
 
   const currentWindow = getCurrentTimeWindow();
   const windowMeta = TIME_WINDOW_META[currentWindow];
@@ -392,54 +372,7 @@ export function DashboardPage() {
               source={current.source}
             />
 
-            {/* 2. AI-First Copilot Command Bar */}
-            <div className="rounded-2xl border border-slate-200/80 bg-white p-4 shadow-[0_1px_2px_rgba(15,23,42,0.03)] dark:border-white/[0.08] dark:bg-[#12171E] dark:shadow-none">
-              <div className="mb-2.5 flex flex-wrap items-center justify-between gap-2">
-                <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-teal-700 dark:text-teal-300">
-                  <Sparkles className="h-3.5 w-3.5" aria-hidden="true" />
-                  Ask BreatheWise AI · Live {selectedLocation.city} Context
-                </span>
-                {user && userProfile && !userProfile.onboardingCompleted ? (
-                  <Link
-                    to={APP_ROUTES.ONBOARDING}
-                    className="text-xs font-semibold text-teal-700 hover:underline dark:text-teal-300"
-                  >
-                    Personalize in 30s →
-                  </Link>
-                ) : null}
-              </div>
-              <form onSubmit={handleCopilotSubmit} className="flex items-center gap-2">
-                <input
-                  type="text"
-                  value={copilotQuery}
-                  onChange={(e) => setCopilotQuery(e.target.value)}
-                  placeholder={`Ask about ${selectedLocation.city} air, smoking harm-reduction, kids' play, or home ventilation…`}
-                  className="min-h-[42px] flex-1 rounded-xl border border-slate-200/80 bg-slate-50/70 px-3.5 text-sm text-slate-900 outline-none transition-colors placeholder:text-slate-400 focus:border-teal-500 focus:bg-white focus:ring-2 focus:ring-teal-500/15 dark:border-white/[0.08] dark:bg-[#0B0E12] dark:text-[#EEF2F6] dark:placeholder:text-[#64748B] dark:focus:border-teal-400/50"
-                />
-                <Button type="submit" variant="brand" size="sm" disabled={!copilotQuery.trim()}>
-                  <Send className="h-3.5 w-3.5" aria-hidden="true" />
-                  <span className="hidden sm:inline">Ask AI</span>
-                </Button>
-              </form>
-              <div className="mt-2.5 flex flex-wrap gap-1.5">
-                {[
-                  `Someone smokes indoors while ${selectedLocation.city} AQI is ${current.aqi ?? 'high'} — lower-loss steps?`,
-                  `Best realistic indoor air fixes in ${selectedLocation.city} without a HEPA purifier?`,
-                  `Can my family walk outside in ${selectedLocation.city} right now?`,
-                ].map((prompt) => (
-                  <button
-                    key={prompt}
-                    type="button"
-                    onClick={() => handleAskCopilot(prompt)}
-                    className="cursor-pointer rounded-full border border-slate-200/80 bg-slate-50/80 px-2.5 py-1 text-left text-[11px] font-medium text-slate-600 transition-colors hover:border-teal-500/40 hover:text-slate-900 dark:border-white/[0.07] dark:bg-white/[0.03] dark:text-[#94A3B8] dark:hover:border-teal-400/35 dark:hover:text-[#EEF2F6]"
-                  >
-                    {prompt}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* 3. Everyday Human Quick Verdicts */}
+            {/* 2. Everyday Human Quick Verdicts */}
             <QuickDecisionsStrip decisions={activeQuickDecisions} category={current.category} />
 
             {/* 4. Right Now Actions Preview (Time-Aware!) */}
