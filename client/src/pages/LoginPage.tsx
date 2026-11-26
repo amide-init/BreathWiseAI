@@ -90,7 +90,7 @@ export function LoginPage() {
           className="cloud-card inline-flex items-center gap-1.5 rounded-full border border-white/80 bg-white/95 px-3.5 py-2 text-xs font-semibold text-[#3C4043] backdrop-blur-sm hover:border-[#4285F4]/50 dark:border-white/[0.12] dark:bg-[#1E1F20]/95 dark:text-[#E3E3E3]"
         >
           <ArrowLeft className="h-3.5 w-3.5" aria-hidden="true" />
-          Live Air Preview
+          Back to Home
         </Link>
       </div>
 
