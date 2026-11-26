@@ -119,9 +119,9 @@ export function LandingPage() {
     <div className="bw-illustrated-bg relative min-h-screen overflow-x-hidden text-[#202124] transition-colors duration-200 dark:text-[#E3E3E3]">
       <GoogleAmbientBackdrop variant="hero" />
 
-      {/* Floating Google-Tinted Cloud Pill Navbar */}
-      <div className="sticky top-0 z-40 px-3 pt-3 sm:px-6 sm:pt-4">
-        <header className="cloud-card relative mx-auto max-w-6xl rounded-full border border-[#4285F4]/25 bg-gradient-to-r from-[#E8F0FE]/92 via-white/92 to-[#E6F4EA]/92 backdrop-blur-md dark:border-white/[0.12] dark:from-[#1E2430]/92 dark:via-[#1E1F20]/92 dark:to-[#1C2820]/92">
+      {/* Fixed Floating Google-Tinted Cloud Pill Navbar */}
+      <div className="pointer-events-none fixed inset-x-0 top-0 z-50 px-3 pt-3 sm:px-6 sm:pt-4">
+        <header className="cloud-card pointer-events-auto relative mx-auto max-w-6xl rounded-full border border-[#4285F4]/25 bg-gradient-to-r from-[#E8F0FE]/92 via-white/92 to-[#E6F4EA]/92 backdrop-blur-md dark:border-white/[0.12] dark:from-[#1E2430]/92 dark:via-[#1E1F20]/92 dark:to-[#1C2820]/92">
           <div
             className="pointer-events-none absolute inset-0 overflow-hidden rounded-full"
             aria-hidden="true"
@@ -200,7 +200,7 @@ export function LandingPage() {
       </div>
 
       {/* Main Marketing & Onboarding Hero Flow */}
-      <main className="relative z-10 mx-auto max-w-6xl px-4 pt-10 pb-44 sm:px-6 sm:pt-14 sm:pb-56">
+      <main className="relative z-10 mx-auto max-w-6xl px-4 pt-28 pb-44 sm:px-6 sm:pt-32 sm:pb-56">
         {/* Hero Section */}
         <section className="mx-auto max-w-3xl text-center">
           <div className="cloud-card mb-5 inline-flex items-center gap-2 rounded-full border border-white/80 bg-white/95 px-4 py-1.5 text-xs font-semibold text-[#3C4043] dark:border-white/[0.12] dark:bg-[#1E1F20]/95 dark:text-[#E3E3E3]">
