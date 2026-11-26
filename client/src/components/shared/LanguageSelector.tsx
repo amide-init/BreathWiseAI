@@ -7,7 +7,6 @@ import { cn } from '@/lib/cn';
 
 /**
  * Compact header language switcher (`data-no-translate="true"` so language labels stay exact).
- * Displays a subtle spinner while real-time DOM translation is fetching uncached strings.
  */
 export function LanguageSelector({ className }: { className?: string }) {
   const { language, setLanguage, isTranslating } = useLanguage();
@@ -46,15 +45,15 @@ export function LanguageSelector({ className }: { className?: string }) {
         aria-expanded={open}
         aria-label={`Change language (current: ${current.label})`}
         title={`Language: ${current.label}`}
-        className="inline-flex min-h-[36px] cursor-pointer items-center gap-1.5 rounded-xl border border-zinc-200/90 bg-white px-2.5 py-1.5 text-xs font-semibold text-zinc-800 shadow-2xs transition-all hover:border-emerald-500/40 hover:bg-emerald-500/5 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-100 dark:hover:border-emerald-400/40"
+        className="inline-flex min-h-[34px] cursor-pointer items-center gap-1.5 rounded-full border border-[#DADCE0] bg-white px-3 py-1.5 text-xs font-semibold text-[#3C4043] transition-all hover:border-[#4285F4]/60 dark:border-white/[0.12] dark:bg-[#1E1F20] dark:text-[#E3E3E3] dark:hover:border-[#8AB4F8]/50"
       >
         {isTranslating ? (
           <Loader2
-            className="h-3.5 w-3.5 animate-spin text-emerald-600 dark:text-emerald-400"
+            className="h-3.5 w-3.5 animate-spin text-[#4285F4] dark:text-[#8AB4F8]"
             aria-hidden="true"
           />
         ) : (
-          <Globe className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" aria-hidden="true" />
+          <Globe className="h-3.5 w-3.5 text-[#4285F4] dark:text-[#8AB4F8]" aria-hidden="true" />
         )}
         <span>{current.shortCode}</span>
       </button>
@@ -63,9 +62,9 @@ export function LanguageSelector({ className }: { className?: string }) {
         <div
           role="listbox"
           aria-label="Choose app language"
-          className="absolute right-0 z-40 mt-2 w-60 rounded-2xl border border-zinc-200 bg-white p-1.5 shadow-xl dark:border-zinc-800 dark:bg-zinc-950"
+          className="cloud-card absolute right-0 z-40 mt-2 w-60 rounded-3xl border border-[#DADCE0] bg-white p-1.5 dark:border-white/[0.1] dark:bg-[#1E1F20]"
         >
-          <p className="px-2.5 pt-1.5 pb-1 text-[10px] font-semibold tracking-wider text-zinc-400 uppercase dark:text-zinc-500">
+          <p className="px-3 pt-1.5 pb-1 text-[10px] font-semibold tracking-wider text-[#5F6368] uppercase dark:text-[#9AA0A6]">
             Live Translation
           </p>
           <div className="space-y-0.5">
@@ -82,25 +81,25 @@ export function LanguageSelector({ className }: { className?: string }) {
                     setOpen(false);
                   }}
                   className={cn(
-                    'flex w-full cursor-pointer items-center justify-between rounded-xl px-2.5 py-2 text-left transition-colors',
+                    'flex w-full cursor-pointer items-center justify-between rounded-2xl px-3 py-2 text-left transition-colors',
                     selected
-                      ? 'bg-emerald-500/12 text-emerald-800 dark:bg-emerald-400/15 dark:text-emerald-300'
-                      : 'text-zinc-700 hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-zinc-900',
+                      ? 'bg-[#4285F4]/12 text-[#1A73E8] dark:bg-[#8AB4F8]/15 dark:text-[#8AB4F8]'
+                      : 'text-[#3C4043] hover:bg-[#F1F3F4] dark:text-[#E3E3E3] dark:hover:bg-white/[0.06]',
                   )}
                 >
                   <div className="min-w-0">
                     <p className="text-xs font-semibold">{opt.label}</p>
-                    <p className="truncate text-[11px] text-zinc-500 dark:text-zinc-400">
+                    <p className="truncate text-[11px] text-[#5F6368] dark:text-[#9AA0A6]">
                       {opt.nativeHint}
                     </p>
                   </div>
                   {selected ? (
                     <Check
-                      className="h-4 w-4 shrink-0 text-emerald-600 dark:text-emerald-400"
+                      className="h-4 w-4 shrink-0 text-[#4285F4] dark:text-[#8AB4F8]"
                       aria-hidden="true"
                     />
                   ) : (
-                    <span className="text-[10px] font-semibold text-zinc-400">{opt.shortCode}</span>
+                    <span className="text-[10px] font-semibold text-[#9AA0A6]">{opt.shortCode}</span>
                   )}
                 </button>
               );

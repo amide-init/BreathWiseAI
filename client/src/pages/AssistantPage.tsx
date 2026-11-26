@@ -12,6 +12,10 @@ import {
 import { useCallback, useEffect, useRef, useState, type FormEvent } from 'react';
 import { useSearchParams } from 'react-router-dom';
 
+import {
+  CopilotChatIllustration,
+  GoogleSparkleMark,
+} from '@/components/illustrations/GoogleAirIllustrations';
 import { AgentTracePill } from '@/components/shared/AgentTracePill';
 import { AqiBadge } from '@/components/shared/AqiBadge';
 import { MedicalDisclaimer } from '@/components/shared/MedicalDisclaimer';
@@ -52,10 +56,10 @@ function AssistantMessageCard({
 
   return (
     <div className="flex justify-start">
-      <div className="max-w-[92%] space-y-3 rounded-2xl border border-zinc-200/80 bg-white p-4 shadow-2xs sm:max-w-[85%] dark:border-zinc-800 dark:bg-zinc-900/90">
+      <div className="cloud-card max-w-[92%] space-y-3 rounded-3xl border border-white/80 bg-white/95 p-4 backdrop-blur-sm sm:max-w-[85%] dark:border-white/[0.09] dark:bg-[#1E1F20]/95">
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-700 dark:text-emerald-400">
-            <Sparkles className="h-3.5 w-3.5" aria-hidden="true" />
+          <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#1A73E8] dark:text-[#8AB4F8]">
+            <GoogleSparkleMark className="h-4 w-4" />
             BreatheWise AI
           </span>
           <div className="flex flex-wrap items-center gap-1.5">
@@ -126,7 +130,7 @@ function AssistantMessageCard({
                 type="button"
                 disabled={disabled}
                 onClick={() => onFollowUpClick(suggestion)}
-                className="cursor-pointer rounded-full border border-emerald-500/25 bg-emerald-500/8 px-3 py-1 text-left text-xs font-medium text-emerald-800 transition-colors hover:bg-emerald-500/15 disabled:opacity-50 dark:border-emerald-400/25 dark:bg-emerald-400/10 dark:text-emerald-300 dark:hover:bg-emerald-400/20"
+                className="cursor-pointer rounded-full border border-[#4285F4]/25 bg-[#4285F4]/[0.08] px-3 py-1 text-left text-xs font-medium text-[#1A73E8] transition-colors hover:bg-[#4285F4]/15 disabled:opacity-50 dark:border-[#8AB4F8]/25 dark:bg-[#8AB4F8]/12 dark:text-[#8AB4F8] dark:hover:bg-[#8AB4F8]/20"
               >
                 {suggestion}
               </button>
@@ -349,14 +353,17 @@ export function AssistantPage() {
     <div className="space-y-5">
       {/* Header */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight text-zinc-950 dark:text-zinc-50">
-            AI Clean-Air Assistant
-          </h1>
-          <p className="text-sm text-zinc-600 dark:text-zinc-400">
-            Grounded in live {selectedLocation.city} AQI, your family profile, and verified
-            public-health guidance.
-          </p>
+        <div className="flex items-center gap-3">
+          <CopilotChatIllustration className="hidden h-14 w-20 shrink-0 sm:block" />
+          <div>
+            <h1 className="font-display text-2xl font-bold tracking-tight text-[#202124] dark:text-[#E3E3E3]">
+              Ask BreatheWise AI
+            </h1>
+            <p className="text-sm text-[#5F6368] dark:text-[#9AA0A6]">
+              Grounded in live {selectedLocation.city} AQI, your home setup, and realistic
+              harm-reduction guidance.
+            </p>
+          </div>
         </div>
 
         <Button type="button" variant="outline" size="sm" onClick={handleNewChat}>
@@ -373,10 +380,10 @@ export function AssistantPage() {
             return (
               <div
                 key={sess.sessionId}
-                className={`inline-flex shrink-0 items-center gap-1 rounded-full border pl-3 pr-1.5 py-1 text-xs transition-colors ${
+                className={`inline-flex shrink-0 items-center gap-1 rounded-full border py-1 pr-1.5 pl-3 text-xs transition-colors ${
                   active
-                    ? 'border-emerald-500/40 bg-emerald-500/12 text-emerald-800 dark:border-emerald-400/40 dark:bg-emerald-400/15 dark:text-emerald-300'
-                    : 'border-zinc-200 bg-white text-zinc-600 hover:border-zinc-300 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-300'
+                    ? 'border-[#4285F4]/40 bg-[#4285F4]/12 text-[#1A73E8] dark:border-[#8AB4F8]/40 dark:bg-[#8AB4F8]/15 dark:text-[#8AB4F8]'
+                    : 'border-[#DADCE0] bg-white text-[#5F6368] hover:border-[#4285F4]/40 dark:border-white/[0.1] dark:bg-[#1E1F20] dark:text-[#BDC1C6]'
                 }`}
               >
                 <button
@@ -390,7 +397,7 @@ export function AssistantPage() {
                   type="button"
                   aria-label={`Delete conversation ${sess.title}`}
                   onClick={() => void handleDeleteSession(sess.sessionId)}
-                  className="flex h-5 w-5 cursor-pointer items-center justify-center rounded-full text-zinc-400 hover:bg-red-100 hover:text-red-600 dark:hover:bg-red-950/60 dark:hover:text-red-400"
+                  className="flex h-5 w-5 cursor-pointer items-center justify-center rounded-full text-[#9AA0A6] hover:bg-[#EA4335]/15 hover:text-[#EA4335] dark:hover:text-[#F28B82]"
                 >
                   <Trash2 className="h-3 w-3" />
                 </button>
@@ -407,12 +414,12 @@ export function AssistantPage() {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <Sparkles className="h-5 w-5 text-emerald-600 dark:text-emerald-400" aria-hidden="true" />
+              <GoogleSparkleMark className="h-5 w-5" />
               Ask About Today’s Air in {selectedLocation.city}
             </CardTitle>
             <CardDescription>
-              Tap a starter question below or type your own. Every answer checks deterministic CPCB
-              NAQI safety rules before responding.
+              Tap a starter question below or type your own. Every answer runs our planning &amp;
+              reasoning tools with live city AQI.
             </CardDescription>
           </CardHeader>
           <CardContent className="flex flex-wrap gap-2">
@@ -422,7 +429,7 @@ export function AssistantPage() {
                 type="button"
                 disabled={sending}
                 onClick={() => void submitPrompt(prompt)}
-                className="inline-flex cursor-pointer items-center gap-1.5 rounded-full border border-emerald-500/25 bg-emerald-500/10 px-3.5 py-2 text-left text-xs font-medium text-emerald-800 transition-colors hover:bg-emerald-500/20 disabled:opacity-50 dark:border-emerald-400/25 dark:bg-emerald-400/10 dark:text-emerald-300 dark:hover:bg-emerald-400/20"
+                className="inline-flex cursor-pointer items-center gap-1.5 rounded-full border border-[#4285F4]/25 bg-[#4285F4]/[0.08] px-3.5 py-2 text-left text-xs font-medium text-[#1A73E8] transition-colors hover:bg-[#4285F4]/15 disabled:opacity-50 dark:border-[#8AB4F8]/25 dark:bg-[#8AB4F8]/12 dark:text-[#8AB4F8] dark:hover:bg-[#8AB4F8]/20"
               >
                 <Sparkles className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
                 {prompt}
@@ -433,15 +440,15 @@ export function AssistantPage() {
       ) : (
         <div className="space-y-4">
           {loadingThread ? (
-            <div className="flex items-center justify-center py-10 text-sm text-zinc-500">
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            <div className="flex items-center justify-center py-10 text-sm text-[#5F6368] dark:text-[#9AA0A6]">
+              <Loader2 className="mr-2 h-4 w-4 animate-spin text-[#4285F4]" />
               Loading conversation…
             </div>
           ) : (
             messages.map((msg) =>
               msg.role === 'user' ? (
                 <div key={msg.messageId} className="flex justify-end">
-                  <div className="max-w-[85%] rounded-2xl rounded-br-md bg-zinc-950 px-4 py-3 text-sm text-white shadow-xs sm:max-w-[75%] dark:bg-emerald-500 dark:text-zinc-950">
+                  <div className="cloud-card max-w-[85%] rounded-3xl rounded-br-md bg-[#4285F4] px-4 py-3 text-sm text-white sm:max-w-[75%] dark:bg-[#8AB4F8] dark:text-[#131314]">
                     {msg.content}
                   </div>
                 </div>
@@ -458,9 +465,9 @@ export function AssistantPage() {
 
           {sending ? (
             <div className="flex justify-start">
-              <div className="inline-flex items-center gap-2 rounded-2xl border border-zinc-200/80 bg-white px-4 py-3 text-xs text-zinc-500 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-400">
-                <Loader2 className="h-3.5 w-3.5 animate-spin text-emerald-600 dark:text-emerald-400" />
-                Checking live AQI, risk rules &amp; verified sources…
+              <div className="cloud-card inline-flex items-center gap-2 rounded-3xl border border-white/80 bg-white/95 px-4 py-3 text-xs text-[#5F6368] dark:border-white/[0.09] dark:bg-[#1E1F20] dark:text-[#9AA0A6]">
+                <Loader2 className="h-3.5 w-3.5 animate-spin text-[#4285F4] dark:text-[#8AB4F8]" />
+                Planning with live {selectedLocation.city} AQI &amp; verified tools…
               </div>
             </div>
           ) : null}
@@ -472,7 +479,7 @@ export function AssistantPage() {
       {/* Composer */}
       <form
         onSubmit={handleFormSubmit}
-        className="sticky bottom-[76px] z-10 rounded-2xl border border-zinc-200/90 bg-white/95 p-2.5 shadow-sm backdrop-blur-xl md:bottom-4 dark:border-zinc-800 dark:bg-zinc-900/95"
+        className="cloud-card sticky bottom-[76px] z-10 rounded-3xl border border-white/80 bg-white/95 p-2.5 backdrop-blur-xl md:bottom-4 dark:border-white/[0.1] dark:bg-[#1E1F20]/95"
       >
         <div className="flex items-end gap-2">
           <textarea
@@ -487,7 +494,7 @@ export function AssistantPage() {
               }
             }}
             placeholder={`Ask about ${selectedLocation.city} air quality, outdoor plans, indoor ventilation, or commute swaps…`}
-            className="max-h-32 flex-1 resize-none rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm text-zinc-950 outline-none focus:border-emerald-500 focus:bg-white focus:ring-2 focus:ring-emerald-500/20 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-50"
+            className="max-h-32 flex-1 resize-none rounded-2xl border border-[#DADCE0] bg-[#F8F9FA] px-3.5 py-2 text-sm text-[#202124] outline-none focus:border-[#4285F4] focus:bg-white focus:ring-2 focus:ring-[#4285F4]/20 dark:border-white/[0.1] dark:bg-[#131314] dark:text-[#E3E3E3] dark:placeholder:text-[#9AA0A6] dark:focus:border-[#8AB4F8]"
           />
           <Button type="submit" disabled={sending || !input.trim()} className="shrink-0">
             {sending ? (

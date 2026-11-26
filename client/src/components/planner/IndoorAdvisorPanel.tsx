@@ -47,9 +47,9 @@ import { assessIndoorAir } from '@/services/indoor.service';
 import type { RecommendationItem } from '@/types';
 
 const FIELD_CLASS =
-  'w-full rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm text-zinc-950 outline-none transition-colors focus:border-emerald-500 focus:bg-white focus:ring-2 focus:ring-emerald-500/20 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-50';
+  'w-full rounded-2xl border border-[#DADCE0] bg-[#F8F9FA] px-3.5 py-2 text-sm text-[#202124] outline-none transition-colors focus:border-[#4285F4] focus:bg-white focus:ring-2 focus:ring-[#4285F4]/20 dark:border-white/[0.1] dark:bg-[#131314] dark:text-[#E3E3E3] dark:focus:border-[#8AB4F8]';
 
-const LABEL_CLASS = 'text-xs font-medium text-zinc-700 dark:text-zinc-300';
+const LABEL_CLASS = 'text-xs font-semibold text-[#3C4043] dark:text-[#BDC1C6]';
 
 const RISK_BADGE_VARIANT: Record<IndoorRiskLevel, 'default' | 'neutral' | 'warning' | 'danger'> = {
   low: 'default',

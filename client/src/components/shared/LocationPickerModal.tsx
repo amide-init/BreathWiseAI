@@ -72,21 +72,23 @@ export function LocationPickerModal() {
       aria-modal="true"
       aria-label="Select city"
     >
-      <div className="w-full max-w-lg rounded-t-3xl border border-zinc-200/80 bg-white p-5 shadow-2xl sm:rounded-2xl dark:border-zinc-800 dark:bg-zinc-900">
+      <div className="cloud-card w-full max-w-lg overflow-hidden rounded-t-3xl border border-white/80 bg-white sm:rounded-3xl dark:border-white/[0.1] dark:bg-[#1E1F20]">
+        <div className="google-ribbon h-[3px] w-full" aria-hidden="true" />
+        <div className="p-5">
         <div className="flex items-center justify-between gap-3 pb-3">
           <div>
-            <h2 className="text-base font-semibold tracking-tight text-zinc-950 dark:text-zinc-50">
+            <h2 className="font-display text-base font-bold tracking-tight text-[#202124] dark:text-[#E3E3E3]">
               Select Your City
             </h2>
-            <p className="text-xs text-zinc-500 dark:text-zinc-400">
-              Choose a location for real-time CPCB NAQI, pollutants & weather.
+            <p className="text-xs text-[#5F6368] dark:text-[#9AA0A6]">
+              Choose a location for real-time CPCB NAQI, pollutants &amp; weather.
             </p>
           </div>
           <button
             type="button"
             onClick={closePicker}
             aria-label="Close location picker"
-            className="flex h-9 w-9 cursor-pointer items-center justify-center rounded-xl text-zinc-500 hover:bg-zinc-100 dark:text-zinc-400 dark:hover:bg-zinc-800"
+            className="flex h-9 w-9 cursor-pointer items-center justify-center rounded-full text-[#5F6368] hover:bg-[#F1F3F4] dark:text-[#9AA0A6] dark:hover:bg-white/[0.08]"
           >
             <X className="h-4 w-4" />
           </button>
@@ -97,7 +99,7 @@ export function LocationPickerModal() {
             type="button"
             disabled={locatingGps}
             onClick={() => void handleDetectGps()}
-            className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl border border-emerald-500/35 bg-emerald-500/10 px-3.5 py-2.5 text-xs font-semibold text-emerald-800 transition-colors hover:bg-emerald-500/15 disabled:opacity-60 dark:border-emerald-400/35 dark:bg-emerald-400/12 dark:text-emerald-300 dark:hover:bg-emerald-400/20"
+            className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-full border border-[#4285F4]/35 bg-[#4285F4]/10 px-3.5 py-2.5 text-xs font-semibold text-[#1A73E8] transition-colors hover:bg-[#4285F4]/15 disabled:opacity-60 dark:border-[#8AB4F8]/35 dark:bg-[#8AB4F8]/12 dark:text-[#8AB4F8] dark:hover:bg-[#8AB4F8]/20"
           >
             {locatingGps ? (
               <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
@@ -108,13 +110,13 @@ export function LocationPickerModal() {
           </button>
 
           {gpsError ? (
-            <p className="text-center text-[11px] text-amber-700 dark:text-amber-400">{gpsError}</p>
+            <p className="text-center text-[11px] text-[#B06000] dark:text-[#FDD663]">{gpsError}</p>
           ) : null}
         </div>
 
         <div className="relative mb-4">
           <Search
-            className="pointer-events-none absolute top-3 left-3 h-4 w-4 text-zinc-400"
+            className="pointer-events-none absolute top-3 left-3 h-4 w-4 text-[#5F6368] dark:text-[#9AA0A6]"
             aria-hidden="true"
           />
           <input
@@ -123,17 +125,17 @@ export function LocationPickerModal() {
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search any city (e.g. Delhi, Pune, Jaipur)…"
-            className="w-full rounded-xl border border-zinc-200 bg-zinc-50 py-2.5 pr-3 pl-9 text-sm text-zinc-950 outline-none focus:border-emerald-500 focus:bg-white focus:ring-2 focus:ring-emerald-500/20 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-50 dark:placeholder:text-zinc-500 dark:focus:bg-zinc-950"
+            className="w-full rounded-xl border border-[#DADCE0] bg-[#F8F9FA] py-2.5 pr-3 pl-9 text-sm text-[#202124] outline-none focus:border-[#4285F4] focus:bg-white focus:ring-2 focus:ring-[#4285F4]/25 dark:border-white/[0.12] dark:bg-[#131314] dark:text-[#E3E3E3] dark:placeholder:text-[#9AA0A6] dark:focus:border-[#8AB4F8] dark:focus:bg-[#131314]"
           />
         </div>
 
         <div className="max-h-72 space-y-1.5 overflow-y-auto">
           {searching ? (
-            <p className="py-6 text-center text-xs text-zinc-500 dark:text-zinc-400">
+            <p className="py-6 text-center text-xs text-[#5F6368] dark:text-[#9AA0A6]">
               Searching locations…
             </p>
           ) : results.length === 0 ? (
-            <p className="py-6 text-center text-xs text-zinc-500 dark:text-zinc-400">
+            <p className="py-6 text-center text-xs text-[#5F6368] dark:text-[#9AA0A6]">
               No matching cities found. Try another city name.
             </p>
           ) : (
@@ -146,26 +148,26 @@ export function LocationPickerModal() {
                   onClick={() => void selectLocation(city)}
                   className={`flex w-full cursor-pointer items-center justify-between rounded-xl border px-3.5 py-2.5 text-left transition-colors ${
                     isSelected
-                      ? 'border-emerald-500/60 bg-emerald-500/10 text-emerald-950 dark:text-emerald-100'
-                      : 'border-zinc-200/80 bg-white text-zinc-800 hover:bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-900/60 dark:text-zinc-200 dark:hover:bg-zinc-800/80'
+                      ? 'border-[#4285F4]/50 bg-[#E8F0FE] text-[#174EA6] dark:border-[#8AB4F8]/45 dark:bg-[#4285F4]/15 dark:text-[#D2E3FC]'
+                      : 'border-[#E8EAED] bg-white text-[#202124] hover:bg-[#F8F9FA] dark:border-white/[0.08] dark:bg-[#131314]/80 dark:text-[#E3E3E3] dark:hover:bg-white/[0.06]'
                   }`}
                 >
                   <span className="flex items-center gap-2.5">
                     <MapPin
                       className={`h-4 w-4 shrink-0 ${
-                        isSelected ? 'text-emerald-600 dark:text-emerald-400' : 'text-zinc-400'
+                        isSelected ? 'text-[#4285F4] dark:text-[#8AB4F8]' : 'text-[#5F6368] dark:text-[#9AA0A6]'
                       }`}
                       aria-hidden="true"
                     />
                     <span>
                       <span className="block text-sm font-medium">{city.city}</span>
-                      <span className="block text-xs text-zinc-500 dark:text-zinc-400">
+                      <span className="block text-xs text-[#5F6368] dark:text-[#9AA0A6]">
                         {city.label}
                       </span>
                     </span>
                   </span>
                   {isSelected ? (
-                    <span className="rounded-full bg-emerald-600 px-2.5 py-0.5 text-[10px] font-semibold text-white dark:bg-emerald-500 dark:text-zinc-950">
+                    <span className="rounded-full bg-[#4285F4] px-2.5 py-0.5 text-[10px] font-semibold text-white">
                       Active
                     </span>
                   ) : null}
@@ -173,6 +175,7 @@ export function LocationPickerModal() {
               );
             })
           )}
+        </div>
         </div>
       </div>
     </div>

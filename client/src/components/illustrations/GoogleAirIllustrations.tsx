@@ -279,3 +279,104 @@ export function GoogleAmbientBackdrop() {
     </div>
   );
 }
+
+/**
+ * Google 4-color illustrated Plan checklist + sun emblem for `/planner`.
+ */
+export function PlanCalendarIllustration({ className = 'h-14 w-20' }: { className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 110 78"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      className={className}
+      aria-hidden="true"
+    >
+      <circle cx="88" cy="20" r="10" fill="#FBBC05" />
+      <circle cx="88" cy="20" r="15" fill="#FBBC05" fillOpacity="0.18" />
+      <rect
+        x="16"
+        y="16"
+        width="58"
+        height="50"
+        rx="12"
+        fill="#34A853"
+        fillOpacity="0.12"
+        stroke="#34A853"
+        strokeWidth="2.5"
+      />
+      <path d="M16 30H74" stroke="#34A853" strokeWidth="2.2" />
+      <circle cx="30" cy="23" r="2.5" fill="#4285F4" />
+      <circle cx="40" cy="23" r="2.5" fill="#EA4335" />
+      <circle cx="50" cy="23" r="2.5" fill="#FBBC05" />
+      <path d="M27 42L31 46L39 38" stroke="#34A853" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M46 42H62" stroke="#4285F4" strokeWidth="2.6" strokeLinecap="round" />
+      <path d="M27 54L31 58L39 50" stroke="#4285F4" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M46 54H58" stroke="#EA4335" strokeWidth="2.6" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+/**
+ * Google 4-color illustrated AI copilot chat bubble for `/assistant`.
+ */
+export function CopilotChatIllustration({ className = 'h-14 w-20' }: { className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 112 78"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      className={className}
+      aria-hidden="true"
+    >
+      <rect
+        x="14"
+        y="14"
+        width="64"
+        height="44"
+        rx="16"
+        fill="#4285F4"
+        fillOpacity="0.14"
+        stroke="#4285F4"
+        strokeWidth="2.5"
+      />
+      <path d="M28 58L22 68L38 58" fill="#4285F4" fillOpacity="0.14" stroke="#4285F4" strokeWidth="2.5" strokeLinejoin="round" />
+      <path d="M28 31H60" stroke="#4285F4" strokeWidth="3" strokeLinecap="round" />
+      <path d="M28 42H50" stroke="#34A853" strokeWidth="3" strokeLinecap="round" />
+      {/* 4-color Sparkle */}
+      <path d="M90 14L93.5 23.5L103 27L93.5 30.5L90 40L86.5 30.5L77 27L86.5 23.5L90 14Z" fill="#FBBC05" />
+      <circle cx="94" cy="52" r="5" fill="#EA4335" fillOpacity="0.8" />
+    </svg>
+  );
+}
+
+/**
+ * Google 4-color illustrated leaf + globe emblem for `/impact`.
+ */
+export function ImpactGlobeIllustration({ className = 'h-14 w-20' }: { className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 112 78"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      className={className}
+      aria-hidden="true"
+    >
+      <circle
+        cx="48"
+        cy="42"
+        r="24"
+        fill="#4285F4"
+        fillOpacity="0.14"
+        stroke="#4285F4"
+        strokeWidth="2.5"
+      />
+      <path d="M28 36C36 32 46 34 52 40C58 46 64 46 70 42" stroke="#34A853" strokeWidth="2.5" strokeLinecap="round" />
+      <path d="M32 52C40 48 52 50 62 54" stroke="#4285F4" strokeWidth="2.2" strokeLinecap="round" />
+      <path d="M68 26C68 15 80 8 92 8C92 20 84 30 68 26Z" fill="#34A853" />
+      <path d="M66 28L79 18" stroke="#1E8E3E" strokeWidth="2.2" strokeLinecap="round" />
+      <circle cx="92" cy="50" r="6" fill="#FBBC05" />
+      <circle cx="20" cy="22" r="4" fill="#EA4335" />
+    </svg>
+  );
+}
