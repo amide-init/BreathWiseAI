@@ -311,13 +311,13 @@ export function PortalLayout() {
         </div>
       </nav>
 
-      {/* Floating Google-Style Ask AI Button */}
+      {/* Floating Google-Style Cloud Ask AI Button */}
       {pathname !== APP_ROUTES.ASSISTANT ? (
         <Link
           to={APP_ROUTES.ASSISTANT}
           aria-label="Ask BreatheWise AI"
           title="Ask BreatheWise AI"
-          className="fixed right-4 bottom-20 z-30 inline-flex h-12 items-center gap-2 rounded-full border border-[#DADCE0] bg-white px-4 text-sm font-semibold text-[#202124] shadow-[0_6px_20px_rgba(66,133,244,0.22)] transition-all hover:scale-[1.03] hover:border-[#4285F4]/60 active:scale-[0.98] md:right-6 md:bottom-6 dark:border-white/[0.14] dark:bg-[#282A2C] dark:text-[#E3E3E3] dark:shadow-[0_6px_20px_rgba(0,0,0,0.45)] dark:hover:border-[#8AB4F8]/60"
+          className="cloud-card fixed right-4 bottom-20 z-30 inline-flex h-12 items-center gap-2 rounded-full border border-white/90 bg-white/95 px-4 text-sm font-semibold text-[#202124] backdrop-blur-md hover:-translate-y-0.5 hover:border-[#4285F4]/50 active:scale-[0.98] md:right-6 md:bottom-6 dark:border-white/[0.14] dark:bg-[#282A2C]/95 dark:text-[#E3E3E3] dark:hover:border-[#8AB4F8]/55"
         >
           <GoogleSparkleMark className="h-5 w-5 shrink-0" />
           <span className="hidden sm:inline">Ask AI</span>

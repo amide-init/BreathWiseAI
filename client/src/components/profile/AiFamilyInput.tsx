@@ -91,7 +91,7 @@ export function AiFamilyInput({
 
   return (
     <div className="space-y-3.5">
-      <div className="rounded-2xl border border-slate-200/80 bg-white p-4 dark:border-white/[0.08] dark:bg-[#12171E]">
+      <div className="cloud-card rounded-3xl border border-white/80 bg-white/95 p-4 backdrop-blur-sm dark:border-white/[0.09] dark:bg-[#1E1F20]/95">
         <div className="mb-2.5 flex items-center justify-between gap-2">
           <div className="flex items-center gap-2">
             <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-teal-500/12 text-teal-700 dark:bg-teal-400/15 dark:text-teal-300">

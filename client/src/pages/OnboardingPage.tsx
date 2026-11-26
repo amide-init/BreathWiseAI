@@ -322,7 +322,7 @@ export function OnboardingPage() {
         </div>
 
         {/* Main Card */}
-        <div className="overflow-hidden rounded-3xl border border-[#DADCE0] bg-white shadow-xs dark:border-white/[0.09] dark:bg-[#1E1F20]">
+        <div className="cloud-card overflow-hidden rounded-3xl border border-white/80 bg-white/95 backdrop-blur-sm dark:border-white/[0.09] dark:bg-[#1E1F20]/95">
           <div className="google-ribbon h-[3px] w-full" aria-hidden="true" />
           <div className="p-6 sm:p-7">
             <div className="flex items-start justify-between gap-3">
