@@ -93,7 +93,7 @@ const HOW_IT_WORKS_STEPS = [
 ] as const;
 
 export function LandingPage() {
-  useDocumentTitle('BreatheWise AI — Personal Clean-Air Assistant for Families');
+  useDocumentTitle('BreathWiseAI — Personal Clean-Air Assistant for Families');
   const navigate = useNavigate();
   const { user, signInWithGoogle } = useAuth();
   const [signingIn, setSigningIn] = useState(false);
@@ -133,11 +133,9 @@ export function LandingPage() {
             <Link to={APP_ROUTES.HOME} className="group flex items-center gap-2.5">
               <BreatheWiseLogoMark className="h-9 w-9 shrink-0 transition-transform duration-200 group-hover:scale-105" />
               <div className="leading-tight">
-                <span className="font-display flex items-center gap-1.5 text-base font-bold tracking-tight text-[#202124] dark:text-[#E3E3E3]">
-                  BreatheWise
-                  <span className="rounded-full bg-[#4285F4]/14 px-1.5 py-0.5 text-[10px] font-bold text-[#1A73E8] dark:bg-[#8AB4F8]/18 dark:text-[#8AB4F8]">
-                    AI
-                  </span>
+                <span className="font-display flex items-center text-base font-bold tracking-tight text-[#202124] dark:text-[#E3E3E3]">
+                  BreathWise
+                  <span className="text-[#4285F4] dark:text-[#8AB4F8]">AI</span>
                 </span>
                 <span className="hidden items-center gap-1 text-[10px] font-medium text-[#5F6368] sm:flex dark:text-[#9AA0A6]">
                   <span className="h-1.5 w-1.5 rounded-full bg-[#4285F4]" />
@@ -215,7 +213,7 @@ export function LandingPage() {
           </h1>
 
           <p className="mx-auto mt-5 max-w-2xl text-base leading-relaxed text-[#5F6368] sm:text-lg dark:text-[#9AA0A6]">
-            BreatheWise AI translates live CPCB air quality, local weather, and your household
+            BreathWiseAI translates live CPCB air quality, local weather, and your household
             routines into realistic daily plans, indoor air fixes, and a grounded AI copilot — in 6
             Indian languages.
           </p>
@@ -355,7 +353,7 @@ export function LandingPage() {
                   Ready in 60 seconds
                 </p>
                 <h2 className="font-display mt-1 text-2xl font-bold text-[#202124] sm:text-3xl dark:text-[#E3E3E3]">
-                  How BreatheWise AI works for your home
+                  How BreathWiseAI works for your home
                 </h2>
               </div>
               <FamilyHomeIllustration className="h-16 w-24 shrink-0" />

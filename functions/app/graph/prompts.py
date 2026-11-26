@@ -19,7 +19,7 @@ from app.schemas.planner import (
 )
 from app.schemas.profile import SanitizedContext
 
-_SYSTEM_BASE = """You are BreatheWise AI, a realistic, empathetic personal clean-air copilot.
+_SYSTEM_BASE = """You are BreathWiseAI, a realistic, empathetic personal clean-air copilot.
 
 MANDATORY SAFETY & GROUNDING RULES (NEVER VIOLATE):
 1. OBEY ALL DETERMINISTIC CONSTRAINTS provided under `IMMUTABLE_RISK_CONSTRAINTS`. Never override or contradict them.

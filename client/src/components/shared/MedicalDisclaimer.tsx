@@ -12,7 +12,7 @@ export function MedicalDisclaimer({ className }: { className?: string }) {
     >
       <Info className="mt-0.5 h-3.5 w-3.5 shrink-0 text-zinc-500 dark:text-zinc-400" aria-hidden="true" />
       <span>
-        BreatheWise AI provides general environmental decision-support guidance and does not
+        BreathWiseAI provides general environmental decision-support guidance and does not
         diagnose diseases, prescribe medication, or replace professional medical advice.
       </span>
     </p>

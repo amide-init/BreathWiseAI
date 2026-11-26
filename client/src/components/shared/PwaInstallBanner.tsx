@@ -98,8 +98,8 @@ export function PwaInstallBanner() {
           </p>
           <p className="text-zinc-600 dark:text-zinc-400">
             {showIosHint
-              ? 'In Safari, tap Share → “Add to Home Screen” to install BreatheWise.'
-              : 'Install BreatheWise AI as a lightweight app—instant load & offline cache.'}
+              ? 'In Safari, tap Share → “Add to Home Screen” to install BreathWiseAI.'
+              : 'Install BreathWiseAI as a lightweight app—instant load & offline cache.'}
           </p>
         </div>
       </div>

@@ -296,7 +296,7 @@ export function OnboardingPage() {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2.5">
             <BreatheWiseLogoMark className="h-9 w-9" />
-            <span className="font-display text-base font-bold tracking-tight">BreatheWise AI</span>
+            <span className="font-display text-base font-bold tracking-tight">BreathWiseAI</span>
           </div>
           <button
             type="button"

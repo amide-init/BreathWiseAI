@@ -273,7 +273,7 @@ class TranslationService:
         if missing_for_llm:
             lang_meta = SUPPORTED_LANGUAGES[lang]
             system_prompt = (
-                f"You are a fluent, natural translator for BreatheWise AI (an Indian clean-air app).\n"
+                f"You are a fluent, natural translator for BreathWiseAI (an Indian clean-air app).\n"
                 f"Target language: {lang_meta['label']} — {lang_meta['style']}\n\n"
                 "STRICT RULES:\n"
                 "1. Translate EVERY text COMPLETELY into natural, everyday native script "
@@ -282,7 +282,7 @@ class TranslationService:
                 "(translate words like Dashboard, Plan, Settings, Profile, Outdoor, Indoor, Exercise, "
                 "Moderate, Refresh, Save, Sign In, Sign Out, Light Mode, Dark Mode, etc.).\n"
                 "2. Keep ONLY scientific/measurement abbreviations & brand names intact: "
-                "BreatheWise AI, AQI, PM2.5, PM10, NO2, SO2, O3, CO, CO2, CPCB, NAQI, EPA, N95, HEPA, "
+                "BreathWiseAI, AQI, PM2.5, PM10, NO2, SO2, O3, CO, CO2, CPCB, NAQI, EPA, N95, HEPA, "
                 "µg/m³, °C, km/h, kg CO2e, %.\n"
                 "3. Preserve EVERY number using standard ASCII digits (0-9) EXACTLY as given. Never "
                 "convert digits to native numerals, and never round, change, add, or drop any number.\n"

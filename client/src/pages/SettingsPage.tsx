@@ -178,7 +178,7 @@ export function SettingsPage() {
             Appearance
           </CardTitle>
           <CardDescription>
-            Choose how BreatheWise AI looks on this device. Updates immediately with zero flicker.
+            Choose how BreathWiseAI looks on this device. Updates immediately with zero flicker.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -319,7 +319,7 @@ export function SettingsPage() {
             <Badge variant="default">User-Owned Data</Badge>
           </div>
           <CardDescription>
-            How BreatheWise AI protects your family profile and grounds environmental guidance.
+            How BreathWiseAI protects your family profile and grounds environmental guidance.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-3 text-sm text-zinc-600 dark:text-zinc-400">
@@ -370,7 +370,7 @@ export function SettingsPage() {
           <div className="flex flex-col justify-between gap-4 rounded-xl border border-zinc-200/80 bg-zinc-50/70 p-4 sm:flex-row sm:items-center dark:border-zinc-800 dark:bg-zinc-950/60">
             <div className="min-w-0 space-y-0.5">
               <p className="truncate text-sm font-semibold text-zinc-950 dark:text-zinc-50">
-                {userProfile?.displayName ?? user?.displayName ?? 'BreatheWise Account'}
+                {userProfile?.displayName ?? user?.displayName ?? 'BreathWiseAI Account'}
               </p>
               <p className="truncate text-xs text-zinc-500 dark:text-zinc-400">
                 {userProfile?.email ?? user?.email}

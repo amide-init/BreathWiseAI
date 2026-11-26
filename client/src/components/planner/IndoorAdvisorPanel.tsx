@@ -202,7 +202,7 @@ export function IndoorAdvisorPanel() {
         <div>
           <p className="font-semibold">Estimated (Questionnaire-Based) Assessment</p>
           <p className="text-xs opacity-90">
-            BreatheWise AI estimates indoor air risk from your home setup, family profile, and
+            BreathWiseAI estimates indoor air risk from your home setup, family profile, and
             current outdoor AQI in <strong>{selectedLocation.city}</strong> — never as a substitute
             for a physical indoor PM2.5 sensor.
           </p>

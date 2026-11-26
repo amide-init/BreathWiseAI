@@ -501,7 +501,7 @@ def build_fallback_chat_reply(
 
     if risk.constraints.medical_escalation_required:
         parts.append(
-            "Important medical notice: BreatheWise AI cannot diagnose illnesses or recommend "
+            "Important medical notice: BreathWiseAI cannot diagnose illnesses or recommend "
             "medication dosages. If anyone is experiencing wheezing, chest tightness, shortness "
             "of breath, or worsening symptoms, please seek qualified medical care or local "
             "emergency services promptly."

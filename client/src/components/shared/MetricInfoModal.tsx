@@ -176,7 +176,7 @@ export function MetricInfoModal({
         <div className="mt-5 flex flex-wrap items-center justify-between gap-2 border-t border-[#E8EAED] pt-3.5 dark:border-white/[0.08]">
           <Button type="button" variant="secondary" size="sm" onClick={handleAskAi}>
             <Sparkles className="h-3.5 w-3.5 text-[#4285F4] dark:text-[#8AB4F8]" />
-            Ask BreatheWise AI
+            Ask BreathWiseAI
           </Button>
           <Button type="button" variant="primary" size="sm" onClick={onClose}>
             Got it

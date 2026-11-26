@@ -12,7 +12,7 @@ export function ProtectedRoute() {
     return (
       <div className="bw-illustrated-bg flex min-h-screen flex-col items-center justify-center gap-3 text-[#5F6368] dark:text-[#9AA0A6]">
         <BreatheWiseLogoMark className="h-12 w-12 animate-pulse" />
-        <p className="font-display text-sm font-semibold">Loading BreatheWise AI…</p>
+        <p className="font-display text-sm font-semibold">Loading BreathWiseAI…</p>
       </div>
     );
   }

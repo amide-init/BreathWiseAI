@@ -36,7 +36,7 @@ export function AgentTracePill({
         <span className="flex items-center gap-2">
           <BrainCircuit className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
           <span>
-            How BreatheWise reasoned
+            How BreathWiseAI reasoned
             {cityLabel ? ` · ${cityLabel}` : ''} ({trace.length} steps)
           </span>
         </span>

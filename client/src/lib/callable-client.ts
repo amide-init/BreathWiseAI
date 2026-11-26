@@ -39,7 +39,7 @@ export async function callFunction<TRequest, TResponse>(
       throw new CallableClientError(cleanMessage, err.code);
     }
     throw new CallableClientError(
-      err instanceof Error ? err.message : 'Unable to reach BreatheWise backend service.',
+      err instanceof Error ? err.message : 'Unable to reach BreathWiseAI backend service.',
       'UNKNOWN_ERROR',
     );
   }

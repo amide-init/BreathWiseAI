@@ -80,7 +80,7 @@ export function DashboardPage() {
       decisions: activeQuickDecisions,
     });
     const outcome = await shareTextMessage(
-      `${selectedLocation.city} Air Quality — BreatheWise AI`,
+      `${selectedLocation.city} Air Quality — BreathWiseAI`,
       text,
     );
     if (outcome === 'shared' || outcome === 'copied') {
@@ -364,7 +364,7 @@ export function DashboardPage() {
                     <Link to={APP_ROUTES.ASSISTANT}>
                       <Button className="w-full justify-start" size="sm" variant="primary">
                         <Sparkles className="h-3.5 w-3.5" aria-hidden="true" />
-                        Ask BreatheWise AI
+                        Ask BreathWiseAI
                       </Button>
                     </Link>
                     <Link to={`${APP_ROUTES.PLANNER}?tab=indoor`}>

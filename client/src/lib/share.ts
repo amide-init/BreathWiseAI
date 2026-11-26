@@ -42,7 +42,7 @@ export function buildImpactShareText(params: {
   const shareUrl =
     params.url ?? (typeof window !== 'undefined' ? window.location.origin : 'https://agentora-ai-v2.web.app');
   const lines = [
-    '🌿 My BreatheWise AI 14-Day Clean-Air Update:',
+    '🌿 My BreathWiseAI 14-Day Clean-Air Update:',
     `• Estimated CO₂ avoided: ${params.estimatedCo2Kg.toFixed(2)} kg CO₂e (estimate)`,
     `• Family exposure-protection steps: ${params.protectiveActions} action${params.protectiveActions === 1 ? '' : 's'}`,
   ];
@@ -50,7 +50,7 @@ export function buildImpactShareText(params: {
     lines.push(`• Active Clean-Air Streak: ${params.streakDays} day${params.streakDays === 1 ? '' : 's'} 🔥`);
   }
   lines.push('');
-  lines.push(`Try BreatheWise AI free: ${shareUrl}`);
+  lines.push(`Try BreathWiseAI free: ${shareUrl}`);
   return lines.join('\n');
 }
 

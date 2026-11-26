@@ -60,7 +60,7 @@ function AssistantMessageCard({
         <div className="flex flex-wrap items-center justify-between gap-2">
           <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#1A73E8] dark:text-[#8AB4F8]">
             <GoogleSparkleMark className="h-4 w-4" />
-            BreatheWise AI
+            BreathWiseAI
           </span>
           <div className="flex flex-wrap items-center gap-1.5">
             {msg.environmentalSnapshot ? (
@@ -79,7 +79,7 @@ function AssistantMessageCard({
             <div>
               <p className="font-semibold">Seek Qualified Medical Care Promptly</p>
               <p>
-                BreatheWise AI cannot diagnose or prescribe medication. Follow official local
+                BreathWiseAI cannot diagnose or prescribe medication. Follow official local
                 advisories or contact medical/emergency services for acute symptoms.
               </p>
             </div>
@@ -357,7 +357,7 @@ export function AssistantPage() {
           <CopilotChatIllustration className="hidden h-14 w-20 shrink-0 sm:block" />
           <div>
             <h1 className="font-display text-2xl font-bold tracking-tight text-[#202124] dark:text-[#E3E3E3]">
-              Ask BreatheWise AI
+              Ask BreathWiseAI
             </h1>
             <p className="text-sm text-[#5F6368] dark:text-[#9AA0A6]">
               Grounded in live {selectedLocation.city} AQI, your home setup, and realistic

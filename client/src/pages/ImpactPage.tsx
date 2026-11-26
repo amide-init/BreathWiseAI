@@ -245,7 +245,7 @@ export function ImpactPage() {
       protectiveActions: summary.exposure.totalProtectiveActions,
       streakDays,
     });
-    const outcome = await shareTextMessage('My BreatheWise AI Clean-Air Impact', text);
+    const outcome = await shareTextMessage('My BreathWiseAI Clean-Air Impact', text);
     if (outcome === 'shared' || outcome === 'copied') {
       setShareFeedback(outcome);
       window.setTimeout(() => setShareFeedback(null), 2500);

@@ -56,7 +56,7 @@ function GoogleGIcon() {
 }
 
 export function LoginPage() {
-  useDocumentTitle('Sign In | BreatheWise AI');
+  useDocumentTitle('Sign In | BreathWiseAI');
   const { user, signInWithGoogle } = useAuth();
   const location = useLocation();
   const redirectTo = (location.state as { from?: string } | null)?.from ?? APP_ROUTES.HOME;
@@ -105,7 +105,7 @@ export function LoginPage() {
             <BreatheWiseLogoMark className="h-11 w-11" />
             <FamilyHomeIllustration className="h-14 w-20" />
           </div>
-          <CardTitle className="text-2xl">BreatheWise AI</CardTitle>
+          <CardTitle className="text-2xl">BreathWiseAI</CardTitle>
           <CardDescription>
             One tap to unlock your city-AQI daily plan, realistic indoor harm-reduction tips, and AI
             clean-air copilot.

@@ -144,7 +144,7 @@ class ProfileAiService:
             )
 
         system_prompt = (
-            "You are BreatheWise AI's household setup assistant for Indian families.\n"
+            "You are BreathWiseAI's household setup assistant for Indian families.\n"
             "Extract a clean, accurate structured household draft from the user's casual description "
             "(which may be in English, Hindi, or mixed Indian speech).\n\n"
             "RULES:\n"

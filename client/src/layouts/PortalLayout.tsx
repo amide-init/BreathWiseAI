@@ -82,7 +82,7 @@ export function PortalLayout() {
           <BreatheWiseLogoMark className="h-9 w-9 shrink-0" />
           <div>
             <p className="font-display text-base font-bold tracking-tight text-[#202124] dark:text-[#E3E3E3]">
-              BreatheWise AI
+              BreathWiseAI
             </p>
             <p className="text-[11px] font-medium text-[#5F6368] dark:text-[#9AA0A6]">
               Clean-Air Copilot
@@ -315,8 +315,8 @@ export function PortalLayout() {
       {pathname !== APP_ROUTES.ASSISTANT ? (
         <Link
           to={APP_ROUTES.ASSISTANT}
-          aria-label="Ask BreatheWise AI"
-          title="Ask BreatheWise AI"
+          aria-label="Ask BreathWiseAI"
+          title="Ask BreathWiseAI"
           className="cloud-card fixed right-4 bottom-20 z-30 inline-flex h-12 items-center gap-2 rounded-full border border-white/90 bg-white/95 px-4 text-sm font-semibold text-[#202124] backdrop-blur-md hover:-translate-y-0.5 hover:border-[#4285F4]/50 active:scale-[0.98] md:right-6 md:bottom-6 dark:border-white/[0.14] dark:bg-[#282A2C]/95 dark:text-[#E3E3E3] dark:hover:border-[#8AB4F8]/55"
         >
           <GoogleSparkleMark className="h-5 w-5 shrink-0" />

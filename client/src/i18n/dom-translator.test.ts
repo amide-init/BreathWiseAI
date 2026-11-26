@@ -32,6 +32,7 @@ describe('Real-time frontend translator safety & glossary', () => {
     expect(shouldSkipText('AQI')).toBe(true);
     expect(shouldSkipText('10:30 PM')).toBe(true);
     expect(shouldSkipText('user@example.com')).toBe(true);
+    expect(shouldSkipText('BreathWiseAI')).toBe(true);
     expect(shouldSkipText('BreatheWise AI')).toBe(true);
 
     expect(shouldSkipText('Right Now — Everyday Answers')).toBe(false);
