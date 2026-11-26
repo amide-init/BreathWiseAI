@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import { Link, NavLink, Outlet, useLocation } from 'react-router-dom';
 
+import { LanguageSelector } from '@/components/shared/LanguageSelector';
 import { LocationPickerModal } from '@/components/shared/LocationPickerModal';
 import { QuickOnboardingModal } from '@/components/shared/QuickOnboardingModal';
 import { ThemeToggle } from '@/components/shared/ThemeToggle';
@@ -121,6 +122,7 @@ export function PortalLayout() {
             <div className="flex items-center justify-between gap-2 rounded-xl border border-zinc-200/80 bg-zinc-50/70 p-2.5 dark:border-zinc-800/80 dark:bg-zinc-900/70">
               <Link
                 to={APP_ROUTES.PROFILE}
+                data-no-translate="true"
                 className="min-w-0 flex-1 rounded-lg transition-opacity hover:opacity-80"
               >
                 <p className="truncate text-xs font-semibold text-zinc-900 dark:text-zinc-100">
@@ -174,6 +176,7 @@ export function PortalLayout() {
             <button
               type="button"
               onClick={openPicker}
+              data-no-translate="true"
               className="inline-flex min-h-[36px] cursor-pointer items-center gap-1.5 rounded-xl border border-zinc-200/90 bg-white px-3 py-1.5 text-xs font-medium text-zinc-800 shadow-2xs transition-all hover:border-emerald-500/40 hover:bg-emerald-500/5 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-100 dark:hover:border-emerald-400/40"
             >
               <MapPin
@@ -184,6 +187,8 @@ export function PortalLayout() {
                 {selectedLocation.city}
               </span>
             </button>
+
+            <LanguageSelector />
 
             <ThemeToggle className="md:hidden" />
 

@@ -1,25 +1,22 @@
 import {
   BookOpen,
   CalendarCheck2,
-  Car,
   CheckCircle2,
   ChevronRight,
   Circle,
   Clock,
-  Footprints,
   Home,
   Info,
-  Leaf,
   RefreshCw,
   ShieldAlert,
   Sparkles,
-  Utensils,
-  X,
 } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 
 import { IndoorAdvisorPanel } from '@/components/planner/IndoorAdvisorPanel';
+import { RECOMMENDATION_CATEGORY_META } from '@/components/planner/recommendation-meta';
+import { RecommendationDetailModal } from '@/components/planner/RecommendationDetailModal';
 import { AqiBadge } from '@/components/shared/AqiBadge';
 import { DataStateWrapper } from '@/components/shared/DataStateWrapper';
 import { MedicalDisclaimer } from '@/components/shared/MedicalDisclaimer';
@@ -42,162 +39,6 @@ import type { RecommendationItem } from '@/types';
 type TimeFilterTab = TimeWindowKey | 'all';
 type PlannerModeTab = 'routine' | 'indoor';
 
-const CATEGORY_META: Record<
-  RecommendationItem['category'],
-  { label: string; icon: typeof Home; accent: string }
-> = {
-  outdoor_activity: {
-    label: 'Outdoors',
-    icon: Footprints,
-    accent: 'bg-sky-500/12 text-sky-700 dark:bg-sky-400/15 dark:text-sky-300',
-  },
-  commute: {
-    label: 'Commute',
-    icon: Car,
-    accent: 'bg-indigo-500/12 text-indigo-700 dark:bg-indigo-400/15 dark:text-indigo-300',
-  },
-  indoor_air: {
-    label: 'Home Air',
-    icon: Home,
-    accent: 'bg-emerald-500/12 text-emerald-700 dark:bg-emerald-400/15 dark:text-emerald-300',
-  },
-  cooking_ventilation: {
-    label: 'Kitchen',
-    icon: Utensils,
-    accent: 'bg-amber-500/12 text-amber-700 dark:bg-amber-400/15 dark:text-amber-300',
-  },
-  sustainability: {
-    label: 'Clean Swap',
-    icon: Leaf,
-    accent: 'bg-emerald-500/12 text-emerald-700 dark:bg-emerald-400/15 dark:text-emerald-300',
-  },
-  health_precaution: {
-    label: 'Health Alert',
-    icon: ShieldAlert,
-    accent: 'bg-red-500/12 text-red-700 dark:bg-red-400/15 dark:text-red-300',
-  },
-};
-
-function ActionDetailModal({
-  item,
-  completed,
-  onToggle,
-  onClose,
-}: {
-  item: RecommendationItem;
-  completed: boolean;
-  onToggle: () => void;
-  onClose: () => void;
-}) {
-  const cat = CATEGORY_META[item.category];
-  const Icon = cat.icon;
-
-  useEffect(() => {
-    function onKeyDown(e: KeyboardEvent) {
-      if (e.key === 'Escape') {
-        onClose();
-      }
-    }
-    window.addEventListener('keydown', onKeyDown);
-    return () => window.removeEventListener('keydown', onKeyDown);
-  }, [onClose]);
-
-  return (
-    <div
-      className="fixed inset-0 z-50 flex items-end justify-center bg-zinc-950/60 p-3 backdrop-blur-xs sm:items-center sm:p-4"
-      role="dialog"
-      aria-modal="true"
-      aria-label={item.title}
-      onClick={(e) => {
-        if (e.target === e.currentTarget) {
-          onClose();
-        }
-      }}
-    >
-      <div className="max-h-[88vh] w-full max-w-lg overflow-y-auto rounded-2xl border border-zinc-200 bg-white p-5 shadow-xl dark:border-zinc-800 dark:bg-zinc-900">
-        <div className="flex items-start justify-between gap-3 pb-3">
-          <div className="flex items-start gap-3">
-            <span className={cn('flex h-10 w-10 shrink-0 items-center justify-center rounded-xl', cat.accent)}>
-              <Icon className="h-5 w-5" aria-hidden="true" />
-            </span>
-            <div>
-              <h2 className="text-lg font-bold text-zinc-950 dark:text-zinc-50">{item.title}</h2>
-              <div className="mt-1 flex flex-wrap items-center gap-1.5">
-                <Badge
-                  variant={
-                    item.priority === 'high'
-                      ? 'danger'
-                      : item.priority === 'medium'
-                        ? 'warning'
-                        : 'neutral'
-                  }
-                >
-                  {item.priority === 'high' ? 'Top Priority' : `${item.priority} priority`}
-                </Badge>
-                <Badge variant="outline">{cat.label}</Badge>
-                {item.targetMembers.map((member) => (
-                  <Badge key={member} variant="neutral">
-                    {member}
-                  </Badge>
-                ))}
-              </div>
-            </div>
-          </div>
-
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label="Close action details"
-            className="flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-lg text-zinc-500 hover:bg-zinc-100 hover:text-zinc-950 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-50"
-          >
-            <X className="h-4 w-4" />
-          </button>
-        </div>
-
-        <div className="space-y-4 text-sm">
-          <div className="rounded-xl border border-emerald-200/80 bg-emerald-50/60 p-3.5 dark:border-emerald-900/50 dark:bg-emerald-950/30">
-            <p className="text-[11px] font-bold uppercase tracking-wide text-emerald-700 dark:text-emerald-400">
-              What to do
-            </p>
-            <p className="mt-1 leading-relaxed text-zinc-900 dark:text-zinc-100">{item.whatToDo}</p>
-          </div>
-
-          <div>
-            <p className="text-[11px] font-bold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
-              Why it matters for you
-            </p>
-            <p className="mt-1 leading-relaxed text-zinc-700 dark:text-zinc-300">{item.why}</p>
-          </div>
-
-          <div className="rounded-xl border border-zinc-200/80 bg-zinc-50/80 p-3.5 dark:border-zinc-800 dark:bg-zinc-950/60">
-            <p className="text-[11px] font-bold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
-              Easy Backup Plan
-            </p>
-            <p className="mt-1 leading-relaxed text-zinc-700 dark:text-zinc-300">
-              {item.alternative}
-            </p>
-          </div>
-
-          <p className="text-xs text-zinc-500 dark:text-zinc-400">
-            <span className="font-semibold text-zinc-700 dark:text-zinc-300">Based on:</span>{' '}
-            {item.supportingData}
-          </p>
-        </div>
-
-        <div className="mt-5 flex flex-wrap items-center justify-between gap-2 border-t border-zinc-100 pt-3.5 dark:border-zinc-800">
-          <Button type="button" variant={completed ? 'secondary' : 'brand'} size="sm" onClick={onToggle}>
-            <CheckCircle2 className="h-4 w-4" aria-hidden="true" />
-            {completed ? 'Completed ✓' : 'Mark as Done'}
-          </Button>
-          <Button type="button" variant="outline" size="sm" onClick={onClose}>
-            Close
-          </Button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
 function CompactActionCard({
   item,
   completed,
@@ -209,7 +50,7 @@ function CompactActionCard({
   onToggle: () => void;
   onOpenDetails: () => void;
 }) {
-  const cat = CATEGORY_META[item.category];
+  const cat = RECOMMENDATION_CATEGORY_META[item.category];
   const Icon = cat.icon;
 
   return (
@@ -267,7 +108,7 @@ function CompactActionCard({
               >
                 {item.title}
               </h3>
-              <p className="mt-1 text-sm leading-relaxed text-zinc-600 dark:text-zinc-400">
+              <p className="mt-1 line-clamp-2 text-sm leading-relaxed text-zinc-600 dark:text-zinc-400">
                 {item.whatToDo}
               </p>
             </div>
@@ -278,7 +119,7 @@ function CompactActionCard({
                 onClick={onOpenDetails}
                 className="inline-flex cursor-pointer items-center gap-1 text-xs font-semibold text-emerald-700 hover:text-emerald-800 dark:text-emerald-400 dark:hover:text-emerald-300"
               >
-                <span>Why &amp; Backup Plan</span>
+                <span>Read more · Why &amp; Backup Plan</span>
                 <ChevronRight className="h-3.5 w-3.5" aria-hidden="true" />
               </button>
             </div>
@@ -573,7 +414,7 @@ export function PlannerPage() {
       )}
 
       {selectedItem && plan ? (
-        <ActionDetailModal
+        <RecommendationDetailModal
           item={selectedItem}
           completed={plan.completedItemIds.includes(selectedItem.itemId)}
           onToggle={() => void toggleItemCompleted(selectedItem.itemId)}

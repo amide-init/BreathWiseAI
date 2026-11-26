@@ -3,6 +3,7 @@ import {
   BookOpen,
   CheckCircle2,
   ChevronDown,
+  ChevronRight,
   ChevronUp,
   Home,
   Info,
@@ -12,6 +13,8 @@ import {
 } from 'lucide-react';
 import { useEffect, useState, type FormEvent } from 'react';
 
+import { RECOMMENDATION_CATEGORY_META } from '@/components/planner/recommendation-meta';
+import { RecommendationDetailModal } from '@/components/planner/RecommendationDetailModal';
 import { AqiBadge } from '@/components/shared/AqiBadge';
 import { MetricInfoButton } from '@/components/shared/MetricInfoModal';
 import { Alert } from '@/components/ui/alert';
@@ -26,6 +29,7 @@ import {
   getSessionCached,
   setSessionCached,
 } from '@/lib/client-cache';
+import { cn } from '@/lib/cn';
 import {
   COOKING_FUEL_LABELS,
   DEFAULT_INDOOR_QUESTIONNAIRE,
@@ -39,6 +43,7 @@ import {
   type WindowSealingQuality,
 } from '@/models/indoor.model';
 import { assessIndoorAir } from '@/services/indoor.service';
+import type { RecommendationItem } from '@/types';
 
 const FIELD_CLASS =
   'w-full rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm text-zinc-950 outline-none transition-colors focus:border-emerald-500 focus:bg-white focus:ring-2 focus:ring-emerald-500/20 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-50';
@@ -94,6 +99,7 @@ export function IndoorAdvisorPanel() {
   });
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [selectedItem, setSelectedItem] = useState<RecommendationItem | null>(null);
 
   // Sync cached Indoor Plan whenever user switches city
   useEffect(() => {
@@ -266,41 +272,61 @@ export function IndoorAdvisorPanel() {
 
           {!showForm ? (
             <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-              {assessment.recommendations.map((item) => (
-                <Card key={item.itemId}>
-                  <CardHeader className="pb-2">
-                    <div className="flex flex-wrap items-center justify-between gap-2">
-                      <CardTitle className="text-base">{item.title}</CardTitle>
-                      <Badge
-                        variant={
-                          item.priority === 'high'
-                            ? 'danger'
-                            : item.priority === 'medium'
-                              ? 'warning'
-                              : 'neutral'
-                        }
-                      >
-                        {item.priority === 'high' ? 'Top Priority' : item.priority}
-                      </Badge>
-                    </div>
-                  </CardHeader>
-                  <CardContent className="space-y-2.5 text-sm">
-                    <p className="leading-relaxed text-zinc-800 dark:text-zinc-200">
-                      {item.whatToDo}
-                    </p>
-                    <p className="text-xs text-zinc-600 dark:text-zinc-400">
-                      <span className="font-semibold text-zinc-700 dark:text-zinc-300">Why:</span>{' '}
-                      {item.why}
-                    </p>
-                    <div className="rounded-xl border border-zinc-200/70 bg-zinc-50 p-2.5 text-xs dark:border-zinc-800 dark:bg-zinc-950/60">
-                      <span className="font-semibold text-zinc-700 dark:text-zinc-300">
-                        Easy swap:{' '}
-                      </span>
-                      <span className="text-zinc-600 dark:text-zinc-400">{item.alternative}</span>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
+              {assessment.recommendations.map((item) => {
+                const cat = RECOMMENDATION_CATEGORY_META[item.category];
+                const Icon = cat.icon;
+                return (
+                  <Card
+                    key={item.itemId}
+                    className="transition-all hover:border-emerald-500/35 dark:hover:border-emerald-400/35"
+                  >
+                    <CardContent className="space-y-2.5 p-4">
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <span
+                          className={cn(
+                            'inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-semibold',
+                            cat.accent,
+                          )}
+                        >
+                          <Icon className="h-3 w-3" aria-hidden="true" />
+                          {cat.label}
+                        </span>
+                        <Badge
+                          variant={
+                            item.priority === 'high'
+                              ? 'danger'
+                              : item.priority === 'medium'
+                                ? 'warning'
+                                : 'neutral'
+                          }
+                        >
+                          {item.priority === 'high' ? 'Top Priority' : item.priority}
+                        </Badge>
+                      </div>
+
+                      <div>
+                        <h3 className="font-display text-base font-bold leading-snug text-zinc-950 dark:text-zinc-50">
+                          {item.title}
+                        </h3>
+                        <p className="mt-1 line-clamp-2 text-sm leading-relaxed text-zinc-600 dark:text-zinc-400">
+                          {item.whatToDo}
+                        </p>
+                      </div>
+
+                      <div className="pt-0.5">
+                        <button
+                          type="button"
+                          onClick={() => setSelectedItem(item)}
+                          className="inline-flex cursor-pointer items-center gap-1 text-xs font-semibold text-emerald-700 hover:text-emerald-800 dark:text-emerald-400 dark:hover:text-emerald-300"
+                        >
+                          <span>Read more · Why &amp; Easy Swap</span>
+                          <ChevronRight className="h-3.5 w-3.5" aria-hidden="true" />
+                        </button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                );
+              })}
             </div>
           ) : null}
         </div>
@@ -479,6 +505,10 @@ export function IndoorAdvisorPanel() {
             </Badge>
           ))}
         </div>
+      ) : null}
+
+      {selectedItem ? (
+        <RecommendationDetailModal item={selectedItem} onClose={() => setSelectedItem(null)} />
       ) : null}
     </div>
   );

@@ -1,6 +1,7 @@
 import {
   CheckCircle2,
   Gauge,
+  Globe,
   LogOut,
   MapPin,
   Moon,
@@ -21,8 +22,10 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { APP_ROUTES } from '@/config/routes';
 import { useAuth } from '@/hooks/useAuth';
+import { useLanguage } from '@/hooks/useLanguage';
 import { useSelectedLocation } from '@/hooks/useSelectedLocation';
 import { useTheme } from '@/hooks/useTheme';
+import { SUPPORTED_LANGUAGES } from '@/i18n/languages';
 import { cn } from '@/lib/cn';
 import type { AqiScalePreference } from '@/models/user.model';
 
@@ -33,6 +36,7 @@ export function SettingsPage() {
   const { user, userProfile, updateUser, signOut } = useAuth();
   const { selectedLocation, openPicker } = useSelectedLocation();
   const { theme, setTheme } = useTheme();
+  const { language, setLanguage, isTranslating } = useLanguage();
 
   const [aqiScale, setAqiScale] = useState<AqiScalePreference>(
     userProfile?.aqiScalePreference ?? 'CPCB_NAQI',
@@ -101,7 +105,72 @@ export function SettingsPage() {
         </div>
       </div>
 
-      {/* 1. Appearance / Light & Dark Mode */}
+      {/* 1. Language (Real-Time Frontend Translation) */}
+      <Card>
+        <CardHeader>
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <CardTitle className="flex items-center gap-2">
+              <Globe className="h-5 w-5 text-emerald-600 dark:text-emerald-400" aria-hidden="true" />
+              Language (Live Translation)
+            </CardTitle>
+            {isTranslating ? (
+              <Badge variant="default">Translating…</Badge>
+            ) : (
+              <Badge variant="neutral">Indian Languages</Badge>
+            )}
+          </div>
+          <CardDescription>
+            Switch between English and full Indian language translations. All screens, verdicts, and
+            AI guidance translate completely in real time and cache locally on this device.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div
+            data-no-translate="true"
+            className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3"
+          >
+            {SUPPORTED_LANGUAGES.map((opt) => {
+              const active = opt.code === language;
+              return (
+                <button
+                  key={opt.code}
+                  type="button"
+                  onClick={() => setLanguage(opt.code)}
+                  className={cn(
+                    'flex cursor-pointer flex-col justify-between rounded-2xl border p-4 text-left transition-all',
+                    active
+                      ? 'border-emerald-500 bg-emerald-50/70 ring-2 ring-emerald-500/20 dark:border-emerald-400 dark:bg-emerald-950/40'
+                      : 'border-zinc-200 bg-zinc-50/60 hover:border-zinc-300 dark:border-zinc-800 dark:bg-zinc-950/60 dark:hover:border-zinc-700',
+                  )}
+                >
+                  <div className="flex items-start justify-between gap-2">
+                    <div>
+                      <p className="text-sm font-semibold text-zinc-950 dark:text-zinc-50">
+                        {opt.label}
+                      </p>
+                      <p className="text-[11px] font-medium text-zinc-500 dark:text-zinc-400">
+                        {opt.nativeHint}
+                      </p>
+                    </div>
+                    {active ? (
+                      <Badge variant="default">Active</Badge>
+                    ) : (
+                      <span className="rounded-md bg-zinc-200/70 px-1.5 py-0.5 text-[10px] font-semibold text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300">
+                        {opt.shortCode}
+                      </span>
+                    )}
+                  </div>
+                  <p className="mt-2.5 text-xs leading-relaxed text-zinc-600 italic dark:text-zinc-400">
+                    “{opt.sampleLine}”
+                  </p>
+                </button>
+              );
+            })}
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* 2. Appearance / Light & Dark Mode */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
