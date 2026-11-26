@@ -15,6 +15,7 @@ import { AiFamilyInput } from '@/components/profile/AiFamilyInput';
 import {
   BreatheWiseLogoMark,
   FamilyHomeIllustration,
+  GoogleAmbientBackdrop,
 } from '@/components/illustrations/GoogleAirIllustrations';
 import { AqiBadge } from '@/components/shared/AqiBadge';
 import { Alert } from '@/components/ui/alert';
@@ -286,8 +287,9 @@ export function OnboardingPage() {
   }
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center bg-[#F8F9FA] px-4 py-10 text-[#202124] dark:bg-[#131314] dark:text-[#E3E3E3]">
-      <div className="w-full max-w-xl space-y-6">
+    <div className="bw-illustrated-bg relative flex min-h-screen flex-col items-center justify-center px-4 py-10 text-[#202124] dark:text-[#E3E3E3]">
+      <GoogleAmbientBackdrop />
+      <div className="relative z-10 w-full max-w-xl space-y-6">
         {/* Minimal Brand & Progress */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2.5">

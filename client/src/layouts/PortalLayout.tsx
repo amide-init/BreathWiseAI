@@ -13,6 +13,7 @@ import { Link, NavLink, Outlet, useLocation } from 'react-router-dom';
 
 import {
   BreatheWiseLogoMark,
+  GoogleAmbientBackdrop,
   GoogleSparkleMark,
 } from '@/components/illustrations/GoogleAirIllustrations';
 import { LanguageSelector } from '@/components/shared/LanguageSelector';
@@ -70,9 +71,11 @@ export function PortalLayout() {
   useDocumentTitle(activeRoute.documentTitle);
 
   return (
-    <div className="min-h-screen bg-[#F8F9FA] text-[#202124] transition-colors duration-200 md:flex dark:bg-[#131314] dark:text-[#E3E3E3]">
+    <div className="bw-illustrated-bg relative min-h-screen text-[#202124] transition-colors duration-200 md:flex dark:text-[#E3E3E3]">
+      <GoogleAmbientBackdrop />
+
       {/* Desktop Sidebar */}
-      <aside className="hidden md:sticky md:top-0 md:flex md:h-screen md:w-60 md:shrink-0 md:flex-col md:overflow-hidden md:border-r md:border-[#DADCE0]/90 md:bg-white dark:md:border-white/[0.08] dark:md:bg-[#1E1F20]">
+      <aside className="relative z-10 hidden md:sticky md:top-0 md:flex md:h-screen md:w-60 md:shrink-0 md:flex-col md:overflow-hidden md:border-r md:border-[#DADCE0]/90 md:bg-white/95 md:backdrop-blur-md dark:md:border-white/[0.08] dark:md:bg-[#1E1F20]/95">
         <div className="google-ribbon h-[3px] w-full shrink-0" aria-hidden="true" />
 
         <div className="flex shrink-0 items-center gap-2.5 px-5 py-4">
@@ -174,7 +177,7 @@ export function PortalLayout() {
       </aside>
 
       {/* Main Content Area */}
-      <div className="flex min-h-screen flex-1 flex-col">
+      <div className="relative z-10 flex min-h-screen flex-1 flex-col">
         <div className="google-ribbon h-[3px] w-full shrink-0 md:hidden" aria-hidden="true" />
 
         <header className="sticky top-0 z-20 flex items-center justify-between gap-2 border-b border-[#DADCE0]/80 bg-[#F8F9FA]/90 px-4 py-3 backdrop-blur-xl md:px-8 dark:border-white/[0.08] dark:bg-[#131314]/88">

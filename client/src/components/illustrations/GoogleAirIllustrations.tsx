@@ -223,3 +223,59 @@ export function FamilyHomeIllustration({ className = 'h-20 w-28' }: { className?
     </svg>
   );
 }
+
+/**
+ * Subtle corner breeze, cloud, and leaf vector watermarks framing the app canvas
+ * without interfering with readability or clicks.
+ */
+export function GoogleAmbientBackdrop() {
+  return (
+    <div
+      className="pointer-events-none fixed inset-0 z-0 overflow-hidden select-none"
+      aria-hidden="true"
+    >
+      {/* Top-right floating breeze & sun accent */}
+      <svg
+        viewBox="0 0 260 200"
+        fill="none"
+        xmlns="http://www.w3.org/2000/svg"
+        className="absolute -top-6 -right-8 h-52 w-64 opacity-[0.22] dark:opacity-[0.14]"
+      >
+        <circle cx="195" cy="54" r="28" fill="#FBBC05" fillOpacity="0.28" />
+        <path
+          d="M52 72H154C167 72 176 63 176 52C176 41 167 33 156 33C147 33 140 39 138 46"
+          stroke="#4285F4"
+          strokeWidth="3.5"
+          strokeLinecap="round"
+        />
+        <path
+          d="M90 98H198C210 98 218 106 218 117C218 128 209 136 198 136"
+          stroke="#34A853"
+          strokeWidth="3.5"
+          strokeLinecap="round"
+        />
+        <circle cx="72" cy="48" r="5" fill="#EA4335" fillOpacity="0.65" />
+        <circle cx="222" cy="82" r="4" fill="#FBBC05" />
+      </svg>
+
+      {/* Bottom-left soft cloud & leaf sketch */}
+      <svg
+        viewBox="0 0 260 180"
+        fill="none"
+        xmlns="http://www.w3.org/2000/svg"
+        className="absolute -bottom-8 left-4 hidden h-44 w-64 opacity-[0.2] md:left-64 md:block dark:opacity-[0.12]"
+      >
+        <path
+          d="M24 128H126C140 128 151 117 151 103C151 90 141 79 128 78C123 62 108 51 91 51C70 51 53 68 52 89C39 90 29 101 29 114C29 120 24 128 24 128Z"
+          stroke="#4285F4"
+          strokeWidth="3"
+          fill="#4285F4"
+          fillOpacity="0.1"
+        />
+        <path d="M168 118C168 104 182 94 196 94C196 108 186 122 168 118Z" fill="#34A853" fillOpacity="0.45" />
+        <circle cx="152" cy="64" r="4.5" fill="#FBBC05" fillOpacity="0.7" />
+        <circle cx="42" cy="56" r="3.5" fill="#EA4335" fillOpacity="0.55" />
+      </svg>
+    </div>
+  );
+}
