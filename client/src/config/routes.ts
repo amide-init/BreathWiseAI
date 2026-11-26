@@ -28,9 +28,9 @@ export const PRIMARY_NAV_ITEMS: readonly NavItemConfig[] = [
     iconKey: 'dashboard',
   },
   {
-    label: 'Plan & Home',
+    label: 'Plan',
     shortLabel: 'Plan',
-    documentTitle: 'Plan & Home | BreatheWise AI',
+    documentTitle: 'Plan | BreatheWise AI',
     subtitle: 'City-AQI routines & realistic indoor harm reduction',
     to: APP_ROUTES.PLANNER,
     iconKey: 'planner',
