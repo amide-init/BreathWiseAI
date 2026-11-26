@@ -1,4 +1,4 @@
-"""Node 4: Recommendation Agent — RAG grounding + Google Gemini structured generation."""
+"""Node 6: Recommendation Agent — RAG grounding + Google Gemini structured synthesis."""
 
 from __future__ import annotations
 
@@ -29,7 +29,7 @@ def build_recommendation_node(
     llm_provider: StructuredLLMProvider | None = None,
     retriever: KnowledgeRetriever | None = None,
 ):
-    """Create Node 4 (`recommendation_agent`) with injectable LLM & RAG retriever."""
+    """Create Node 6 (`recommendation_agent`) with injectable LLM & RAG retriever."""
     llm = llm_provider or GeminiStructuredProvider()
     rag = retriever or KnowledgeRetriever()
 
@@ -38,7 +38,10 @@ def build_recommendation_node(
         context = state["sanitized_context"]
         env = state["environment_data"]
         risk = state["risk_assessment"]
+        reasoning_plan = state.get("reasoning_plan")
+        tool_results = state.get("tool_results")
         validation_errors = state.get("validation_errors") or []
+        trace = list(state.get("agent_trace") or [])
 
         docs = state.get("retrieved_docs") or rag.retrieve(
             workflow_mode=mode,
@@ -56,6 +59,8 @@ def build_recommendation_node(
                     env=env,
                     risk=risk,
                     docs=docs,
+                    reasoning_plan=reasoning_plan,
+                    tool_results=tool_results,
                     validation_errors=validation_errors,
                 )
                 generated = llm.generate_structured(
@@ -73,6 +78,8 @@ def build_recommendation_node(
                     env=env,
                     risk=risk,
                     docs=docs,
+                    reasoning_plan=reasoning_plan,
+                    tool_results=tool_results,
                     validation_errors=validation_errors,
                 )
                 generated_indoor = llm.generate_structured(
@@ -80,9 +87,9 @@ def build_recommendation_node(
                     user_prompt=usr_prompt,
                     response_schema=IndoorAssessmentResponse,
                 )
-                # Always force verifiable RAG citations and questionnaire basis
                 generated_indoor.assessment_basis = "estimated_questionnaire"
                 generated_indoor.citations = docs_to_citations(docs)
+                generated_indoor.agent_trace = trace
                 generated_indoor.fallback_mode = False
                 draft = generated_indoor.model_dump(by_alias=True)
 
@@ -94,6 +101,8 @@ def build_recommendation_node(
                     env=env,
                     risk=risk,
                     docs=docs,
+                    reasoning_plan=reasoning_plan,
+                    tool_results=tool_results,
                     validation_errors=validation_errors,
                 )
                 generated_chat = llm.generate_structured(
@@ -103,6 +112,7 @@ def build_recommendation_node(
                 )
                 generated_chat.citations = docs_to_citations(docs)
                 generated_chat.environmental_snapshot = env.current
+                generated_chat.agent_trace = trace
                 generated_chat.medical_disclaimer_shown = True
                 generated_chat.fallback_mode = False
                 draft = generated_chat.model_dump(by_alias=True)

@@ -24,6 +24,7 @@ from app.routes.impact_routes import (
 from app.routes.indoor_routes import handle_assess_indoor_air_callable
 from app.routes.location_routes import handle_location_search_callable
 from app.routes.planner_routes import handle_generate_daily_plan_callable
+from app.routes.profile_ai_routes import handle_parse_household_profile_callable
 from app.routes.translation_routes import handle_translate_texts_callable
 from app.utils.callable_utils import run_callable
 
@@ -150,3 +151,19 @@ def delete_impact_action(req: https_fn.CallableRequest[Any]) -> Any:
 def translate_texts(req: https_fn.CallableRequest[Any]) -> Any:
     """Public bounded callable for real-time Indian-English batch translation."""
     return run_callable("translate_texts", req, handle_translate_texts_callable, require_auth=False)
+
+
+@https_fn.on_call(
+    region=_settings.region,
+    memory=options.MemoryOption.MB_512,
+    timeout_sec=30,
+    secrets=["GEMINI_API_KEY"],
+)
+def parse_household_profile(req: https_fn.CallableRequest[Any]) -> Any:
+    """Authenticated callable extracting family members & home habits from natural language."""
+    return run_callable(
+        "parse_household_profile",
+        req,
+        handle_parse_household_profile_callable,
+        require_auth=True,
+    )

@@ -68,6 +68,9 @@ class ChatService:
         risk = result_state["risk_assessment"]
         reply_payload["fallbackMode"] = bool(result_state.get("fallback_mode", False))
         reply_payload["medicalDisclaimerShown"] = True
+        reply_payload["agentTrace"] = list(
+            reply_payload.get("agentTrace") or result_state.get("agent_trace") or []
+        )
 
         saved_assistant = self._chat_repo.append_message(
             session_id=active_session_id,
@@ -78,6 +81,7 @@ class ChatService:
                 "citations": reply_payload.get("citations") or [],
                 "followUpSuggestions": reply_payload.get("followUpSuggestions") or [],
                 "environmentalSnapshot": reply_payload.get("environmentalSnapshot"),
+                "agentTrace": reply_payload["agentTrace"],
                 "medicalDisclaimerShown": True,
                 "medicalEscalationRequired": bool(risk.constraints.medical_escalation_required),
                 "fallbackMode": reply_payload["fallbackMode"],
