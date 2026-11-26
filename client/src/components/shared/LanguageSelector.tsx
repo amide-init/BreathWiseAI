@@ -62,7 +62,7 @@ export function LanguageSelector({ className }: { className?: string }) {
         <div
           role="listbox"
           aria-label="Choose app language"
-          className="cloud-card absolute right-0 z-40 mt-2 w-60 rounded-3xl border border-[#DADCE0] bg-white p-1.5 dark:border-white/[0.1] dark:bg-[#1E1F20]"
+          className="cloud-card absolute right-0 z-[80] mt-2 w-60 rounded-3xl border border-[#DADCE0] bg-white p-1.5 dark:border-white/[0.1] dark:bg-[#1E1F20]"
         >
           <p className="px-3 pt-1.5 pb-1 text-[10px] font-semibold tracking-wider text-[#5F6368] uppercase dark:text-[#9AA0A6]">
             Live Translation

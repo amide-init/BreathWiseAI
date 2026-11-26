@@ -4,6 +4,7 @@ import { useState, type FormEvent } from 'react';
 import { Alert } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { ModalPortal } from '@/components/ui/modal-portal';
 import {
   AGE_GROUP_LABELS,
   ROLE_LABELS,
@@ -94,8 +95,9 @@ export function MemberFormModal({ initial, onClose, onSubmit }: MemberFormModalP
   }
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-end justify-center bg-black/55 p-0 backdrop-blur-xs sm:items-center sm:p-4"
+    <ModalPortal>
+      <div
+        className="fixed inset-0 z-[100] flex items-end justify-center bg-black/55 p-0 backdrop-blur-xs sm:items-center sm:p-4"
       role="dialog"
       aria-modal="true"
       aria-label={initial ? 'Edit family member' : 'Add family member'}
@@ -311,5 +313,6 @@ export function MemberFormModal({ initial, onClose, onSubmit }: MemberFormModalP
         </div>
       </div>
     </div>
+    </ModalPortal>
   );
 }

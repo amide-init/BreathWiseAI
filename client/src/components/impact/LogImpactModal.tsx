@@ -3,6 +3,7 @@ import { useState, type FormEvent } from 'react';
 
 import { Alert } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
+import { ModalPortal } from '@/components/ui/modal-portal';
 import {
   BASELINE_VEHICLE_OPTIONS,
   EMISSIONS_ACTION_LABELS,
@@ -105,8 +106,9 @@ export function LogImpactModal({
   }
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/55 p-4 backdrop-blur-xs"
+    <ModalPortal>
+      <div
+        className="fixed inset-0 z-[100] flex items-center justify-center bg-black/55 p-4 backdrop-blur-xs"
       role="dialog"
       aria-modal="true"
       aria-label="Log clean-air or sustainable action"
@@ -353,5 +355,6 @@ export function LogImpactModal({
         </div>
       </div>
     </div>
+    </ModalPortal>
   );
 }

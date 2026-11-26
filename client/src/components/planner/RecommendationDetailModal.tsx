@@ -4,6 +4,7 @@ import { useEffect } from 'react';
 import { RECOMMENDATION_CATEGORY_META } from '@/components/planner/recommendation-meta';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { ModalPortal } from '@/components/ui/modal-portal';
 import { cn } from '@/lib/cn';
 import type { RecommendationItem } from '@/types';
 
@@ -32,8 +33,9 @@ export function RecommendationDetailModal({
   }, [onClose]);
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-end justify-center bg-black/65 p-3 backdrop-blur-xs sm:items-center sm:p-4"
+    <ModalPortal>
+      <div
+        className="fixed inset-0 z-[100] flex items-end justify-center bg-black/65 p-3 backdrop-blur-xs sm:items-center sm:p-4"
       role="dialog"
       aria-modal="true"
       aria-label={item.title}
@@ -159,5 +161,6 @@ export function RecommendationDetailModal({
         </div>
       </div>
     </div>
+    </ModalPortal>
   );
 }

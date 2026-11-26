@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { ModalPortal } from '@/components/ui/modal-portal';
 import {
   METRIC_EXPLAINERS,
   type MetricKey,
@@ -68,8 +69,9 @@ export function MetricInfoModal({
   }
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-end justify-center bg-black/55 p-3 backdrop-blur-xs sm:items-center sm:p-4"
+    <ModalPortal>
+      <div
+        className="fixed inset-0 z-[100] flex items-end justify-center bg-black/55 p-3 backdrop-blur-xs sm:items-center sm:p-4"
       role="dialog"
       aria-modal="true"
       aria-label={config.title}
@@ -183,6 +185,7 @@ export function MetricInfoModal({
         </div>
       </div>
     </div>
+    </ModalPortal>
   );
 }
 

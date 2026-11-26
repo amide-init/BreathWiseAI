@@ -1,6 +1,7 @@
 import { Loader2, LocateFixed, MapPin, Search, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
+import { ModalPortal } from '@/components/ui/modal-portal';
 import { QUICK_PICK_CITIES } from '@/config/cities';
 import { useSelectedLocation } from '@/hooks/useSelectedLocation';
 import { detectUserGpsLocation } from '@/lib/geolocation';
@@ -66,8 +67,9 @@ export function LocationPickerModal() {
   }
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-end justify-center bg-zinc-950/60 p-0 backdrop-blur-xs sm:items-center sm:p-4"
+    <ModalPortal>
+      <div
+        className="fixed inset-0 z-[100] flex items-end justify-center bg-black/60 p-0 backdrop-blur-xs sm:items-center sm:p-4"
       role="dialog"
       aria-modal="true"
       aria-label="Select city"
@@ -179,5 +181,6 @@ export function LocationPickerModal() {
         </div>
       </div>
     </div>
+    </ModalPortal>
   );
 }
