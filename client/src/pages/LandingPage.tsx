@@ -119,46 +119,88 @@ export function LandingPage() {
     <div className="bw-illustrated-bg relative min-h-screen overflow-x-hidden text-[#202124] transition-colors duration-200 dark:text-[#E3E3E3]">
       <GoogleAmbientBackdrop variant="hero" />
 
-      {/* Top Signature 4-Color Google Ribbon */}
-      <div className="google-ribbon sticky top-0 z-40 h-[3px] w-full" aria-hidden="true" />
-
-      {/* Clean Consumer Navbar (No Dashboard Sidebar) */}
-      <header className="sticky top-[3px] z-30 border-b border-white/60 bg-white/80 backdrop-blur-md dark:border-white/[0.08] dark:bg-[#131314]/80">
-        <div className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 py-3 sm:px-6">
-          <Link to={APP_ROUTES.HOME} className="flex items-center gap-2.5">
-            <BreatheWiseLogoMark className="h-9 w-9 shrink-0" />
-            <div className="leading-tight">
-              <span className="font-display block text-base font-bold tracking-tight text-[#202124] dark:text-[#E3E3E3]">
-                BreatheWise AI
-              </span>
-              <span className="hidden text-[11px] font-medium text-[#5F6368] sm:block dark:text-[#9AA0A6]">
-                Personal Clean-Air Copilot
-              </span>
-            </div>
-          </Link>
-
-          <div className="flex items-center gap-2">
-            <LanguageSelector />
-            <ThemeToggle />
-            <button
-              type="button"
-              disabled={signingIn}
-              onClick={() => void handleGoogleSignIn()}
-              className="inline-flex cursor-pointer items-center gap-2 rounded-full bg-[#4285F4] px-4 py-2 text-xs font-semibold text-white shadow-sm transition-all hover:bg-[#3367D6] disabled:opacity-60 sm:px-5 sm:text-sm"
-            >
-              {signingIn ? (
-                <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
-              ) : (
-                <Sparkles className="h-3.5 w-3.5" aria-hidden="true" />
-              )}
-              <span>{user ? 'Open Dashboard' : signingIn ? 'Signing in…' : 'Sign in'}</span>
-            </button>
+      {/* Floating Google-Tinted Cloud Pill Navbar */}
+      <div className="sticky top-0 z-40 px-3 pt-3 sm:px-6 sm:pt-4">
+        <header className="cloud-card relative mx-auto max-w-6xl rounded-full border border-[#4285F4]/25 bg-gradient-to-r from-[#E8F0FE]/92 via-white/92 to-[#E6F4EA]/92 backdrop-blur-md dark:border-white/[0.12] dark:from-[#1E2430]/92 dark:via-[#1E1F20]/92 dark:to-[#1C2820]/92">
+          <div
+            className="pointer-events-none absolute inset-0 overflow-hidden rounded-full"
+            aria-hidden="true"
+          >
+            <div className="google-ribbon h-[3px] w-full" />
           </div>
-        </div>
-      </header>
+          <div className="relative flex items-center justify-between gap-3 px-4 py-2.5 sm:px-5">
+            {/* Left Brand + 4-Color Status Dots */}
+            <Link to={APP_ROUTES.HOME} className="group flex items-center gap-2.5">
+              <BreatheWiseLogoMark className="h-9 w-9 shrink-0 transition-transform duration-200 group-hover:scale-105" />
+              <div className="leading-tight">
+                <span className="font-display flex items-center gap-1.5 text-base font-bold tracking-tight text-[#202124] dark:text-[#E3E3E3]">
+                  BreatheWise
+                  <span className="rounded-full bg-[#4285F4]/14 px-1.5 py-0.5 text-[10px] font-bold text-[#1A73E8] dark:bg-[#8AB4F8]/18 dark:text-[#8AB4F8]">
+                    AI
+                  </span>
+                </span>
+                <span className="hidden items-center gap-1 text-[10px] font-medium text-[#5F6368] sm:flex dark:text-[#9AA0A6]">
+                  <span className="h-1.5 w-1.5 rounded-full bg-[#4285F4]" />
+                  <span className="h-1.5 w-1.5 rounded-full bg-[#EA4335]" />
+                  <span className="h-1.5 w-1.5 rounded-full bg-[#FBBC05]" />
+                  <span className="h-1.5 w-1.5 rounded-full bg-[#34A853]" />
+                  <span className="ml-0.5">Clean-Air Copilot</span>
+                </span>
+              </div>
+            </Link>
+
+            {/* Center Quick-Jump Nav Pills (Desktop) */}
+            <nav
+              aria-label="Landing sections"
+              className="hidden items-center gap-1 rounded-full border border-[#DADCE0]/70 bg-white/75 p-1 md:flex dark:border-white/[0.08] dark:bg-[#131314]/65"
+            >
+              <a
+                href="#features"
+                className="inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-semibold text-[#3C4043] transition-colors hover:bg-[#4285F4]/12 hover:text-[#1A73E8] dark:text-[#C4C7C5] dark:hover:bg-[#8AB4F8]/15 dark:hover:text-[#8AB4F8]"
+              >
+                <span className="h-1.5 w-1.5 rounded-full bg-[#4285F4]" />
+                Features
+              </a>
+              <a
+                href="#how-it-works"
+                className="inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-semibold text-[#3C4043] transition-colors hover:bg-[#34A853]/12 hover:text-[#1E8E3E] dark:text-[#C4C7C5] dark:hover:bg-[#81C995]/15 dark:hover:text-[#81C995]"
+              >
+                <span className="h-1.5 w-1.5 rounded-full bg-[#34A853]" />
+                How it works
+              </a>
+              <a
+                href="#safety"
+                className="inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-semibold text-[#3C4043] transition-colors hover:bg-[#FBBC05]/18 hover:text-[#9A6700] dark:text-[#C4C7C5] dark:hover:bg-[#FDD663]/15 dark:hover:text-[#FDD663]"
+              >
+                <span className="h-1.5 w-1.5 rounded-full bg-[#FBBC05]" />
+                AI Safety
+              </a>
+            </nav>
+
+            {/* Right Actions */}
+            <div className="flex items-center gap-2">
+              <LanguageSelector />
+              <ThemeToggle />
+              <button
+                type="button"
+                disabled={signingIn}
+                onClick={() => void handleGoogleSignIn()}
+                className="inline-flex cursor-pointer items-center gap-2 rounded-full bg-[#4285F4] px-4 py-2 text-xs font-semibold text-white shadow-[0_6px_18px_-6px_rgba(66,133,244,0.75)] transition-all hover:-translate-y-0.5 hover:bg-[#3367D6] disabled:opacity-60 sm:px-5 sm:text-sm"
+              >
+                {signingIn ? (
+                  <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+                ) : (
+                  <Sparkles className="h-3.5 w-3.5 text-[#FBBC05]" aria-hidden="true" />
+                )}
+                <span>{user ? 'Open Dashboard' : signingIn ? 'Signing in…' : 'Sign in'}</span>
+              </button>
+            </div>
+          </div>
+        </header>
+      </div>
 
       {/* Main Marketing & Onboarding Hero Flow */}
-      <main className="relative z-10 mx-auto max-w-6xl px-4 pt-12 pb-44 sm:px-6 sm:pt-16 sm:pb-56">
+      <main className="relative z-10 mx-auto max-w-6xl px-4 pt-10 pb-44 sm:px-6 sm:pt-14 sm:pb-56">
         {/* Hero Section */}
         <section className="mx-auto max-w-3xl text-center">
           <div className="cloud-card mb-5 inline-flex items-center gap-2 rounded-full border border-white/80 bg-white/95 px-4 py-1.5 text-xs font-semibold text-[#3C4043] dark:border-white/[0.12] dark:bg-[#1E1F20]/95 dark:text-[#E3E3E3]">
@@ -226,7 +268,7 @@ export function LandingPage() {
         </section>
 
         {/* 4-Color Google Illustrated Feature Grid */}
-        <section className="mt-16 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
+        <section id="features" className="mt-16 scroll-mt-24 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
           <div className="cloud-card flex flex-col justify-between rounded-3xl border border-white/80 bg-white/95 p-5 backdrop-blur-sm dark:border-white/[0.08] dark:bg-[#1E1F20]/95">
             <div>
               <div className="mb-3 flex items-center justify-between">
@@ -303,7 +345,7 @@ export function LandingPage() {
         {/* How It Works Section */}
         <section
           id="how-it-works"
-          className="cloud-card mt-14 overflow-hidden rounded-3xl border border-white/80 bg-white/95 backdrop-blur-sm dark:border-white/[0.08] dark:bg-[#1E1F20]/95"
+          className="cloud-card mt-14 scroll-mt-24 overflow-hidden rounded-3xl border border-white/80 bg-white/95 backdrop-blur-sm dark:border-white/[0.08] dark:bg-[#1E1F20]/95"
         >
           <div className="google-ribbon h-[3px] w-full" aria-hidden="true" />
           <div className="p-6 sm:p-8">
@@ -341,7 +383,10 @@ export function LandingPage() {
             </div>
 
             {/* Bottom Safety & Final CTA Strip */}
-            <div className="mt-6 flex flex-col items-start justify-between gap-4 rounded-2xl border border-[#4285F4]/20 bg-[#E8F0FE]/55 p-4 sm:flex-row sm:items-center sm:p-5 dark:border-[#8AB4F8]/20 dark:bg-[#4285F4]/10">
+            <div
+              id="safety"
+              className="mt-6 scroll-mt-24 flex flex-col items-start justify-between gap-4 rounded-2xl border border-[#4285F4]/20 bg-[#E8F0FE]/55 p-4 sm:flex-row sm:items-center sm:p-5 dark:border-[#8AB4F8]/20 dark:bg-[#4285F4]/10"
+            >
               <div className="flex items-start gap-2.5">
                 <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-[#34A853] dark:text-[#81C995]" />
                 <p className="text-xs leading-relaxed text-[#3C4043] dark:text-[#C4C7C5]">
