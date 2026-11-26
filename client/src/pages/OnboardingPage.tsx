@@ -290,7 +290,7 @@ export function OnboardingPage() {
 
   return (
     <div className="bw-illustrated-bg relative flex min-h-screen flex-col items-center justify-center px-4 py-10 text-[#202124] dark:text-[#E3E3E3]">
-      <GoogleAmbientBackdrop />
+      <GoogleAmbientBackdrop variant="hero" />
       <div className="relative z-10 w-full max-w-xl space-y-6">
         {/* Minimal Brand & Progress */}
         <div className="flex items-center justify-between">

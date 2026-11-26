@@ -225,56 +225,436 @@ export function FamilyHomeIllustration({ className = 'h-20 w-28' }: { className?
 }
 
 /**
- * Subtle corner breeze, cloud, and leaf vector watermarks framing the app canvas
- * without interfering with readability or clicks.
+ * Full-viewport Google 4-color illustrated clean-air scenic backdrop featuring:
+ * - Sky & weather: warm Google Yellow sun, fluffy clouds, breeze swirls, birds & kite
+ * - Cozy family home with red roof, glowing windows, trees & garden fence
+ * - Parent holding a child's hand strolling along a park path
+ * - Child playing outdoors & eco-commuter cycling near park trees & wind turbines
+ *
+ * Uses `variant="hero"` on Login & Onboarding (richer vibrancy) and `variant="ambient"`
+ * across all authenticated portal screens (soft backdrop preserving crisp readability).
  */
-export function GoogleAmbientBackdrop() {
+export function GoogleAmbientBackdrop({
+  variant = 'ambient',
+}: {
+  variant?: 'hero' | 'ambient';
+}) {
+  const isHero = variant === 'hero';
+  const sceneOpacity = isHero
+    ? 'opacity-[0.86] dark:opacity-[0.52]'
+    : 'opacity-[0.38] dark:opacity-[0.22]';
+  const skyOpacity = isHero
+    ? 'opacity-[0.82] dark:opacity-[0.48]'
+    : 'opacity-[0.36] dark:opacity-[0.2]';
+
   return (
     <div
       className="pointer-events-none fixed inset-0 z-0 overflow-hidden select-none"
       aria-hidden="true"
     >
-      {/* Top-right floating breeze & sun accent */}
+      {/* ── TOP-LEFT SKY: Fluffy clouds, breeze ribbons & drifting birds ── */}
       <svg
-        viewBox="0 0 260 200"
+        viewBox="0 0 380 210"
         fill="none"
         xmlns="http://www.w3.org/2000/svg"
-        className="absolute -top-6 -right-8 h-52 w-64 opacity-[0.22] dark:opacity-[0.14]"
+        className={`bw-drift-slow absolute -top-2 -left-6 h-40 w-72 sm:h-48 sm:w-96 ${
+          isHero ? '' : 'md:left-56'
+        } ${skyOpacity}`}
       >
-        <circle cx="195" cy="54" r="28" fill="#FBBC05" fillOpacity="0.28" />
+        {/* Main fluffy cloud */}
         <path
-          d="M52 72H154C167 72 176 63 176 52C176 41 167 33 156 33C147 33 140 39 138 46"
+          d="M36 96H152C167 96 179 84 179 70C179 56.5 168.5 45.5 155 44.5C150 28 134.5 16 116 16C94 16 76 33.5 75.5 55.5C61 56.5 49.5 68.5 49.5 83C49.5 88 36 96 36 96Z"
+          fill="#4285F4"
+          fillOpacity="0.14"
           stroke="#4285F4"
-          strokeWidth="3.5"
+          strokeWidth="2.5"
+          strokeLinejoin="round"
+        />
+        {/* Smaller companion cloud */}
+        <path
+          d="M210 132H296C306 132 314 124 314 114C314 104.5 306.5 96.8 297 96.2C293.5 85 283 77 270.5 77C255 77 242.5 89 242 104.5C232 105.5 224 113.5 224 123.5"
+          fill="#34A853"
+          fillOpacity="0.1"
+          stroke="#4285F4"
+          strokeWidth="2.2"
+          strokeLinecap="round"
+        />
+        {/* Flowing clean-air breeze swirls */}
+        <path
+          d="M42 134H138C150 134 158 126 158 116C158 107 150.5 100 142 100"
+          stroke="#34A853"
+          strokeWidth="2.5"
           strokeLinecap="round"
         />
         <path
-          d="M90 98H198C210 98 218 106 218 117C218 128 209 136 198 136"
-          stroke="#34A853"
-          strokeWidth="3.5"
+          d="M68 152H172"
+          stroke="#4285F4"
+          strokeWidth="2.2"
           strokeLinecap="round"
+          strokeDasharray="10 8"
         />
-        <circle cx="72" cy="48" r="5" fill="#EA4335" fillOpacity="0.65" />
-        <circle cx="222" cy="82" r="4" fill="#FBBC05" />
+        {/* Gentle birds in sky */}
+        <path
+          d="M206 48C211 41 217 41 221 48C225 41 231 41 236 48"
+          stroke="#5F6368"
+          strokeOpacity="0.6"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+        <path
+          d="M254 34C258 29 262 29 265 34C268 29 272 29 276 34"
+          stroke="#5F6368"
+          strokeOpacity="0.5"
+          strokeWidth="1.8"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+        {/* Drifting colorful clean-air kite */}
+        <g className="bw-float-slow">
+          <path d="M312 36L328 54L312 72L296 54L312 36Z" fill="#FBBC05" fillOpacity="0.85" />
+          <path d="M312 36L328 54L312 54V36Z" fill="#EA4335" fillOpacity="0.85" />
+          <path d="M312 54L328 54L312 72V54Z" fill="#4285F4" fillOpacity="0.85" />
+          <path d="M312 54V72L296 54H312Z" fill="#34A853" fillOpacity="0.85" />
+          <path
+            d="M312 72C308 90 322 102 316 122C312 136 322 148 318 164"
+            stroke="#EA4335"
+            strokeOpacity="0.55"
+            strokeWidth="1.6"
+            strokeDasharray="4 4"
+            strokeLinecap="round"
+          />
+        </g>
       </svg>
 
-      {/* Bottom-left soft cloud & leaf sketch */}
+      {/* ── TOP-RIGHT SKY: Warm Google Yellow Sun, cloud, breeze & floating leaf ── */}
       <svg
-        viewBox="0 0 260 180"
+        viewBox="0 0 360 220"
         fill="none"
         xmlns="http://www.w3.org/2000/svg"
-        className="absolute -bottom-8 left-4 hidden h-44 w-64 opacity-[0.2] md:left-64 md:block dark:opacity-[0.12]"
+        className={`absolute -top-4 -right-6 h-44 w-72 sm:h-56 sm:w-96 ${skyOpacity}`}
       >
+        {/* Warm Google Yellow Sun with halo & rays */}
+        <circle cx="256" cy="72" r="54" fill="#FBBC05" fillOpacity="0.12" />
+        <circle cx="256" cy="72" r="36" fill="#FBBC05" fillOpacity="0.24" />
+        <circle cx="256" cy="72" r="24" fill="#FBBC05" />
+        <g stroke="#FBBC05" strokeWidth="3" strokeLinecap="round" strokeOpacity="0.8">
+          <path d="M256 26V14" />
+          <path d="M256 130V118" />
+          <path d="M210 72H198" />
+          <path d="M314 72H302" />
+          <path d="M223 39L215 31" />
+          <path d="M297 113L289 105" />
+          <path d="M289 39L297 31" />
+          <path d="M215 113L223 105" />
+        </g>
+        {/* Fluffy sun-kissed cloud */}
+        <g className="bw-float-slow">
+          <path
+            d="M116 126H226C239 126 249 116 249 103.5C249 91.5 239.5 82 227.5 81.2C223 66.5 209.5 56 193 56C173.5 56 157.5 71.5 157 91C144.5 92 134.5 102.5 134.5 115"
+            fill="#4285F4"
+            fillOpacity="0.16"
+            stroke="#4285F4"
+            strokeWidth="2.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </g>
+        {/* Clean-air breeze & floating green leaf */}
         <path
-          d="M24 128H126C140 128 151 117 151 103C151 90 141 79 128 78C123 62 108 51 91 51C70 51 53 68 52 89C39 90 29 101 29 114C29 120 24 128 24 128Z"
+          d="M52 74H132C142 74 149 67 149 58C149 50 142 44 134 44"
           stroke="#4285F4"
-          strokeWidth="3"
-          fill="#4285F4"
-          fillOpacity="0.1"
+          strokeWidth="2.6"
+          strokeLinecap="round"
         />
-        <path d="M168 118C168 104 182 94 196 94C196 108 186 122 168 118Z" fill="#34A853" fillOpacity="0.45" />
-        <circle cx="152" cy="64" r="4.5" fill="#FBBC05" fillOpacity="0.7" />
-        <circle cx="42" cy="56" r="3.5" fill="#EA4335" fillOpacity="0.55" />
+        <path
+          d="M84 152H176C188 152 196 160 196 170C196 180 188 188 178 188"
+          stroke="#34A853"
+          strokeWidth="2.6"
+          strokeLinecap="round"
+        />
+        <path
+          d="M278 154C278 140 292 132 304 132C304 144 294 158 278 154Z"
+          fill="#34A853"
+          fillOpacity="0.8"
+        />
+        <path d="M274 158L290 144" stroke="#1E8E3E" strokeWidth="2" strokeLinecap="round" />
+        <circle cx="88" cy="48" r="4" fill="#EA4335" fillOpacity="0.7" />
+        <circle cx="316" cy="116" r="3.5" fill="#4285F4" fillOpacity="0.7" />
+      </svg>
+
+      {/* ── BOTTOM PANORAMA: Cozy Home, Parent & Child, Kids Playing, Cyclist, Trees & Clean City ── */}
+      <svg
+        viewBox="0 0 1440 360"
+        fill="none"
+        xmlns="http://www.w3.org/2000/svg"
+        preserveAspectRatio="xMidYMax slice"
+        className={`absolute inset-x-0 bottom-0 h-56 w-full sm:h-64 md:h-72 lg:h-80 ${
+          isHero ? '' : 'md:left-60 md:w-[calc(100%-15rem)]'
+        } ${sceneOpacity}`}
+      >
+        {/* Distant clean-air city skyline silhouette (soft & airy) */}
+        <g fill="#4285F4" fillOpacity="0.1" stroke="#4285F4" strokeOpacity="0.22" strokeWidth="1.5">
+          <rect x="460" y="148" width="44" height="120" rx="6" />
+          <rect x="512" y="120" width="52" height="148" rx="6" />
+          <rect x="572" y="162" width="38" height="106" rx="6" />
+          <rect x="860" y="134" width="48" height="134" rx="6" />
+          <rect x="916" y="106" width="58" height="162" rx="6" />
+          <rect x="982" y="146" width="42" height="122" rx="6" />
+        </g>
+
+        {/* Clean-energy wind turbines on distant hills */}
+        <g stroke="#4285F4" strokeOpacity="0.45" strokeWidth="2.4" strokeLinecap="round">
+          {/* Left-hill turbine */}
+          <path d="M358 214V146" />
+          <path d="M358 146L340 124" />
+          <path d="M358 146L384 142" />
+          <path d="M358 146L348 172" />
+          <circle cx="358" cy="146" r="3.5" fill="#4285F4" />
+          {/* Right-hill turbine */}
+          <path d="M1078 216V140" />
+          <path d="M1078 140L1060 116" />
+          <path d="M1078 140L1106 138" />
+          <path d="M1078 140L1068 168" />
+          <circle cx="1078" cy="140" r="3.5" fill="#34A853" />
+        </g>
+
+        {/* Soft layered rolling hills */}
+        <path
+          d="M0 248C140 202 290 204 440 236C610 272 790 264 960 226C1140 186 1300 200 1440 234V360H0V248Z"
+          fill="#34A853"
+          fillOpacity="0.14"
+        />
+        <path
+          d="M0 284C190 244 380 256 590 282C800 308 1030 294 1230 256C1320 238 1390 242 1440 254V360H0V284Z"
+          fill="#34A853"
+          fillOpacity="0.22"
+        />
+
+        {/* Winding clean-air park pathway */}
+        <path
+          d="M210 360C310 318 440 312 610 326C800 342 970 316 1160 288C1270 272 1365 276 1440 288V316C1350 304 1260 302 1150 318C965 344 795 366 600 352C445 340 335 342 260 360H210Z"
+          fill="#FBBC05"
+          fillOpacity="0.18"
+        />
+
+        {/* ── LEFT SCENE: Cozy Illustrated Family Home & Lush Trees ── */}
+        <g>
+          {/* Left tall garden tree */}
+          <path d="M62 248V304" stroke="#5F6368" strokeOpacity="0.55" strokeWidth="6" strokeLinecap="round" />
+          <circle cx="62" cy="224" r="34" fill="#34A853" fillOpacity="0.28" stroke="#34A853" strokeWidth="2.5" />
+          <circle cx="44" cy="240" r="22" fill="#34A853" fillOpacity="0.22" />
+          <circle cx="82" cy="238" r="20" fill="#34A853" fillOpacity="0.22" />
+
+          {/* Main Home Body */}
+          <rect
+            x="108"
+            y="196"
+            width="156"
+            height="108"
+            rx="10"
+            fill="#4285F4"
+            fillOpacity="0.16"
+            stroke="#4285F4"
+            strokeWidth="3"
+          />
+          {/* Chimney with gentle clean puff */}
+          <rect x="218" y="134" width="22" height="44" rx="4" fill="#EA4335" fillOpacity="0.75" />
+          <circle cx="234" cy="120" r="7" fill="#4285F4" fillOpacity="0.22" />
+          <circle cx="246" cy="108" r="9" fill="#4285F4" fillOpacity="0.16" />
+
+          {/* Google Red Gabled Roof */}
+          <path
+            d="M92 204L186 128L280 204Z"
+            fill="#EA4335"
+            fillOpacity="0.24"
+            stroke="#EA4335"
+            strokeWidth="3.2"
+            strokeLinejoin="round"
+          />
+          {/* Solar panel accent on roof */}
+          <path
+            d="M144 166L176 144L194 158L162 180Z"
+            fill="#4285F4"
+            fillOpacity="0.55"
+            stroke="#4285F4"
+            strokeWidth="1.6"
+          />
+
+          {/* Warm Google Yellow Front Door */}
+          <rect
+            x="166"
+            y="246"
+            width="38"
+            height="58"
+            rx="8"
+            fill="#FBBC05"
+            fillOpacity="0.85"
+            stroke="#EA4335"
+            strokeWidth="2"
+          />
+          <circle cx="195" cy="276" r="2.8" fill="#EA4335" />
+
+          {/* Glowing Cozy Windows (with indoor plant silhouette) */}
+          <rect
+            x="124"
+            y="218"
+            width="30"
+            height="32"
+            rx="6"
+            fill="#FBBC05"
+            fillOpacity="0.32"
+            stroke="#4285F4"
+            strokeWidth="2.2"
+          />
+          <path d="M139 218V250M124 234H154" stroke="#4285F4" strokeWidth="1.6" />
+          <rect
+            x="218"
+            y="218"
+            width="30"
+            height="32"
+            rx="6"
+            fill="#FBBC05"
+            fillOpacity="0.32"
+            stroke="#4285F4"
+            strokeWidth="2.2"
+          />
+          <path d="M233 218V250M218 234H248" stroke="#4285F4" strokeWidth="1.6" />
+          {/* Attic round window */}
+          <circle cx="186" cy="172" r="11" fill="#FBBC05" fillOpacity="0.45" stroke="#EA4335" strokeWidth="2" />
+
+          {/* Garden Bushes & Picket Fence */}
+          <circle cx="110" cy="298" r="16" fill="#34A853" fillOpacity="0.45" />
+          <circle cx="268" cy="296" r="18" fill="#34A853" fillOpacity="0.45" />
+          <path
+            d="M276 286H332M284 278V304M298 278V304M312 278V304M326 278V304"
+            stroke="#5F6368"
+            strokeOpacity="0.45"
+            strokeWidth="2.4"
+            strokeLinecap="round"
+          />
+        </g>
+
+        {/* ── LEFT-CENTER SCENE: Parent Holding Child's Hand + Friendly Dog ── */}
+        <g>
+          {/* Parent figure */}
+          <circle cx="404" cy="230" r="12" fill="#FBBC05" />
+          {/* Parent torso (Google Blue sweater) */}
+          <path
+            d="M390 248C390 243 395 240 404 240C413 240 418 243 418 248L422 282H386L390 248Z"
+            fill="#4285F4"
+          />
+          {/* Parent legs */}
+          <path d="M396 282L392 316M412 282L418 316" stroke="#1A73E8" strokeWidth="5.5" strokeLinecap="round" />
+          {/* Parent arm holding child's hand */}
+          <path d="M416 254L436 274" stroke="#4285F4" strokeWidth="4.5" strokeLinecap="round" />
+          <path d="M392 254L382 272" stroke="#4285F4" strokeWidth="4.5" strokeLinecap="round" />
+
+          {/* Child figure holding parent's hand */}
+          <circle cx="452" cy="256" r="9.5" fill="#EA4335" fillOpacity="0.85" />
+          {/* Child torso (Google Yellow shirt) */}
+          <path
+            d="M442 269C442 266 446 264 452 264C458 264 462 266 462 269L464 294H440L442 269Z"
+            fill="#FBBC05"
+          />
+          {/* Child legs */}
+          <path d="M446 294L444 316M458 294L462 316" stroke="#34A853" strokeWidth="4.5" strokeLinecap="round" />
+          {/* Child arms (left holding parent, right holding floating balloon) */}
+          <path d="M444 274L436 274" stroke="#FBBC05" strokeWidth="3.8" strokeLinecap="round" />
+          <path d="M460 274L474 264" stroke="#FBBC05" strokeWidth="3.8" strokeLinecap="round" />
+
+          {/* Floating Google Red Balloon held by child */}
+          <g className="bw-float-slow">
+            <path d="M474 264C478 246 482 232 484 218" stroke="#5F6368" strokeOpacity="0.55" strokeWidth="1.5" />
+            <ellipse cx="486" cy="204" rx="11" ry="13.5" fill="#EA4335" fillOpacity="0.82" />
+            <circle cx="482" cy="199" r="2.5" fill="#FFFFFF" fillOpacity="0.55" />
+          </g>
+
+          {/* Cute little dog trotting beside family */}
+          <ellipse cx="502" cy="306" rx="12" ry="7" fill="#FBBC05" fillOpacity="0.85" />
+          <circle cx="514" cy="299" r="5.5" fill="#FBBC05" />
+          <path d="M494 312V320M508 312V320M490 304L484 298" stroke="#B06000" strokeWidth="2.4" strokeLinecap="round" />
+        </g>
+
+        {/* ── RIGHT-CENTER SCENE: Happy Child Playing With Ball & Eco Cyclist ── */}
+        <g>
+          {/* Child running & playing outdoors */}
+          <circle cx="944" cy="260" r="9" fill="#4285F4" />
+          <path
+            d="M934 273C935 270 939 268 944 268C949 268 953 270 954 273L956 296H934L934 273Z"
+            fill="#34A853"
+          />
+          <path d="M938 296L928 316M950 296L960 314" stroke="#1E8E3E" strokeWidth="4.5" strokeLinecap="round" />
+          <path d="M935 276L922 266M953 276L968 270" stroke="#34A853" strokeWidth="3.8" strokeLinecap="round" />
+          {/* Colorful beach/play ball */}
+          <circle cx="984" cy="308" r="9.5" fill="#FBBC05" stroke="#EA4335" strokeWidth="2" />
+          <path d="M976 304C982 308 986 308 992 304" stroke="#4285F4" strokeWidth="2" />
+
+          {/* Clean-Commute Cyclist */}
+          <g>
+            {/* Wheels */}
+            <circle cx="1072" cy="300" r="17" stroke="#4285F4" strokeWidth="3" />
+            <circle cx="1126" cy="300" r="17" stroke="#4285F4" strokeWidth="3" />
+            {/* Bike Frame (Google Red) */}
+            <path
+              d="M1072 300L1096 276H1118L1126 300M1096 276L1104 300H1072M1116 268L1122 268"
+              stroke="#EA4335"
+              strokeWidth="2.8"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+            {/* Cyclist Rider */}
+            <circle cx="1096" cy="242" r="9.5" fill="#FBBC05" />
+            <path d="M1094 252L1088 274L1102 288" stroke="#4285F4" strokeWidth="5.5" strokeLinecap="round" strokeLinejoin="round" />
+            <path d="M1094 258L1114 268" stroke="#4285F4" strokeWidth="4" strokeLinecap="round" />
+          </g>
+        </g>
+
+        {/* ── RIGHT SCENE: Park Bench, Lush Trees & Second Cozy House Silhouette ── */}
+        <g>
+          {/* Park Trees */}
+          <path d="M1214 244V304" stroke="#5F6368" strokeOpacity="0.55" strokeWidth="6" strokeLinecap="round" />
+          <circle cx="1214" cy="222" r="32" fill="#34A853" fillOpacity="0.3" stroke="#34A853" strokeWidth="2.5" />
+          <circle cx="1238" cy="238" r="22" fill="#34A853" fillOpacity="0.22" />
+
+          {/* Second cozy neighborhood house */}
+          <rect
+            x="1272"
+            y="214"
+            width="112"
+            height="88"
+            rx="8"
+            fill="#FBBC05"
+            fillOpacity="0.15"
+            stroke="#FBBC05"
+            strokeWidth="2.6"
+          />
+          <path
+            d="M1260 220L1328 164L1396 220Z"
+            fill="#4285F4"
+            fillOpacity="0.22"
+            stroke="#4285F4"
+            strokeWidth="2.8"
+            strokeLinejoin="round"
+          />
+          <rect x="1316" y="256" width="26" height="46" rx="5" fill="#EA4335" fillOpacity="0.7" />
+          <rect x="1286" y="232" width="20" height="22" rx="4" fill="#4285F4" fillOpacity="0.3" />
+          <rect x="1352" y="232" width="20" height="22" rx="4" fill="#4285F4" fillOpacity="0.3" />
+
+          {/* Rightmost soft tree */}
+          <path d="M1408 258V306" stroke="#5F6368" strokeOpacity="0.5" strokeWidth="5" strokeLinecap="round" />
+          <circle cx="1408" cy="240" r="24" fill="#34A853" fillOpacity="0.28" stroke="#34A853" strokeWidth="2.2" />
+        </g>
+
+        {/* Subtle foreground clean-air grass tufts & wildflowers */}
+        <g strokeLinecap="round">
+          <circle cx="348" cy="316" r="3" fill="#EA4335" fillOpacity="0.65" />
+          <circle cx="566" cy="306" r="3" fill="#FBBC05" fillOpacity="0.75" />
+          <circle cx="878" cy="314" r="3.5" fill="#4285F4" fillOpacity="0.65" />
+          <circle cx="1174" cy="310" r="3" fill="#EA4335" fillOpacity="0.65" />
+          <path d="M558 314L562 304L566 314" stroke="#34A853" strokeWidth="2" />
+          <path d="M868 320L872 310L876 320" stroke="#34A853" strokeWidth="2" />
+        </g>
       </svg>
     </div>
   );

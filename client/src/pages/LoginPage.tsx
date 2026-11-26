@@ -81,8 +81,8 @@ export function LoginPage() {
   }
 
   return (
-    <div className="bw-illustrated-bg relative flex min-h-screen items-center justify-center overflow-hidden px-4 py-10">
-      <GoogleAmbientBackdrop />
+    <div className="bw-illustrated-bg relative flex min-h-screen items-center justify-center overflow-hidden px-4 pt-14 pb-28 sm:pb-36">
+      <GoogleAmbientBackdrop variant="hero" />
 
       <div className="absolute top-4 left-4 z-10">
         <Link

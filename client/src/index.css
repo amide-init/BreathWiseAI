@@ -153,3 +153,39 @@
 .pb-safe {
   padding-bottom: max(0.5rem, env(safe-area-inset-bottom));
 }
+
+/* Gentle atmospheric motion for illustrated clouds, kite, and breeze */
+@keyframes bw-float-slow {
+  0%,
+  100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-6px);
+  }
+}
+
+@keyframes bw-drift-slow {
+  0%,
+  100% {
+    transform: translateX(0px);
+  }
+  50% {
+    transform: translateX(10px);
+  }
+}
+
+.bw-float-slow {
+  animation: bw-float-slow 7s ease-in-out infinite;
+}
+
+.bw-drift-slow {
+  animation: bw-drift-slow 12s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bw-float-slow,
+  .bw-drift-slow {
+    animation: none;
+  }
+}
