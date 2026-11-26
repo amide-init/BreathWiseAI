@@ -249,7 +249,9 @@ export function OnboardingPage() {
       }
 
       if (savedFamily.familyId) {
-        await Promise.allSettled(membersToCreate.map((m) => createMember(m)));
+        await Promise.allSettled(
+          membersToCreate.map((m) => createMember(m, savedFamily.familyId)),
+        );
       }
 
       // Store honest indoor habits locally for instant Indoor Advisor pre-fill too

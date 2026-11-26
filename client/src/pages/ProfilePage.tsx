@@ -126,20 +126,23 @@ export function ProfilePage() {
       );
       await Promise.allSettled(
         newOnes.map((m) =>
-          createMember({
-            nickname: m.nickname,
-            role: m.role,
-            ageGroup: m.ageGroup,
-            optionalHealthProfile:
-              m.hasRespiratorySensitivity || m.hasCardiacSensitivity || m.isPregnant
-                ? {
-                    hasRespiratorySensitivity: m.hasRespiratorySensitivity,
-                    hasCardiacSensitivity: m.hasCardiacSensitivity,
-                    isPregnant: m.isPregnant,
-                    notes: null,
-                  }
-                : null,
-          }),
+          createMember(
+            {
+              nickname: m.nickname,
+              role: m.role,
+              ageGroup: m.ageGroup,
+              optionalHealthProfile:
+                m.hasRespiratorySensitivity || m.hasCardiacSensitivity || m.isPregnant
+                  ? {
+                      hasRespiratorySensitivity: m.hasRespiratorySensitivity,
+                      hasCardiacSensitivity: m.hasCardiacSensitivity,
+                      isPregnant: m.isPregnant,
+                      notes: null,
+                    }
+                  : null,
+            },
+            saved.familyId,
+          ),
         ),
       );
     }
