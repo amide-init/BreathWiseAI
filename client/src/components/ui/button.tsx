@@ -4,27 +4,27 @@ import type { ButtonHTMLAttributes } from 'react';
 import { cn } from '@/lib/cn';
 
 const buttonVariants = cva(
-  'inline-flex min-h-[42px] cursor-pointer items-center justify-center gap-2 rounded-xl text-sm font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/60 disabled:pointer-events-none disabled:opacity-50 active:scale-[0.99]',
+  'inline-flex min-h-[40px] cursor-pointer items-center justify-center gap-2 rounded-xl text-sm font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500/50 disabled:pointer-events-none disabled:opacity-45 active:scale-[0.99]',
   {
     variants: {
       variant: {
         primary:
-          'bg-zinc-950 text-white shadow-xs hover:bg-zinc-800 dark:bg-emerald-500 dark:text-zinc-950 dark:hover:bg-emerald-400',
+          'bg-slate-900 text-white shadow-xs hover:bg-slate-800 dark:bg-[#EEF2F6] dark:text-[#0B0E12] dark:hover:bg-white',
         brand:
-          'bg-emerald-600 text-white shadow-xs hover:bg-emerald-700 dark:bg-emerald-500 dark:text-zinc-950 dark:hover:bg-emerald-400',
+          'bg-teal-600 text-white shadow-xs hover:bg-teal-700 dark:bg-teal-400/90 dark:text-[#0B0E12] dark:hover:bg-teal-300',
         secondary:
-          'bg-zinc-100 text-zinc-900 hover:bg-zinc-200/80 dark:bg-zinc-800 dark:text-zinc-100 dark:hover:bg-zinc-700',
+          'bg-slate-100 text-slate-800 hover:bg-slate-200/80 dark:bg-[#1A212B] dark:text-[#D9E2EC] dark:hover:bg-[#232C38]',
         outline:
-          'border border-zinc-200/90 bg-white text-zinc-800 shadow-2xs hover:border-zinc-300 hover:bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-100 dark:hover:border-zinc-700 dark:hover:bg-zinc-800',
+          'border border-slate-200/90 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50 dark:border-white/[0.09] dark:bg-[#12171E] dark:text-[#D9E2EC] dark:hover:border-white/[0.16] dark:hover:bg-[#1A212B]',
         ghost:
-          'text-zinc-700 hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-zinc-800/80',
+          'text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:text-[#94A3B8] dark:hover:bg-white/[0.06] dark:hover:text-[#EEF2F6]',
         danger:
-          'border border-red-200 bg-red-50 text-red-700 hover:bg-red-100 dark:border-red-900/60 dark:bg-red-950/60 dark:text-red-300 dark:hover:bg-red-950',
+          'border border-rose-200 bg-rose-50 text-rose-700 hover:bg-rose-100 dark:border-rose-500/25 dark:bg-rose-500/10 dark:text-rose-300 dark:hover:bg-rose-500/15',
       },
       size: {
         default: 'px-4 py-2',
-        sm: 'min-h-[36px] px-3 py-1.5 text-xs',
-        lg: 'px-6 py-3 text-base',
+        sm: 'min-h-[34px] px-3 py-1.5 text-xs',
+        lg: 'px-5 py-2.5 text-sm font-semibold',
       },
     },
     defaultVariants: {

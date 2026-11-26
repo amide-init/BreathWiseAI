@@ -23,6 +23,7 @@ export interface IndoorAssessmentResult {
   keyIndoorSources: string[];
   recommendations: RecommendationItem[];
   citations: Citation[];
+  agentTrace?: string[];
   fallbackMode: boolean;
   questionnaire: IndoorQuestionnaireInput;
   environmentalSnapshot?: CurrentAirQuality;

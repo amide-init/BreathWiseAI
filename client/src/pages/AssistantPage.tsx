@@ -12,6 +12,7 @@ import {
 import { useCallback, useEffect, useRef, useState, type FormEvent } from 'react';
 import { useSearchParams } from 'react-router-dom';
 
+import { AgentTracePill } from '@/components/shared/AgentTracePill';
 import { AqiBadge } from '@/components/shared/AqiBadge';
 import { MedicalDisclaimer } from '@/components/shared/MedicalDisclaimer';
 import { Alert } from '@/components/ui/alert';
@@ -81,9 +82,11 @@ function AssistantMessageCard({
           </Alert>
         ) : null}
 
-        <p className="whitespace-pre-line text-sm leading-relaxed text-zinc-800 dark:text-zinc-200">
+        <p className="whitespace-pre-line text-sm leading-relaxed text-slate-800 dark:text-[#E2E8F0]">
           {msg.content}
         </p>
+
+        <AgentTracePill trace={msg.agentTrace} />
 
         {msg.citations.length > 0 ? (
           <div className="border-t border-zinc-100 pt-2.5 dark:border-zinc-800">
@@ -314,6 +317,7 @@ export function AssistantPage() {
         citations: response.reply.citations ?? [],
         followUpSuggestions: response.reply.followUpSuggestions ?? [],
         environmentalSnapshot: response.reply.environmentalSnapshot ?? null,
+        agentTrace: response.reply.agentTrace ?? [],
         medicalEscalationRequired: response.medicalEscalationRequired,
         fallbackMode: response.reply.fallbackMode,
       };

@@ -377,9 +377,14 @@ export function SettingsPage() {
               </p>
             </div>
             <div className="flex flex-wrap items-center gap-2">
+              <Link to={APP_ROUTES.ONBOARDING}>
+                <Button variant="outline" size="sm">
+                  Re-run AI Onboarding
+                </Button>
+              </Link>
               <Link to={APP_ROUTES.PROFILE}>
                 <Button variant="outline" size="sm">
-                  Edit Family Profile
+                  Family &amp; Home
                 </Button>
               </Link>
               <Button variant="danger" size="sm" onClick={() => void signOut()}>

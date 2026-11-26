@@ -5,14 +5,14 @@ import { APP_ROUTES } from '@/config/routes';
 import { useAuth } from '@/hooks/useAuth';
 
 export function ProtectedRoute() {
-  const { user, isLoading } = useAuth();
+  const { user, userProfile, isLoading } = useAuth();
   const location = useLocation();
 
   if (isLoading) {
     return (
-      <div className="flex min-h-screen flex-col items-center justify-center gap-3 bg-zinc-50 text-zinc-600 dark:bg-zinc-950 dark:text-zinc-400">
-        <div className="flex h-12 w-12 animate-pulse items-center justify-center rounded-2xl bg-emerald-600 text-white shadow-sm dark:bg-emerald-500 dark:text-zinc-950">
-          <Wind className="h-6 w-6" aria-hidden="true" />
+      <div className="flex min-h-screen flex-col items-center justify-center gap-3 bg-[#F7F8FA] text-slate-500 dark:bg-[#0B0E12] dark:text-[#8E9AA8]">
+        <div className="flex h-11 w-11 animate-pulse items-center justify-center rounded-2xl bg-teal-600 text-white dark:bg-teal-400/15 dark:text-teal-300">
+          <Wind className="h-5 w-5" aria-hidden="true" />
         </div>
         <p className="text-sm font-medium">Loading BreatheWise AI…</p>
       </div>
@@ -21,6 +21,15 @@ export function ProtectedRoute() {
 
   if (!user) {
     return <Navigate to={APP_ROUTES.LOGIN} state={{ from: location.pathname }} replace />;
+  }
+
+  // Guide brand-new users seamlessly through the dedicated full-screen AI onboarding once
+  if (
+    userProfile &&
+    !userProfile.onboardingCompleted &&
+    location.pathname !== APP_ROUTES.ONBOARDING
+  ) {
+    return <Navigate to={APP_ROUTES.ONBOARDING} replace />;
   }
 
   return <Outlet />;

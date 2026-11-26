@@ -8,6 +8,9 @@ import { DashboardPage } from '@/pages/DashboardPage';
 import { LoginPage } from '@/pages/LoginPage';
 import { ProtectedRoute } from '@/routes/ProtectedRoute';
 
+const OnboardingPage = lazy(() =>
+  import('@/pages/OnboardingPage').then((m) => ({ default: m.OnboardingPage })),
+);
 const PlannerPage = lazy(() =>
   import('@/pages/PlannerPage').then((m) => ({ default: m.PlannerPage })),
 );
@@ -39,12 +42,20 @@ export function AppRouter() {
     <BrowserRouter>
       <Routes>
         <Route path={APP_ROUTES.LOGIN} element={<LoginPage />} />
-        {/* Public Guest Preview on Home Dashboard so visitors see live value before signing in */}
+        {/* Public Guest Preview on Home so visitors see live city AQI & AI copilot right away */}
         <Route element={<PortalLayout />}>
           <Route path={APP_ROUTES.HOME} element={<DashboardPage />} />
         </Route>
-        {/* Authenticated Personalization, AI & Impact Screens */}
+        {/* Authenticated Personalization, Onboarding, AI & Impact Screens */}
         <Route element={<ProtectedRoute />}>
+          <Route
+            path={APP_ROUTES.ONBOARDING}
+            element={
+              <Suspense fallback={<RouteFallback />}>
+                <OnboardingPage />
+              </Suspense>
+            }
+          />
           <Route element={<PortalLayout />}>
             <Route
               path={APP_ROUTES.PLANNER}

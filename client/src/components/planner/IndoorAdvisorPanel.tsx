@@ -15,6 +15,7 @@ import { useEffect, useState, type FormEvent } from 'react';
 
 import { RECOMMENDATION_CATEGORY_META } from '@/components/planner/recommendation-meta';
 import { RecommendationDetailModal } from '@/components/planner/RecommendationDetailModal';
+import { AgentTracePill } from '@/components/shared/AgentTracePill';
 import { AqiBadge } from '@/components/shared/AqiBadge';
 import { MetricInfoButton } from '@/components/shared/MetricInfoModal';
 import { Alert } from '@/components/ui/alert';
@@ -187,6 +188,8 @@ export function IndoorAdvisorPanel() {
       {/* Saved / Generated Estimated Indoor Plan (Displayed First When Ready!) */}
       {assessment ? (
         <div className="space-y-4">
+          <AgentTracePill trace={assessment.agentTrace} cityLabel={selectedLocation.city} />
+
           <Card>
             <CardHeader>
               <div className="flex flex-wrap items-center justify-between gap-2">

@@ -17,6 +17,7 @@ import { useSearchParams } from 'react-router-dom';
 import { IndoorAdvisorPanel } from '@/components/planner/IndoorAdvisorPanel';
 import { RECOMMENDATION_CATEGORY_META } from '@/components/planner/recommendation-meta';
 import { RecommendationDetailModal } from '@/components/planner/RecommendationDetailModal';
+import { AgentTracePill } from '@/components/shared/AgentTracePill';
 import { AqiBadge } from '@/components/shared/AqiBadge';
 import { DataStateWrapper } from '@/components/shared/DataStateWrapper';
 import { MedicalDisclaimer } from '@/components/shared/MedicalDisclaimer';
@@ -119,7 +120,11 @@ function CompactActionCard({
                 onClick={onOpenDetails}
                 className="inline-flex cursor-pointer items-center gap-1 text-xs font-semibold text-emerald-700 hover:text-emerald-800 dark:text-emerald-400 dark:hover:text-emerald-300"
               >
-                <span>Read more · Why &amp; Backup Plan</span>
+                <span>
+                  {item.ifYouContinue
+                    ? 'Read more · Lower-Loss Steps & Why'
+                    : 'Read more · Why & Backup Plan'}
+                </span>
                 <ChevronRight className="h-3.5 w-3.5" aria-hidden="true" />
               </button>
             </div>
@@ -266,6 +271,11 @@ export function PlannerPage() {
             </Card>
           ) : (
             <div className="space-y-5">
+              <AgentTracePill
+                trace={plan.agentTrace}
+                cityLabel={plan.locationName ?? selectedLocation.city}
+              />
+
               {/* Compact Status Bar */}
               <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-zinc-200/80 bg-white px-4 py-3 dark:border-zinc-800 dark:bg-zinc-900/80">
                 <div className="flex flex-wrap items-center gap-2">

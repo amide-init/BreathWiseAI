@@ -88,6 +88,7 @@ export async function listCachedSessionMessages(
         data.environmentalSnapshot && typeof data.environmentalSnapshot === 'object'
           ? (data.environmentalSnapshot as CurrentAirQuality)
           : null,
+      agentTrace: Array.isArray(data.agentTrace) ? (data.agentTrace as string[]) : [],
       medicalEscalationRequired: Boolean(data.medicalEscalationRequired),
       fallbackMode: Boolean(data.fallbackMode),
     };
@@ -165,6 +166,7 @@ export async function listSessionMessages(
         data.environmentalSnapshot && typeof data.environmentalSnapshot === 'object'
           ? (data.environmentalSnapshot as CurrentAirQuality)
           : null,
+      agentTrace: Array.isArray(data.agentTrace) ? (data.agentTrace as string[]) : [],
       medicalEscalationRequired: Boolean(data.medicalEscalationRequired),
       fallbackMode: Boolean(data.fallbackMode),
     };
