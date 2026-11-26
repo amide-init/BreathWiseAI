@@ -3,16 +3,16 @@ import type { HTMLAttributes } from 'react';
 
 import { cn } from '@/lib/cn';
 
-const alertVariants = cva('flex items-start gap-3 rounded-xl border p-3.5 text-sm', {
+const alertVariants = cva('flex items-start gap-3 rounded-2xl border p-3.5 text-sm', {
   variants: {
     variant: {
-      info: 'border-teal-200/80 bg-teal-50/60 text-teal-950 dark:border-teal-400/20 dark:bg-teal-500/[0.07] dark:text-teal-100',
+      info: 'border-[#4285F4]/25 bg-[#4285F4]/[0.07] text-[#174EA6] dark:border-[#8AB4F8]/25 dark:bg-[#4285F4]/[0.11] dark:text-[#D2E3FC]',
       warning:
-        'border-amber-200/90 bg-amber-50/70 text-amber-950 dark:border-amber-400/20 dark:bg-amber-500/[0.07] dark:text-amber-100',
+        'border-[#FBBC05]/35 bg-[#FBBC05]/[0.10] text-[#7A4F01] dark:border-[#FDD663]/25 dark:bg-[#FBBC05]/[0.10] dark:text-[#FEEFC3]',
       danger:
-        'border-rose-200/90 bg-rose-50/70 text-rose-950 dark:border-rose-400/25 dark:bg-rose-500/[0.09] dark:text-rose-100',
+        'border-[#EA4335]/30 bg-[#EA4335]/[0.08] text-[#A50E0E] dark:border-[#F28B82]/30 dark:bg-[#EA4335]/[0.12] dark:text-[#FAD2CF]',
       neutral:
-        'border-slate-200/80 bg-slate-50/80 text-slate-700 dark:border-white/[0.08] dark:bg-white/[0.03] dark:text-[#CBD5E1]',
+        'border-[#DADCE0] bg-[#F1F3F4]/80 text-[#3C4043] dark:border-white/[0.09] dark:bg-[#282A2C] dark:text-[#E3E3E3]',
     },
   },
   defaultVariants: {

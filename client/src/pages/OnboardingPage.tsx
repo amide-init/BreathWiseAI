@@ -7,12 +7,15 @@ import {
   MapPin,
   Sparkles,
   Users,
-  Wind,
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 import { AiFamilyInput } from '@/components/profile/AiFamilyInput';
+import {
+  BreatheWiseLogoMark,
+  FamilyHomeIllustration,
+} from '@/components/illustrations/GoogleAirIllustrations';
 import { AqiBadge } from '@/components/shared/AqiBadge';
 import { Alert } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
@@ -283,49 +286,58 @@ export function OnboardingPage() {
   }
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center bg-[#F7F8FA] px-4 py-10 text-slate-900 dark:bg-[#0B0E12] dark:text-[#EEF2F6]">
+    <div className="flex min-h-screen flex-col items-center justify-center bg-[#F8F9FA] px-4 py-10 text-[#202124] dark:bg-[#131314] dark:text-[#E3E3E3]">
       <div className="w-full max-w-xl space-y-6">
         {/* Minimal Brand & Progress */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2.5">
-            <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-teal-600 text-white dark:bg-teal-400/15 dark:text-teal-300 dark:ring-1 dark:ring-teal-400/25">
-              <Wind className="h-4 w-4" aria-hidden="true" />
-            </div>
-            <span className="text-sm font-bold tracking-tight">BreatheWise AI</span>
+            <BreatheWiseLogoMark className="h-9 w-9" />
+            <span className="font-display text-base font-bold tracking-tight">BreatheWise AI</span>
           </div>
           <button
             type="button"
             onClick={() => void handleSkip()}
-            className="cursor-pointer text-xs font-medium text-slate-400 hover:text-slate-700 dark:text-[#7C8999] dark:hover:text-[#EEF2F6]"
+            className="cursor-pointer text-xs font-medium text-[#5F6368] hover:text-[#202124] dark:text-[#9AA0A6] dark:hover:text-[#E3E3E3]"
           >
             Skip setup
           </button>
         </div>
 
         <div className="grid grid-cols-3 gap-2">
-          {[1, 2, 3].map((idx) => (
+          {[
+            { idx: 1, color: 'bg-[#4285F4]' },
+            { idx: 2, color: 'bg-[#FBBC05]' },
+            { idx: 3, color: 'bg-[#34A853]' },
+          ].map(({ idx, color }) => (
             <div
               key={idx}
               className={cn(
-                'h-1 rounded-full transition-colors',
-                idx <= step ? 'bg-teal-500 dark:bg-teal-400' : 'bg-slate-200 dark:bg-white/[0.08]',
+                'h-1.5 rounded-full transition-colors',
+                idx <= step ? color : 'bg-[#DADCE0] dark:bg-white/[0.1]',
               )}
             />
           ))}
         </div>
 
         {/* Main Card */}
-        <div className="rounded-3xl border border-slate-200/80 bg-white p-6 shadow-xs sm:p-7 dark:border-white/[0.08] dark:bg-[#12171E]">
-          <p className="text-xs font-semibold uppercase tracking-wider text-teal-700 dark:text-teal-400">
-            Step {step} of 3
-          </p>
-          <h1 className="mt-1 text-2xl font-bold tracking-tight">
-            {step === 1
-              ? 'Which city are you breathing in?'
-              : step === 2
-                ? 'Who lives with you?'
-                : 'Your real commute & home setup'}
-          </h1>
+        <div className="overflow-hidden rounded-3xl border border-[#DADCE0] bg-white shadow-xs dark:border-white/[0.09] dark:bg-[#1E1F20]">
+          <div className="google-ribbon h-[3px] w-full" aria-hidden="true" />
+          <div className="p-6 sm:p-7">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-wider text-[#1A73E8] dark:text-[#8AB4F8]">
+                  Step {step} of 3
+                </p>
+                <h1 className="font-display mt-1 text-2xl font-bold tracking-tight">
+                  {step === 1
+                    ? 'Which city are you breathing in?'
+                    : step === 2
+                      ? 'Who lives with you?'
+                      : 'Your real commute & home setup'}
+                </h1>
+              </div>
+              <FamilyHomeIllustration className="hidden h-16 w-24 shrink-0 sm:block" />
+            </div>
           <p className="mt-1 text-sm text-slate-500 dark:text-[#8E9AA8]">
             {step === 1
               ? 'We anchor every suggestion to your city’s live air quality.'
@@ -593,6 +605,7 @@ export function OnboardingPage() {
                 {saving ? 'Building Your AI Plan…' : 'Launch My Clean-Air Copilot'}
               </Button>
             )}
+          </div>
           </div>
         </div>
       </div>

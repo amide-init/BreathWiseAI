@@ -48,7 +48,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     document.documentElement.classList.toggle('dark', isDark);
     const meta = document.querySelector('meta[name="theme-color"]');
     if (meta) {
-      meta.setAttribute('content', isDark ? '#0B0E12' : '#F7F8FA');
+      meta.setAttribute('content', isDark ? '#131314' : '#F8F9FA');
     }
   }, [resolvedTheme]);
 

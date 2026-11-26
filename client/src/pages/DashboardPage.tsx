@@ -19,6 +19,7 @@ import { Link } from 'react-router-dom';
 
 import { ForecastChart } from '@/components/dashboard/ForecastChart';
 import { QuickDecisionsStrip } from '@/components/dashboard/QuickDecisionsStrip';
+import { AirStatusIllustration } from '@/components/illustrations/GoogleAirIllustrations';
 import { AgentTracePill } from '@/components/shared/AgentTracePill';
 import { AqiBadge } from '@/components/shared/AqiBadge';
 import { DataStateWrapper } from '@/components/shared/DataStateWrapper';
@@ -166,35 +167,42 @@ export function DashboardPage() {
                   </div>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <div className="flex flex-wrap items-baseline gap-4">
-                    {current.aqi !== null ? (
-                      <p
-                        className={`text-5xl font-extrabold tracking-tight tabular-nums ${token.accentTextClass}`}
-                      >
-                        {current.aqi}
-                      </p>
-                    ) : (
-                      <p className="flex items-center gap-2 text-2xl font-bold text-slate-600 dark:text-[#94A3B8]">
-                        <CloudOff className="h-6 w-6 text-slate-400" aria-hidden="true" />
-                        Unavailable
-                      </p>
-                    )}
+                  <div className="flex flex-wrap items-center justify-between gap-4">
+                    <div className="flex flex-wrap items-baseline gap-4">
+                      {current.aqi !== null ? (
+                        <p
+                          className={`font-display text-5xl font-bold tracking-tight tabular-nums ${token.accentTextClass}`}
+                        >
+                          {current.aqi}
+                        </p>
+                      ) : (
+                        <p className="font-display flex items-center gap-2 text-2xl font-bold text-[#5F6368] dark:text-[#9AA0A6]">
+                          <CloudOff className="h-6 w-6 text-[#9AA0A6]" aria-hidden="true" />
+                          Unavailable
+                        </p>
+                      )}
 
-                    <div className="space-y-1">
-                      <p className="text-sm font-semibold text-slate-900 dark:text-[#EEF2F6]">
-                        {current.category} ({token.rangeLabel})
-                      </p>
-                      <div className="flex flex-wrap items-center gap-2 text-xs text-slate-500 dark:text-[#8E9AA8]">
-                        {current.dominantPollutant ? (
-                          <Badge variant="neutral">
-                            Main pollutant: {current.dominantPollutant.toUpperCase()}
-                          </Badge>
-                        ) : null}
-                        {data.fallbackProviderUsed ? (
-                          <Badge variant="outline">Open-Meteo Fallback</Badge>
-                        ) : null}
+                      <div className="space-y-1">
+                        <p className="font-display text-base font-semibold text-[#202124] dark:text-[#E3E3E3]">
+                          {current.category} ({token.rangeLabel})
+                        </p>
+                        <div className="flex flex-wrap items-center gap-2 text-xs text-[#5F6368] dark:text-[#9AA0A6]">
+                          {current.dominantPollutant ? (
+                            <Badge variant="neutral">
+                              Main pollutant: {current.dominantPollutant.toUpperCase()}
+                            </Badge>
+                          ) : null}
+                          {data.fallbackProviderUsed ? (
+                            <Badge variant="outline">Open-Meteo Fallback</Badge>
+                          ) : null}
+                        </div>
                       </div>
                     </div>
+
+                    <AirStatusIllustration
+                      category={current.category}
+                      className="h-20 w-28 shrink-0 sm:h-24 sm:w-32"
+                    />
                   </div>
 
                   <p className="rounded-xl border border-slate-200/70 bg-white/80 p-3.5 text-sm leading-relaxed text-slate-700 dark:border-white/[0.07] dark:bg-[#0B0E12]/60 dark:text-[#CBD5E1]">

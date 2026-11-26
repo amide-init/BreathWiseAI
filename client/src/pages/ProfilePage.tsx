@@ -17,6 +17,7 @@ import {
 import { useEffect, useState, type FormEvent } from 'react';
 import { Link } from 'react-router-dom';
 
+import { FamilyHomeIllustration } from '@/components/illustrations/GoogleAirIllustrations';
 import { AiFamilyInput } from '@/components/profile/AiFamilyInput';
 import { MemberFormModal } from '@/components/profile/MemberFormModal';
 import type { ParsedHouseholdDraft } from '@/services/profile-ai.service';
@@ -244,13 +245,16 @@ export function ProfilePage() {
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight text-zinc-950 dark:text-zinc-50">
-            Profile &amp; Household
-          </h1>
-          <p className="text-sm text-zinc-600 dark:text-zinc-400">
-            Personalize clean-air routines for you and every member of your household.
-          </p>
+        <div className="flex items-center gap-3">
+          <FamilyHomeIllustration className="hidden h-14 w-20 shrink-0 sm:block" />
+          <div>
+            <h1 className="font-display text-2xl font-bold tracking-tight text-[#202124] dark:text-[#E3E3E3]">
+              Family &amp; Home
+            </h1>
+            <p className="text-sm text-[#5F6368] dark:text-[#9AA0A6]">
+              Personalize clean-air routines for you and every member of your household.
+            </p>
+          </div>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <div

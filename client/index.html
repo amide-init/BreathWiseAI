@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-    <meta name="theme-color" content="#F7F8FA" />
+    <meta name="theme-color" content="#F8F9FA" />
     <meta
       name="description"
       content="BreatheWise AI turns live city air quality and your home setup into realistic, personalized clean-air guidance — powered by planning & reasoning AI."
@@ -28,7 +28,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap"
       rel="stylesheet"
     />
     <script>
@@ -39,13 +39,13 @@
           var isDark = stored === 'dark' || ((!stored || stored === 'system') && prefersDark);
           document.documentElement.classList.toggle('dark', isDark);
           var meta = document.querySelector('meta[name="theme-color"]');
-          if (meta) meta.setAttribute('content', isDark ? '#0B0E12' : '#F7F8FA');
+          if (meta) meta.setAttribute('content', isDark ? '#131314' : '#F8F9FA');
         } catch (e) {}
       })();
     </script>
     <title>BreatheWise AI — Personal Clean-Air Copilot</title>
   </head>
-  <body class="bg-[#F7F8FA] text-slate-900 antialiased transition-colors duration-200 dark:bg-[#0B0E12] dark:text-[#EEF2F6]">
+  <body class="bg-[#F8F9FA] text-[#202124] antialiased transition-colors duration-200 dark:bg-[#131314] dark:text-[#E3E3E3]">
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>

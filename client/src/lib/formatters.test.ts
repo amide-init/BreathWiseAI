@@ -6,7 +6,7 @@ import { formatCo2Kg, formatMeasurement, formatWindDirection } from '@/lib/forma
 describe('client foundation helpers', () => {
   it('returns accessible visual tokens for all CPCB categories', () => {
     expect(getAqiToken('Good').rangeLabel).toBe('0–50');
-    expect(getAqiToken('Very Poor').badgeClass).toContain('bg-rose-600');
+    expect(getAqiToken('Very Poor').badgeClass).toContain('bg-[#EA4335]');
     expect(getAqiToken('Unavailable').label).toBe('Unavailable');
   });
 

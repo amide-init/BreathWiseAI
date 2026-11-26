@@ -8,10 +8,13 @@ import {
   Settings,
   Sparkles,
   User,
-  Wind,
 } from 'lucide-react';
 import { Link, NavLink, Outlet, useLocation } from 'react-router-dom';
 
+import {
+  BreatheWiseLogoMark,
+  GoogleSparkleMark,
+} from '@/components/illustrations/GoogleAirIllustrations';
 import { LanguageSelector } from '@/components/shared/LanguageSelector';
 import { LocationPickerModal } from '@/components/shared/LocationPickerModal';
 import { ThemeToggle } from '@/components/shared/ThemeToggle';
@@ -36,11 +39,27 @@ const NAV_ICONS: Record<NavItemConfig['iconKey'], typeof LayoutDashboard> = {
   settings: Settings,
 };
 
+const NAV_ACTIVE_COLORS: Record<NavItemConfig['iconKey'], string> = {
+  dashboard:
+    'bg-[#4285F4]/12 text-[#1A73E8] ring-1 ring-[#4285F4]/25 dark:bg-[#8AB4F8]/15 dark:text-[#8AB4F8] dark:ring-[#8AB4F8]/25',
+  planner:
+    'bg-[#34A853]/12 text-[#1E8E3E] ring-1 ring-[#34A853]/25 dark:bg-[#81C995]/15 dark:text-[#81C995] dark:ring-[#81C995]/25',
+  assistant:
+    'bg-[#FBBC05]/18 text-[#9A6700] ring-1 ring-[#FBBC05]/30 dark:bg-[#FDD663]/15 dark:text-[#FDD663] dark:ring-[#FDD663]/25',
+  impact:
+    'bg-[#EA4335]/12 text-[#C5221F] ring-1 ring-[#EA4335]/25 dark:bg-[#F28B82]/15 dark:text-[#F28B82] dark:ring-[#F28B82]/25',
+  profile:
+    'bg-[#4285F4]/12 text-[#1A73E8] dark:bg-[#8AB4F8]/15 dark:text-[#8AB4F8]',
+  settings:
+    'bg-[#F1F3F4] text-[#202124] dark:bg-white/[0.1] dark:text-[#E3E3E3]',
+};
+
 /**
- * Minimalist AI-first portal shell:
- * - Obsidian/slate low-glare dark palette (#0B0E12 canvas, #12171E surface, hairline borders)
- * - Clean 4-item primary nav (`Today`, `Plan & Home`, `Ask AI`, `Impact`)
- * - Compact Family & Settings links tucked into secondary footer / mobile top bar
+ * Google RGB + Illustrated Material 3 portal shell:
+ * - Signature 3px 4-color Google ribbon across the top
+ * - Official Gemini Dark (#131314 canvas, #1E1F20 surfaces) & clean Google Light (#F8F9FA)
+ * - Color-coded 4-item primary nav (`Today` Blue, `Plan` Green, `Ask AI` Yellow, `Impact` Red)
+ * - Floating 4-color sparkle Ask AI FAB
  */
 export function PortalLayout() {
   const { pathname } = useLocation();
@@ -51,18 +70,18 @@ export function PortalLayout() {
   useDocumentTitle(activeRoute.documentTitle);
 
   return (
-    <div className="min-h-screen bg-[#F7F8FA] text-slate-900 transition-colors duration-200 md:flex dark:bg-[#0B0E12] dark:text-[#EEF2F6]">
-      {/* Desktop Sidebar (fixed viewport height, minimal obsidian surface) */}
-      <aside className="hidden md:sticky md:top-0 md:flex md:h-screen md:w-60 md:shrink-0 md:flex-col md:overflow-hidden md:border-r md:border-slate-200/80 md:bg-white dark:md:border-white/[0.07] dark:md:bg-[#0E1319]">
-        <div className="flex shrink-0 items-center gap-2.5 px-5 py-5">
-          <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-teal-600 text-white dark:bg-teal-400/15 dark:text-teal-300 dark:ring-1 dark:ring-teal-400/25">
-            <Wind className="h-4 w-4" aria-hidden="true" />
-          </div>
+    <div className="min-h-screen bg-[#F8F9FA] text-[#202124] transition-colors duration-200 md:flex dark:bg-[#131314] dark:text-[#E3E3E3]">
+      {/* Desktop Sidebar */}
+      <aside className="hidden md:sticky md:top-0 md:flex md:h-screen md:w-60 md:shrink-0 md:flex-col md:overflow-hidden md:border-r md:border-[#DADCE0]/90 md:bg-white dark:md:border-white/[0.08] dark:md:bg-[#1E1F20]">
+        <div className="google-ribbon h-[3px] w-full shrink-0" aria-hidden="true" />
+
+        <div className="flex shrink-0 items-center gap-2.5 px-5 py-4">
+          <BreatheWiseLogoMark className="h-9 w-9 shrink-0" />
           <div>
-            <p className="text-sm font-bold tracking-tight text-slate-900 dark:text-[#EEF2F6]">
+            <p className="font-display text-base font-bold tracking-tight text-[#202124] dark:text-[#E3E3E3]">
               BreatheWise AI
             </p>
-            <p className="text-[11px] font-medium text-slate-400 dark:text-[#64748B]">
+            <p className="text-[11px] font-medium text-[#5F6368] dark:text-[#9AA0A6]">
               Clean-Air Copilot
             </p>
           </div>
@@ -78,10 +97,10 @@ export function PortalLayout() {
                 end={item.to === '/'}
                 className={({ isActive }) =>
                   cn(
-                    'flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all',
+                    'flex items-center gap-3 rounded-full px-3.5 py-2.5 text-sm font-semibold transition-all',
                     isActive
-                      ? 'bg-slate-900/[0.06] text-slate-950 dark:bg-white/[0.07] dark:text-[#EEF2F6]'
-                      : 'text-slate-500 hover:bg-slate-900/[0.03] hover:text-slate-900 dark:text-[#8E9AA8] dark:hover:bg-white/[0.04] dark:hover:text-[#EEF2F6]',
+                      ? NAV_ACTIVE_COLORS[item.iconKey]
+                      : 'text-[#5F6368] hover:bg-[#F1F3F4] hover:text-[#202124] dark:text-[#9AA0A6] dark:hover:bg-white/[0.06] dark:hover:text-[#E3E3E3]',
                   )
                 }
               >
@@ -91,7 +110,7 @@ export function PortalLayout() {
             );
           })}
 
-          <div className="my-3 border-t border-slate-100 pt-3 dark:border-white/[0.06]">
+          <div className="my-3 border-t border-[#E8EAED] pt-3 dark:border-white/[0.08]">
             {SECONDARY_NAV_ITEMS.map((item) => {
               const Icon = NAV_ICONS[item.iconKey];
               return (
@@ -100,10 +119,10 @@ export function PortalLayout() {
                   to={item.to}
                   className={({ isActive }) =>
                     cn(
-                      'flex items-center gap-3 rounded-xl px-3 py-2 text-xs font-medium transition-all',
+                      'flex items-center gap-3 rounded-full px-3.5 py-2 text-xs font-semibold transition-all',
                       isActive
-                        ? 'bg-slate-900/[0.06] text-slate-950 dark:bg-white/[0.07] dark:text-[#EEF2F6]'
-                        : 'text-slate-500 hover:bg-slate-900/[0.03] hover:text-slate-900 dark:text-[#7C8999] dark:hover:bg-white/[0.04] dark:hover:text-[#EEF2F6]',
+                        ? NAV_ACTIVE_COLORS[item.iconKey]
+                        : 'text-[#5F6368] hover:bg-[#F1F3F4] hover:text-[#202124] dark:text-[#9AA0A6] dark:hover:bg-white/[0.06] dark:hover:text-[#E3E3E3]',
                     )
                   }
                 >
@@ -115,20 +134,20 @@ export function PortalLayout() {
           </div>
         </nav>
 
-        <div className="space-y-2.5 border-t border-slate-100 p-3.5 dark:border-white/[0.06]">
+        <div className="space-y-2.5 border-t border-[#E8EAED] p-3.5 dark:border-white/[0.08]">
           <ThemeToggle showLabel className="w-full justify-start px-3" />
 
           {user ? (
-            <div className="flex items-center justify-between gap-2 rounded-xl border border-slate-200/70 bg-slate-50/70 p-2.5 dark:border-white/[0.07] dark:bg-[#12171E]">
+            <div className="flex items-center justify-between gap-2 rounded-2xl border border-[#DADCE0]/80 bg-[#F8F9FA] p-2.5 dark:border-white/[0.08] dark:bg-[#131314]">
               <Link
                 to={APP_ROUTES.PROFILE}
                 data-no-translate="true"
                 className="min-w-0 flex-1 rounded-lg transition-opacity hover:opacity-80"
               >
-                <p className="truncate text-xs font-semibold text-slate-900 dark:text-[#EEF2F6]">
+                <p className="truncate text-xs font-semibold text-[#202124] dark:text-[#E3E3E3]">
                   {user.displayName || 'Family Account'}
                 </p>
-                <p className="truncate text-[11px] text-slate-500 dark:text-[#7C8999]">
+                <p className="truncate text-[11px] text-[#5F6368] dark:text-[#9AA0A6]">
                   {user.email}
                 </p>
               </Link>
@@ -137,7 +156,7 @@ export function PortalLayout() {
                 onClick={() => void signOut()}
                 title="Sign out"
                 aria-label="Sign out"
-                className="flex h-7 w-7 shrink-0 cursor-pointer items-center justify-center rounded-lg text-slate-400 hover:bg-slate-200/70 hover:text-slate-900 dark:text-[#7C8999] dark:hover:bg-white/[0.08] dark:hover:text-[#EEF2F6]"
+                className="flex h-7 w-7 shrink-0 cursor-pointer items-center justify-center rounded-full text-[#5F6368] hover:bg-[#E8EAED] hover:text-[#202124] dark:text-[#9AA0A6] dark:hover:bg-white/[0.08] dark:hover:text-[#E3E3E3]"
               >
                 <LogOut className="h-3.5 w-3.5" aria-hidden="true" />
               </button>
@@ -145,7 +164,7 @@ export function PortalLayout() {
           ) : (
             <Link
               to={APP_ROUTES.LOGIN}
-              className="flex w-full items-center justify-center gap-2 rounded-xl bg-slate-900 px-3.5 py-2.5 text-xs font-semibold text-white transition-colors hover:bg-slate-800 dark:bg-[#EEF2F6] dark:text-[#0B0E12] dark:hover:bg-white"
+              className="flex w-full items-center justify-center gap-2 rounded-full bg-[#4285F4] px-3.5 py-2.5 text-xs font-semibold text-white transition-colors hover:bg-[#3367D6] dark:bg-[#8AB4F8] dark:text-[#131314] dark:hover:bg-[#A8C7FA]"
             >
               <LogIn className="h-3.5 w-3.5" aria-hidden="true" />
               Sign In · Free
@@ -156,18 +175,18 @@ export function PortalLayout() {
 
       {/* Main Content Area */}
       <div className="flex min-h-screen flex-1 flex-col">
-        <header className="sticky top-0 z-20 flex items-center justify-between gap-2 border-b border-slate-200/70 bg-[#F7F8FA]/85 px-4 py-3 backdrop-blur-xl md:px-8 dark:border-white/[0.06] dark:bg-[#0B0E12]/80">
+        <div className="google-ribbon h-[3px] w-full shrink-0 md:hidden" aria-hidden="true" />
+
+        <header className="sticky top-0 z-20 flex items-center justify-between gap-2 border-b border-[#DADCE0]/80 bg-[#F8F9FA]/90 px-4 py-3 backdrop-blur-xl md:px-8 dark:border-white/[0.08] dark:bg-[#131314]/88">
           <div className="flex min-w-0 items-center gap-2.5 md:hidden">
-            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-teal-600 text-white dark:bg-teal-400/15 dark:text-teal-300">
-              <Wind className="h-4 w-4" aria-hidden="true" />
-            </div>
-            <span className="truncate text-sm font-bold tracking-tight text-slate-900 dark:text-[#EEF2F6]">
+            <BreatheWiseLogoMark className="h-8 w-8 shrink-0" />
+            <span className="font-display truncate text-base font-bold tracking-tight text-[#202124] dark:text-[#E3E3E3]">
               {activeRoute.label}
             </span>
           </div>
 
           <div className="hidden md:block">
-            <p className="text-xs font-medium text-slate-400 dark:text-[#7C8999]">
+            <p className="text-xs font-medium text-[#5F6368] dark:text-[#9AA0A6]">
               {activeRoute.subtitle}
             </p>
           </div>
@@ -177,10 +196,10 @@ export function PortalLayout() {
               type="button"
               onClick={openPicker}
               data-no-translate="true"
-              className="inline-flex min-h-[34px] cursor-pointer items-center gap-1.5 rounded-xl border border-slate-200/80 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 transition-all hover:border-slate-300 dark:border-white/[0.08] dark:bg-[#12171E] dark:text-[#D9E2EC] dark:hover:border-white/[0.16]"
+              className="inline-flex min-h-[34px] cursor-pointer items-center gap-1.5 rounded-full border border-[#DADCE0] bg-white px-3 py-1.5 text-xs font-semibold text-[#3C4043] transition-all hover:border-[#4285F4]/60 dark:border-white/[0.12] dark:bg-[#1E1F20] dark:text-[#E3E3E3] dark:hover:border-[#8AB4F8]/50"
             >
               <MapPin
-                className="h-3.5 w-3.5 text-teal-600 dark:text-teal-400"
+                className="h-3.5 w-3.5 text-[#EA4335] dark:text-[#F28B82]"
                 aria-hidden="true"
               />
               <span className="max-w-[115px] truncate sm:max-w-[160px]">
@@ -200,10 +219,10 @@ export function PortalLayout() {
                   title="Family & Home"
                   className={({ isActive }) =>
                     cn(
-                      'flex h-8 w-8 items-center justify-center rounded-xl border transition-all',
+                      'flex h-8 w-8 items-center justify-center rounded-full border transition-all',
                       isActive
-                        ? 'border-teal-500/40 bg-teal-500/10 text-teal-700 dark:border-teal-400/30 dark:bg-teal-400/15 dark:text-teal-300'
-                        : 'border-slate-200/80 bg-white text-slate-500 dark:border-white/[0.08] dark:bg-[#12171E] dark:text-[#94A3B8]',
+                        ? 'border-[#4285F4]/40 bg-[#4285F4]/12 text-[#1A73E8] dark:border-[#8AB4F8]/35 dark:bg-[#8AB4F8]/15 dark:text-[#8AB4F8]'
+                        : 'border-[#DADCE0] bg-white text-[#5F6368] dark:border-white/[0.1] dark:bg-[#1E1F20] dark:text-[#9AA0A6]',
                     )
                   }
                 >
@@ -215,10 +234,10 @@ export function PortalLayout() {
                   title="Settings"
                   className={({ isActive }) =>
                     cn(
-                      'flex h-8 w-8 items-center justify-center rounded-xl border transition-all',
+                      'flex h-8 w-8 items-center justify-center rounded-full border transition-all',
                       isActive
-                        ? 'border-teal-500/40 bg-teal-500/10 text-teal-700 dark:border-teal-400/30 dark:bg-teal-400/15 dark:text-teal-300'
-                        : 'border-slate-200/80 bg-white text-slate-500 dark:border-white/[0.08] dark:bg-[#12171E] dark:text-[#94A3B8]',
+                        ? 'border-[#4285F4]/40 bg-[#4285F4]/12 text-[#1A73E8] dark:border-[#8AB4F8]/35 dark:bg-[#8AB4F8]/15 dark:text-[#8AB4F8]'
+                        : 'border-[#DADCE0] bg-white text-[#5F6368] dark:border-white/[0.1] dark:bg-[#1E1F20] dark:text-[#9AA0A6]',
                     )
                   }
                 >
@@ -228,7 +247,7 @@ export function PortalLayout() {
             ) : (
               <Link
                 to={APP_ROUTES.LOGIN}
-                className="inline-flex h-8 items-center gap-1.5 rounded-xl bg-slate-900 px-3 text-xs font-semibold text-white md:hidden dark:bg-[#EEF2F6] dark:text-[#0B0E12]"
+                className="inline-flex h-8 items-center gap-1.5 rounded-full bg-[#4285F4] px-3 text-xs font-semibold text-white md:hidden dark:bg-[#8AB4F8] dark:text-[#131314]"
               >
                 <LogIn className="h-3.5 w-3.5" aria-hidden="true" />
                 Sign In
@@ -244,7 +263,7 @@ export function PortalLayout() {
 
       {/* Minimal 4-Tab Mobile Bottom Bar */}
       <nav
-        className="pb-safe fixed right-0 bottom-0 left-0 z-30 border-t border-slate-200/80 bg-white/90 px-2 pt-1.5 backdrop-blur-xl md:hidden dark:border-white/[0.07] dark:bg-[#0E1319]/92"
+        className="pb-safe fixed right-0 bottom-0 left-0 z-30 border-t border-[#DADCE0]/90 bg-white/95 px-2 pt-1.5 backdrop-blur-xl md:hidden dark:border-white/[0.08] dark:bg-[#1E1F20]/95"
         aria-label="Mobile bottom navigation"
       >
         <div className="mx-auto grid max-w-md grid-cols-4 gap-1">
@@ -257,10 +276,10 @@ export function PortalLayout() {
                 end={item.to === '/'}
                 className={({ isActive }) =>
                   cn(
-                    'group flex min-h-[52px] flex-col items-center justify-center gap-1 rounded-xl text-[10px] font-medium transition-all',
+                    'group flex min-h-[52px] flex-col items-center justify-center gap-1 rounded-2xl text-[10px] font-semibold transition-all',
                     isActive
-                      ? 'text-teal-700 dark:text-teal-300'
-                      : 'text-slate-500 hover:text-slate-900 dark:text-[#7C8999] dark:hover:text-[#EEF2F6]',
+                      ? 'text-[#1A73E8] dark:text-[#8AB4F8]'
+                      : 'text-[#5F6368] hover:text-[#202124] dark:text-[#9AA0A6] dark:hover:text-[#E3E3E3]',
                   )
                 }
               >
@@ -268,9 +287,9 @@ export function PortalLayout() {
                   <>
                     <span
                       className={cn(
-                        'flex h-7 w-11 items-center justify-center rounded-full transition-all',
+                        'flex h-7 w-12 items-center justify-center rounded-full transition-all',
                         isActive
-                          ? 'bg-teal-500/12 text-teal-700 dark:bg-teal-400/15 dark:text-teal-300'
+                          ? NAV_ACTIVE_COLORS[item.iconKey]
                           : 'bg-transparent group-active:scale-95',
                       )}
                     >
@@ -280,7 +299,7 @@ export function PortalLayout() {
                         aria-hidden="true"
                       />
                     </span>
-                    <span className={cn(isActive && 'font-semibold')}>{item.shortLabel}</span>
+                    <span>{item.shortLabel}</span>
                   </>
                 )}
               </NavLink>
@@ -289,15 +308,15 @@ export function PortalLayout() {
         </div>
       </nav>
 
-      {/* Floating AI Chat Button (hidden when already on Ask AI page) */}
+      {/* Floating Google-Style Ask AI Button */}
       {pathname !== APP_ROUTES.ASSISTANT ? (
         <Link
           to={APP_ROUTES.ASSISTANT}
           aria-label="Ask BreatheWise AI"
           title="Ask BreatheWise AI"
-          className="fixed right-4 bottom-20 z-30 inline-flex h-12 items-center gap-2 rounded-full bg-teal-600 px-4 text-sm font-semibold text-white shadow-lg shadow-teal-950/20 transition-all hover:scale-[1.03] hover:bg-teal-700 active:scale-[0.98] md:right-6 md:bottom-6 dark:bg-teal-400 dark:text-[#0B0E12] dark:shadow-black/40 dark:hover:bg-teal-300"
+          className="fixed right-4 bottom-20 z-30 inline-flex h-12 items-center gap-2 rounded-full border border-[#DADCE0] bg-white px-4 text-sm font-semibold text-[#202124] shadow-[0_6px_20px_rgba(66,133,244,0.22)] transition-all hover:scale-[1.03] hover:border-[#4285F4]/60 active:scale-[0.98] md:right-6 md:bottom-6 dark:border-white/[0.14] dark:bg-[#282A2C] dark:text-[#E3E3E3] dark:shadow-[0_6px_20px_rgba(0,0,0,0.45)] dark:hover:border-[#8AB4F8]/60"
         >
-          <Sparkles className="h-4 w-4 shrink-0" aria-hidden="true" />
+          <GoogleSparkleMark className="h-5 w-5 shrink-0" />
           <span className="hidden sm:inline">Ask AI</span>
         </Link>
       ) : null}
