@@ -163,66 +163,286 @@ export function DashboardPage() {
 
       <PwaInstallBanner />
 
-      {/* AI-First Copilot Command Bar */}
-      <div className="rounded-2xl border border-slate-200/80 bg-white p-4 shadow-[0_1px_2px_rgba(15,23,42,0.03)] dark:border-white/[0.08] dark:bg-[#12171E] dark:shadow-none">
-        <div className="mb-2.5 flex flex-wrap items-center justify-between gap-2">
-          <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-teal-700 dark:text-teal-300">
-            <Sparkles className="h-3.5 w-3.5" aria-hidden="true" />
-            Ask BreatheWise AI · Live {selectedLocation.city} Context
-          </span>
-          {user && userProfile && !userProfile.onboardingCompleted ? (
-            <Link
-              to={APP_ROUTES.ONBOARDING}
-              className="text-xs font-semibold text-teal-700 hover:underline dark:text-teal-300"
-            >
-              Personalize in 30s →
-            </Link>
-          ) : null}
-        </div>
-        <form onSubmit={handleCopilotSubmit} className="flex items-center gap-2">
-          <input
-            type="text"
-            value={copilotQuery}
-            onChange={(e) => setCopilotQuery(e.target.value)}
-            placeholder={`Ask about ${selectedLocation.city} air, smoking harm-reduction, kids' play, or home ventilation…`}
-            className="min-h-[42px] flex-1 rounded-xl border border-slate-200/80 bg-slate-50/70 px-3.5 text-sm text-slate-900 outline-none transition-colors placeholder:text-slate-400 focus:border-teal-500 focus:bg-white focus:ring-2 focus:ring-teal-500/15 dark:border-white/[0.08] dark:bg-[#0B0E12] dark:text-[#EEF2F6] dark:placeholder:text-[#64748B] dark:focus:border-teal-400/50"
-          />
-          <Button type="submit" variant="brand" size="sm" disabled={!copilotQuery.trim()}>
-            <Send className="h-3.5 w-3.5" aria-hidden="true" />
-            <span className="hidden sm:inline">Ask AI</span>
-          </Button>
-        </form>
-        <div className="mt-2.5 flex flex-wrap gap-1.5">
-          {[
-            `Someone smokes indoors while ${selectedLocation.city} AQI is ${current?.aqi ?? 'high'} — lower-loss steps?`,
-            `Best realistic indoor air fixes in ${selectedLocation.city} without a HEPA purifier?`,
-            `Can my family walk outside in ${selectedLocation.city} right now?`,
-          ].map((prompt) => (
-            <button
-              key={prompt}
-              type="button"
-              onClick={() => handleAskCopilot(prompt)}
-              className="cursor-pointer rounded-full border border-slate-200/80 bg-slate-50/80 px-2.5 py-1 text-left text-[11px] font-medium text-slate-600 transition-colors hover:border-teal-500/40 hover:text-slate-900 dark:border-white/[0.07] dark:bg-white/[0.03] dark:text-[#94A3B8] dark:hover:border-teal-400/35 dark:hover:text-[#EEF2F6]"
-            >
-              {prompt}
-            </button>
-          ))}
-        </div>
-      </div>
-
       <DataStateWrapper isLoading={isLoading} error={error} onRetry={() => refresh(true)}>
         {data && current ? (
           <div className="space-y-6">
+            {/* 1. Live AQI Score + Local Weather FIRST (immediate visibility above the fold) */}
+            <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+              <Card className={`lg:col-span-2 ${token.surfaceClass} ${token.borderClass}`}>
+                <CardHeader>
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <CardTitle className="flex items-center gap-1.5">
+                      <Wind className={`h-5 w-5 ${token.accentTextClass}`} aria-hidden="true" />
+                      <span>Air Quality Score</span>
+                      <MetricInfoButton
+                        metricKey="aqi"
+                        currentValue={current.aqi}
+                        formattedValue={
+                          current.aqi !== null ? `${current.aqi} (${current.category})` : 'Unavailable'
+                        }
+                      />
+                    </CardTitle>
+                    <AqiBadge category={current.category} aqi={current.aqi} />
+                  </div>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="flex flex-wrap items-baseline gap-4">
+                    {current.aqi !== null ? (
+                      <p
+                        className={`text-5xl font-extrabold tracking-tight tabular-nums ${token.accentTextClass}`}
+                      >
+                        {current.aqi}
+                      </p>
+                    ) : (
+                      <p className="flex items-center gap-2 text-2xl font-bold text-slate-600 dark:text-[#94A3B8]">
+                        <CloudOff className="h-6 w-6 text-slate-400" aria-hidden="true" />
+                        Unavailable
+                      </p>
+                    )}
+
+                    <div className="space-y-1">
+                      <p className="text-sm font-semibold text-slate-900 dark:text-[#EEF2F6]">
+                        {current.category} ({token.rangeLabel})
+                      </p>
+                      <div className="flex flex-wrap items-center gap-2 text-xs text-slate-500 dark:text-[#8E9AA8]">
+                        {current.dominantPollutant ? (
+                          <Badge variant="neutral">
+                            Main pollutant: {current.dominantPollutant.toUpperCase()}
+                          </Badge>
+                        ) : null}
+                        {data.fallbackProviderUsed ? (
+                          <Badge variant="outline">Open-Meteo Fallback</Badge>
+                        ) : null}
+                      </div>
+                    </div>
+                  </div>
+
+                  <p className="rounded-xl border border-slate-200/70 bg-white/80 p-3.5 text-sm leading-relaxed text-slate-700 dark:border-white/[0.07] dark:bg-[#0B0E12]/60 dark:text-[#CBD5E1]">
+                    {current.healthGuidance}
+                  </p>
+
+                  {/* PM2.5 & PM10 with Plain Labels + (i) Explainer Icons */}
+                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                    <div className="rounded-xl border border-slate-200/80 bg-white/90 p-3.5 dark:border-white/[0.07] dark:bg-[#0B0E12]/70">
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-1">
+                          <span className="text-xs font-semibold text-slate-800 dark:text-[#EEF2F6]">
+                            PM2.5
+                          </span>
+                          <span className="text-[11px] text-slate-500 dark:text-[#8E9AA8]">
+                            · Tiny lung dust
+                          </span>
+                          <MetricInfoButton
+                            metricKey="pm25"
+                            currentValue={pm25Reading?.value}
+                            formattedValue={formatMeasurement(pm25Reading?.value, 'µg/m³')}
+                          />
+                        </div>
+                        <Badge
+                          variant={
+                            pm25Eval.tone === 'good'
+                              ? 'default'
+                              : pm25Eval.tone === 'caution'
+                                ? 'warning'
+                                : pm25Eval.tone === 'unhealthy'
+                                  ? 'danger'
+                                  : 'neutral'
+                          }
+                        >
+                          {pm25Eval.badge}
+                        </Badge>
+                      </div>
+                      <p className="mt-1.5 text-xl font-bold tabular-nums text-slate-900 dark:text-[#EEF2F6]">
+                        {formatMeasurement(pm25Reading?.value, 'µg/m³')}
+                      </p>
+                    </div>
+
+                    <div className="rounded-xl border border-slate-200/80 bg-white/90 p-3.5 dark:border-white/[0.07] dark:bg-[#0B0E12]/70">
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-1">
+                          <span className="text-xs font-semibold text-slate-800 dark:text-[#EEF2F6]">
+                            PM10
+                          </span>
+                          <span className="text-[11px] text-slate-500 dark:text-[#8E9AA8]">
+                            · Road dust
+                          </span>
+                          <MetricInfoButton
+                            metricKey="pm10"
+                            currentValue={pm10Reading?.value}
+                            formattedValue={formatMeasurement(pm10Reading?.value, 'µg/m³')}
+                          />
+                        </div>
+                        <Badge
+                          variant={
+                            pm10Eval.tone === 'good'
+                              ? 'default'
+                              : pm10Eval.tone === 'caution'
+                                ? 'warning'
+                                : pm10Eval.tone === 'unhealthy'
+                                  ? 'danger'
+                                  : 'neutral'
+                          }
+                        >
+                          {pm10Eval.badge}
+                        </Badge>
+                      </div>
+                      <p className="mt-1.5 text-xl font-bold tabular-nums text-slate-900 dark:text-[#EEF2F6]">
+                        {formatMeasurement(pm10Reading?.value, 'µg/m³')}
+                      </p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Right Column: Weather + Quick Shortcuts */}
+              <div className="space-y-4">
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-sm">Local Weather</CardTitle>
+                    <CardDescription>Source: {weather?.source ?? 'Open-Meteo'}</CardDescription>
+                  </CardHeader>
+                  <CardContent className="grid grid-cols-3 gap-2 text-center">
+                    <div className="rounded-xl border border-slate-200/70 bg-slate-50 p-2.5 dark:border-white/[0.07] dark:bg-[#0B0E12]/70">
+                      <Thermometer
+                        className="mx-auto h-4 w-4 text-teal-600 dark:text-teal-400"
+                        aria-hidden="true"
+                      />
+                      <p className="mt-1 text-sm font-bold tabular-nums text-slate-900 dark:text-[#EEF2F6]">
+                        {formatMeasurement(weather?.tempC, '°C')}
+                      </p>
+                      <p className="text-[11px] text-slate-500 dark:text-[#8E9AA8]">Temp</p>
+                    </div>
+
+                    <div className="rounded-xl border border-slate-200/70 bg-slate-50 p-2.5 dark:border-white/[0.07] dark:bg-[#0B0E12]/70">
+                      <Droplets className="mx-auto h-4 w-4 text-sky-400" aria-hidden="true" />
+                      <p className="mt-1 text-sm font-bold tabular-nums text-slate-900 dark:text-[#EEF2F6]">
+                        {formatMeasurement(weather?.humidityPct, '%')}
+                      </p>
+                      <div className="flex items-center justify-center gap-0.5">
+                        <span className="text-[11px] text-slate-500 dark:text-[#8E9AA8]">
+                          Humidity
+                        </span>
+                        <MetricInfoButton
+                          metricKey="humidity"
+                          currentValue={weather?.humidityPct}
+                          formattedValue={formatMeasurement(weather?.humidityPct, '%')}
+                          className="h-4 w-4"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="rounded-xl border border-slate-200/70 bg-slate-50 p-2.5 dark:border-white/[0.07] dark:bg-[#0B0E12]/70">
+                      <Compass
+                        className="mx-auto h-4 w-4 text-slate-400 dark:text-[#8E9AA8]"
+                        aria-hidden="true"
+                      />
+                      <p className="mt-1 text-sm font-bold tabular-nums text-slate-900 dark:text-[#EEF2F6]">
+                        {formatMeasurement(weather?.windSpeedKmh, 'km/h')}
+                      </p>
+                      <div className="flex items-center justify-center gap-0.5">
+                        <span className="text-[11px] text-slate-500 dark:text-[#8E9AA8]">
+                          Wind {formatWindDirection(weather?.windDirectionDeg)}
+                        </span>
+                        <MetricInfoButton
+                          metricKey="wind"
+                          currentValue={weather?.windSpeedKmh}
+                          formattedValue={formatMeasurement(weather?.windSpeedKmh, 'km/h')}
+                          className="h-4 w-4"
+                        />
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2 text-sm">
+                      <ShieldCheck
+                        className="h-4 w-4 text-teal-600 dark:text-teal-400"
+                        aria-hidden="true"
+                      />
+                      Quick Shortcuts
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="flex flex-col gap-2">
+                    <Link to={APP_ROUTES.ASSISTANT}>
+                      <Button className="w-full justify-start" size="sm" variant="primary">
+                        <Sparkles className="h-3.5 w-3.5" aria-hidden="true" />
+                        Ask BreatheWise AI
+                      </Button>
+                    </Link>
+                    <Link to={`${APP_ROUTES.PLANNER}?tab=indoor`}>
+                      <Button className="w-full justify-start" size="sm" variant="outline">
+                        Check Indoor Home Air
+                      </Button>
+                    </Link>
+                    <Link to={APP_ROUTES.PROFILE}>
+                      <Button className="w-full justify-start" size="sm" variant="secondary">
+                        AI Family &amp; Home Setup
+                      </Button>
+                    </Link>
+                  </CardContent>
+                </Card>
+              </div>
+            </div>
+
             <FreshnessBanner
               freshnessStatus={current.freshnessStatus}
               observedAt={current.observedAt}
               source={current.source}
             />
 
-            {/* Everyday Human Quick Verdicts FIRST */}
+            {/* 2. AI-First Copilot Command Bar */}
+            <div className="rounded-2xl border border-slate-200/80 bg-white p-4 shadow-[0_1px_2px_rgba(15,23,42,0.03)] dark:border-white/[0.08] dark:bg-[#12171E] dark:shadow-none">
+              <div className="mb-2.5 flex flex-wrap items-center justify-between gap-2">
+                <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-teal-700 dark:text-teal-300">
+                  <Sparkles className="h-3.5 w-3.5" aria-hidden="true" />
+                  Ask BreatheWise AI · Live {selectedLocation.city} Context
+                </span>
+                {user && userProfile && !userProfile.onboardingCompleted ? (
+                  <Link
+                    to={APP_ROUTES.ONBOARDING}
+                    className="text-xs font-semibold text-teal-700 hover:underline dark:text-teal-300"
+                  >
+                    Personalize in 30s →
+                  </Link>
+                ) : null}
+              </div>
+              <form onSubmit={handleCopilotSubmit} className="flex items-center gap-2">
+                <input
+                  type="text"
+                  value={copilotQuery}
+                  onChange={(e) => setCopilotQuery(e.target.value)}
+                  placeholder={`Ask about ${selectedLocation.city} air, smoking harm-reduction, kids' play, or home ventilation…`}
+                  className="min-h-[42px] flex-1 rounded-xl border border-slate-200/80 bg-slate-50/70 px-3.5 text-sm text-slate-900 outline-none transition-colors placeholder:text-slate-400 focus:border-teal-500 focus:bg-white focus:ring-2 focus:ring-teal-500/15 dark:border-white/[0.08] dark:bg-[#0B0E12] dark:text-[#EEF2F6] dark:placeholder:text-[#64748B] dark:focus:border-teal-400/50"
+                />
+                <Button type="submit" variant="brand" size="sm" disabled={!copilotQuery.trim()}>
+                  <Send className="h-3.5 w-3.5" aria-hidden="true" />
+                  <span className="hidden sm:inline">Ask AI</span>
+                </Button>
+              </form>
+              <div className="mt-2.5 flex flex-wrap gap-1.5">
+                {[
+                  `Someone smokes indoors while ${selectedLocation.city} AQI is ${current.aqi ?? 'high'} — lower-loss steps?`,
+                  `Best realistic indoor air fixes in ${selectedLocation.city} without a HEPA purifier?`,
+                  `Can my family walk outside in ${selectedLocation.city} right now?`,
+                ].map((prompt) => (
+                  <button
+                    key={prompt}
+                    type="button"
+                    onClick={() => handleAskCopilot(prompt)}
+                    className="cursor-pointer rounded-full border border-slate-200/80 bg-slate-50/80 px-2.5 py-1 text-left text-[11px] font-medium text-slate-600 transition-colors hover:border-teal-500/40 hover:text-slate-900 dark:border-white/[0.07] dark:bg-white/[0.03] dark:text-[#94A3B8] dark:hover:border-teal-400/35 dark:hover:text-[#EEF2F6]"
+                  >
+                    {prompt}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* 3. Everyday Human Quick Verdicts */}
             <QuickDecisionsStrip decisions={activeQuickDecisions} category={current.category} />
 
-            {/* Right Now Actions Preview (Time-Aware!) */}
+            {/* 4. Right Now Actions Preview (Time-Aware!) */}
             <Card>
               <CardHeader className="pb-3">
                 <div className="flex flex-wrap items-center justify-between gap-2">
@@ -256,14 +476,14 @@ export function DashboardPage() {
               </CardHeader>
               <CardContent>
                 {!user ? (
-                  <div className="flex flex-col items-start justify-between gap-3 rounded-xl border border-emerald-500/30 bg-emerald-500/8 p-4 sm:flex-row sm:items-center dark:border-emerald-400/25 dark:bg-emerald-400/10">
+                  <div className="flex flex-col items-start justify-between gap-3 rounded-xl border border-teal-500/25 bg-teal-500/8 p-4 sm:flex-row sm:items-center dark:border-teal-400/20 dark:bg-teal-400/[0.07]">
                     <div className="space-y-1">
-                      <p className="font-display text-sm font-bold text-zinc-950 dark:text-zinc-50">
+                      <p className="text-sm font-bold text-slate-900 dark:text-[#EEF2F6]">
                         Want advice tailored to your kids, parents &amp; daily commute?
                       </p>
-                      <p className="text-xs text-zinc-600 dark:text-zinc-400">
-                        Sign in free in 1 tap (30-sec setup · 100% private · zero ads) to unlock
-                        your AI Daily Plan, Indoor Air Advisor, and Ask AI.
+                      <p className="text-xs text-slate-600 dark:text-[#94A3B8]">
+                        Sign in free in 1 tap (30-sec AI setup · 100% private · zero ads) to unlock
+                        your Daily Plan, Indoor Advisor, and Ask AI.
                       </p>
                     </div>
                     <Link to={APP_ROUTES.LOGIN} className="shrink-0">
@@ -274,8 +494,8 @@ export function DashboardPage() {
                     </Link>
                   </div>
                 ) : rightNowActions.length === 0 ? (
-                  <div className="flex flex-col items-start justify-between gap-3 rounded-xl border border-dashed border-zinc-300 bg-zinc-50/80 p-4 sm:flex-row sm:items-center dark:border-zinc-700 dark:bg-zinc-950/60">
-                    <p className="text-sm text-zinc-600 dark:text-zinc-400">
+                  <div className="flex flex-col items-start justify-between gap-3 rounded-xl border border-dashed border-slate-300 bg-slate-50/80 p-4 sm:flex-row sm:items-center dark:border-white/[0.12] dark:bg-white/[0.02]">
+                    <p className="text-sm text-slate-600 dark:text-[#94A3B8]">
                       Get 2 short, tailored actions for your {windowMeta.label.toLowerCase()} based
                       on live {selectedLocation.city} air and your family profile.
                     </p>
@@ -292,7 +512,7 @@ export function DashboardPage() {
                       <Link
                         key={item.itemId}
                         to={APP_ROUTES.PLANNER}
-                        className="group rounded-xl border border-zinc-200/80 bg-zinc-50/70 p-4 transition-all hover:border-emerald-500/40 hover:bg-emerald-500/5 dark:border-zinc-800 dark:bg-zinc-950/60 dark:hover:border-emerald-400/40"
+                        className="group rounded-xl border border-slate-200/80 bg-slate-50/70 p-4 transition-all hover:border-teal-500/40 hover:bg-teal-500/5 dark:border-white/[0.08] dark:bg-[#0B0E12]/60 dark:hover:border-teal-400/35"
                       >
                         <div className="flex items-center justify-between gap-2">
                           <Badge
@@ -306,14 +526,14 @@ export function DashboardPage() {
                           >
                             {item.priority === 'high' ? 'Top Priority' : item.priority}
                           </Badge>
-                          <span className="text-[11px] font-medium text-emerald-700 opacity-80 group-hover:opacity-100 dark:text-emerald-400">
+                          <span className="text-[11px] font-medium text-teal-700 opacity-80 group-hover:opacity-100 dark:text-teal-400">
                             Details →
                           </span>
                         </div>
-                        <p className="font-display mt-2 text-sm font-bold text-zinc-950 dark:text-zinc-50">
+                        <p className="mt-2 text-sm font-bold text-slate-900 dark:text-[#EEF2F6]">
                           {item.title}
                         </p>
-                        <p className="mt-1 line-clamp-2 text-xs leading-relaxed text-zinc-600 dark:text-zinc-400">
+                        <p className="mt-1 line-clamp-2 text-xs leading-relaxed text-slate-600 dark:text-[#94A3B8]">
                           {item.whatToDo}
                         </p>
                       </Link>
@@ -322,226 +542,6 @@ export function DashboardPage() {
                 )}
               </CardContent>
             </Card>
-
-            {/* Live Readings + Tap-to-Learn (i) Explainers */}
-            <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-              <Card className={`lg:col-span-2 ${token.surfaceClass} ${token.borderClass}`}>
-                <CardHeader>
-                  <div className="flex flex-wrap items-center justify-between gap-2">
-                    <CardTitle className="flex items-center gap-1.5">
-                      <Wind className={`h-5 w-5 ${token.accentTextClass}`} aria-hidden="true" />
-                      <span>Air Quality Score</span>
-                      <MetricInfoButton
-                        metricKey="aqi"
-                        currentValue={current.aqi}
-                        formattedValue={
-                          current.aqi !== null ? `${current.aqi} (${current.category})` : 'Unavailable'
-                        }
-                      />
-                    </CardTitle>
-                    <AqiBadge category={current.category} aqi={current.aqi} />
-                  </div>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="flex flex-wrap items-baseline gap-4">
-                    {current.aqi !== null ? (
-                      <p
-                        className={`font-display text-5xl font-extrabold tracking-tight tabular-nums ${token.accentTextClass}`}
-                      >
-                        {current.aqi}
-                      </p>
-                    ) : (
-                      <p className="font-display flex items-center gap-2 text-2xl font-bold text-zinc-700 dark:text-zinc-300">
-                        <CloudOff className="h-6 w-6 text-zinc-400" aria-hidden="true" />
-                        Unavailable
-                      </p>
-                    )}
-
-                    <div className="space-y-1">
-                      <p className="text-sm font-semibold text-zinc-950 dark:text-zinc-50">
-                        {current.category} ({token.rangeLabel})
-                      </p>
-                      <div className="flex flex-wrap items-center gap-2 text-xs text-zinc-600 dark:text-zinc-400">
-                        {current.dominantPollutant ? (
-                          <Badge variant="neutral">
-                            Main pollutant: {current.dominantPollutant.toUpperCase()}
-                          </Badge>
-                        ) : null}
-                        {data.fallbackProviderUsed ? (
-                          <Badge variant="outline">Open-Meteo Fallback</Badge>
-                        ) : null}
-                      </div>
-                    </div>
-                  </div>
-
-                  <p className="rounded-xl border border-zinc-200/70 bg-white/85 p-3.5 text-sm leading-relaxed text-zinc-800 dark:border-zinc-800/80 dark:bg-zinc-950/60 dark:text-zinc-200">
-                    {current.healthGuidance}
-                  </p>
-
-                  {/* PM2.5 & PM10 with Plain Labels + (i) Explainer Icons */}
-                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                    <div className="rounded-xl border border-zinc-200/80 bg-white/90 p-3.5 dark:border-zinc-800/90 dark:bg-zinc-950/70">
-                      <div className="flex items-center justify-between gap-2">
-                        <div className="flex items-center gap-1">
-                          <span className="text-xs font-semibold text-zinc-800 dark:text-zinc-200">
-                            PM2.5
-                          </span>
-                          <span className="text-[11px] text-zinc-500 dark:text-zinc-400">
-                            · Tiny lung dust
-                          </span>
-                          <MetricInfoButton
-                            metricKey="pm25"
-                            currentValue={pm25Reading?.value}
-                            formattedValue={formatMeasurement(pm25Reading?.value, 'µg/m³')}
-                          />
-                        </div>
-                        <Badge
-                          variant={
-                            pm25Eval.tone === 'good'
-                              ? 'default'
-                              : pm25Eval.tone === 'caution'
-                                ? 'warning'
-                                : pm25Eval.tone === 'unhealthy'
-                                  ? 'danger'
-                                  : 'neutral'
-                          }
-                        >
-                          {pm25Eval.badge}
-                        </Badge>
-                      </div>
-                      <p className="font-display mt-1.5 text-xl font-bold tabular-nums text-zinc-950 dark:text-zinc-50">
-                        {formatMeasurement(pm25Reading?.value, 'µg/m³')}
-                      </p>
-                    </div>
-
-                    <div className="rounded-xl border border-zinc-200/80 bg-white/90 p-3.5 dark:border-zinc-800/90 dark:bg-zinc-950/70">
-                      <div className="flex items-center justify-between gap-2">
-                        <div className="flex items-center gap-1">
-                          <span className="text-xs font-semibold text-zinc-800 dark:text-zinc-200">
-                            PM10
-                          </span>
-                          <span className="text-[11px] text-zinc-500 dark:text-zinc-400">
-                            · Road dust
-                          </span>
-                          <MetricInfoButton
-                            metricKey="pm10"
-                            currentValue={pm10Reading?.value}
-                            formattedValue={formatMeasurement(pm10Reading?.value, 'µg/m³')}
-                          />
-                        </div>
-                        <Badge
-                          variant={
-                            pm10Eval.tone === 'good'
-                              ? 'default'
-                              : pm10Eval.tone === 'caution'
-                                ? 'warning'
-                                : pm10Eval.tone === 'unhealthy'
-                                  ? 'danger'
-                                  : 'neutral'
-                          }
-                        >
-                          {pm10Eval.badge}
-                        </Badge>
-                      </div>
-                      <p className="font-display mt-1.5 text-xl font-bold tabular-nums text-zinc-950 dark:text-zinc-50">
-                        {formatMeasurement(pm10Reading?.value, 'µg/m³')}
-                      </p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Right Column: Weather (with (i) icons) + Quick Links */}
-              <div className="space-y-4">
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-sm">Local Weather</CardTitle>
-                    <CardDescription>Source: {weather?.source ?? 'Open-Meteo'}</CardDescription>
-                  </CardHeader>
-                  <CardContent className="grid grid-cols-3 gap-2 text-center">
-                    <div className="rounded-xl border border-zinc-200/60 bg-zinc-50 p-2.5 dark:border-zinc-800 dark:bg-zinc-950/70">
-                      <Thermometer
-                        className="mx-auto h-4 w-4 text-emerald-600 dark:text-emerald-400"
-                        aria-hidden="true"
-                      />
-                      <p className="mt-1 text-sm font-bold tabular-nums text-zinc-950 dark:text-zinc-50">
-                        {formatMeasurement(weather?.tempC, '°C')}
-                      </p>
-                      <p className="text-[11px] text-zinc-500 dark:text-zinc-400">Temp</p>
-                    </div>
-
-                    <div className="rounded-xl border border-zinc-200/60 bg-zinc-50 p-2.5 dark:border-zinc-800 dark:bg-zinc-950/70">
-                      <Droplets className="mx-auto h-4 w-4 text-sky-500" aria-hidden="true" />
-                      <p className="mt-1 text-sm font-bold tabular-nums text-zinc-950 dark:text-zinc-50">
-                        {formatMeasurement(weather?.humidityPct, '%')}
-                      </p>
-                      <div className="flex items-center justify-center gap-0.5">
-                        <span className="text-[11px] text-zinc-500 dark:text-zinc-400">
-                          Humidity
-                        </span>
-                        <MetricInfoButton
-                          metricKey="humidity"
-                          currentValue={weather?.humidityPct}
-                          formattedValue={formatMeasurement(weather?.humidityPct, '%')}
-                          className="h-4 w-4"
-                        />
-                      </div>
-                    </div>
-
-                    <div className="rounded-xl border border-zinc-200/60 bg-zinc-50 p-2.5 dark:border-zinc-800 dark:bg-zinc-950/70">
-                      <Compass
-                        className="mx-auto h-4 w-4 text-zinc-500 dark:text-zinc-400"
-                        aria-hidden="true"
-                      />
-                      <p className="mt-1 text-sm font-bold tabular-nums text-zinc-950 dark:text-zinc-50">
-                        {formatMeasurement(weather?.windSpeedKmh, 'km/h')}
-                      </p>
-                      <div className="flex items-center justify-center gap-0.5">
-                        <span className="text-[11px] text-zinc-500 dark:text-zinc-400">
-                          Wind {formatWindDirection(weather?.windDirectionDeg)}
-                        </span>
-                        <MetricInfoButton
-                          metricKey="wind"
-                          currentValue={weather?.windSpeedKmh}
-                          formattedValue={formatMeasurement(weather?.windSpeedKmh, 'km/h')}
-                          className="h-4 w-4"
-                        />
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2 text-sm">
-                      <ShieldCheck
-                        className="h-4 w-4 text-emerald-600 dark:text-emerald-400"
-                        aria-hidden="true"
-                      />
-                      Quick Shortcuts
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="flex flex-col gap-2">
-                    <Link to={APP_ROUTES.ASSISTANT}>
-                      <Button className="w-full justify-start" size="sm" variant="primary">
-                        <Sparkles className="h-3.5 w-3.5" aria-hidden="true" />
-                        Ask BreatheWise AI
-                      </Button>
-                    </Link>
-                    <Link to={`${APP_ROUTES.PLANNER}?tab=indoor`}>
-                      <Button className="w-full justify-start" size="sm" variant="outline">
-                        Check Indoor Home Air
-                      </Button>
-                    </Link>
-                    <Link to={APP_ROUTES.PROFILE}>
-                      <Button className="w-full justify-start" size="sm" variant="secondary">
-                        Personalize Family Profile
-                      </Button>
-                    </Link>
-                  </CardContent>
-                </Card>
-              </div>
-            </div>
 
             <ForecastChart forecasts={data.forecasts} />
           </div>
