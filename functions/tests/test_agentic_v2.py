@@ -148,6 +148,15 @@ def test_7_node_langgraph_runs_planning_tools_and_harm_reduction_with_city_aqi()
     assert smoke_rec["ifYouContinue"] is not None
     assert "balcony" in smoke_rec["ifYouContinue"].lower()
 
+    # Saved family members MUST be factored into indoor tool, trace, targets & family sanctuary rec
+    interaction = state["tool_results"].indoor_outdoor_interaction
+    assert interaction["householdMembersCount"] == 2
+    assert "children" in interaction["vulnerableGroups"]
+    assert any("2 members" in step for step in state["agent_trace"])
+    assert "Children" in smoke_rec["targetMembers"]
+    sanctuary_rec = next(r for r in recs if r["itemId"] == "in_family_sanctuary")
+    assert "Children" in sanctuary_rec["targetMembers"]
+
 
 def test_harm_reduction_tools_detect_no_hepa_and_smoking_interaction() -> None:
     env = _sample_poor_aqi_env()

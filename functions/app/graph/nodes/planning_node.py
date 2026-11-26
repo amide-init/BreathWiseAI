@@ -165,6 +165,11 @@ def planning_reasoning_node(state: BreatheWiseState) -> dict[str, Any]:
 
     trace = list(state.get("agent_trace") or [])
     trace.append(f"Checked live air in {city_aqi_summary}")
+    if context.member_descriptors:
+        trace.append(
+            f"Applied household profile ({len(context.member_descriptors)} member"
+            f"{'' if len(context.member_descriptors) == 1 else 's'})"
+        )
     if len(compound_factors) > 1:
         trace.append(f"Identified household factors: {'; '.join(compound_factors[1:3])}")
 

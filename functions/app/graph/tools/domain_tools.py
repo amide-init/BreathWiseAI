@@ -87,6 +87,17 @@ def estimate_indoor_outdoor_interaction(
 
     drivers: list[str] = []
     outdoor_high = cur.aqi is not None and cur.aqi > 200
+    outdoor_moderate_plus = cur.aqi is not None and cur.aqi > 150
+
+    vulnerable_groups: list[str] = []
+    if context.has_toddlers:
+        vulnerable_groups.append("toddlers (0–5)")
+    elif context.has_children:
+        vulnerable_groups.append("children")
+    if context.has_elderly:
+        vulnerable_groups.append("older adults (60+)")
+    if context.has_respiratory_or_cardiac_sensitivity:
+        vulnerable_groups.append("respiratory/cardiac sensitivity")
 
     if cur.freshness_status == FreshnessStatus.UNAVAILABLE or cur.aqi is None:
         outdoor_note = f"Live outdoor AQI for {city} is currently unavailable."
@@ -107,12 +118,19 @@ def estimate_indoor_outdoor_interaction(
         drivers.append("Loose window/door gaps pulling outdoor smog indoors")
     if not has_hepa and (outdoor_high or smoking or incense):
         drivers.append("No HEPA purifier available — requires zero-cost sealing & exhaust tactics")
+    if vulnerable_groups and (drivers or outdoor_moderate_plus):
+        drivers.append(
+            f"Heightened indoor sensitivity for household members ({', '.join(vulnerable_groups)})"
+        )
 
+    has_vulnerability = bool(vulnerable_groups)
     compound_severity = (
         "high"
-        if (outdoor_high and (smoking or not uses_exhaust or not has_hepa)) or len(drivers) >= 3
+        if (outdoor_high and (smoking or not uses_exhaust or not has_hepa or has_vulnerability))
+        or (has_vulnerability and (smoking or len(drivers) >= 2))
+        or len(drivers) >= 3
         else "elevated"
-        if len(drivers) >= 1
+        if len(drivers) >= 1 or (has_vulnerability and outdoor_moderate_plus)
         else "moderate"
     )
 
@@ -121,6 +139,9 @@ def estimate_indoor_outdoor_interaction(
         "outdoorAqi": cur.aqi,
         "outdoorCategory": cur.category.value,
         "outdoorSummary": outdoor_note,
+        "householdMembersCount": len(context.member_descriptors),
+        "memberDescriptors": list(context.member_descriptors),
+        "vulnerableGroups": vulnerable_groups,
         "hasHepaPurifier": has_hepa,
         "indoorSmokingPresent": smoking,
         "usesKitchenExhaust": uses_exhaust,

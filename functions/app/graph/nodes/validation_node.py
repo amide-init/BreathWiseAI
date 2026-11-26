@@ -174,6 +174,7 @@ def _build_deterministic_fallback(state: BreatheWiseState, trace: list[str]) -> 
     if mode == "indoor_advisor":
         return build_fallback_indoor_assessment(
             questionnaire=state.get("indoor_answers") or IndoorQuestionnaire(),
+            context=context,
             env=env,
             risk=risk,
             retrieved_docs=docs,

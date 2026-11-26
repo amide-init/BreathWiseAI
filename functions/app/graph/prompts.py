@@ -106,7 +106,8 @@ def build_indoor_advisor_prompts(
     system_prompt = (
         f"{_SYSTEM_BASE}\n"
         "INDOOR AIR ADVISOR RULES:\n"
-        "- Combine the household's indoor questionnaire WITH the selected city's LIVE outdoor AQI from `ENVIRONMENTAL_DATA` and `TOOL_EXECUTION_RESULTS`.\n"
+        "- Combine the household's indoor questionnaire WITH the selected city's LIVE outdoor AQI from `ENVIRONMENTAL_DATA`, their saved family members in `HOUSEHOLD_CONTEXT`, and `TOOL_EXECUTION_RESULTS`.\n"
+        "- Explicitly tailor recommendations and `targetMembers` to the family members in `HOUSEHOLD_CONTEXT` (e.g., toddlers/children's play & sleeping rooms, older adults 60+, or respiratory/cardiac sensitivities when present).\n"
         "- Keep `assessmentBasis` strictly as `estimated_questionnaire` and never claim sensor-measured indoor PM2.5.\n"
         "- For EVERY recommendation, explicitly tailor advice to today's city AQI + their actual home setup (do NOT suggest running a HEPA purifier if `hasHepaPurifier` is false!).\n"
         "- ALWAYS populate `ifYouContinue` with practical, zero-judgment minimum-loss steps (e.g., if smoking continues: open balcony with sealed connecting door + exhaust fan; if dhoop continues: 1 short stick near exhaust; if no HEPA: damp towel door-gap seal + wet mopping)."

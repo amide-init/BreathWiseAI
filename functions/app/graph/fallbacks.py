@@ -275,6 +275,7 @@ def build_fallback_indoor_assessment(
     env: AirQualityResponse,
     risk: RiskAssessmentResult,
     retrieved_docs: list[KnowledgeDocument],
+    context: SanitizedContext | None = None,
     agent_trace: list[str] | None = None,
 ) -> IndoorAssessmentResponse:
     """Deterministic harm-reduction fallback for Module 4 Indoor Air Advisor (estimated only)."""
@@ -282,6 +283,18 @@ def build_fallback_indoor_assessment(
     evidence = _evidence_summary(env)
     sources: list[str] = []
     recs: list[RecommendationItem] = []
+
+    vulnerable_targets: list[str] = []
+    if context is not None:
+        if context.has_toddlers:
+            vulnerable_targets.append("Toddlers (0–5)")
+        elif context.has_children:
+            vulnerable_targets.append("Children")
+        if context.has_elderly:
+            vulnerable_targets.append("Older adults (60+)")
+        if context.has_respiratory_or_cardiac_sensitivity:
+            vulnerable_targets.append("Sensitive lungs")
+    primary_targets = vulnerable_targets or ["Whole family"]
 
     if questionnaire.indoor_smoking_present:
         sources.append("Indoor tobacco smoke")
@@ -291,7 +304,7 @@ def build_fallback_indoor_assessment(
                 title="Keep Tobacco Smoke Out of Living Rooms",
                 priority="high",
                 category="indoor_air",
-                target_members=["Whole family"],
+                target_members=primary_targets,
                 what_to_do=(
                     f"With {city_phrase}, moving smoking completely outside living and sleeping "
                     "rooms gives the biggest immediate drop in indoor PM2.5."
@@ -321,7 +334,7 @@ def build_fallback_indoor_assessment(
                 title="Vent Kitchen Fumes Away From Bedrooms",
                 priority="high",
                 category="cooking_ventilation",
-                target_members=["Whole family"],
+                target_members=primary_targets,
                 what_to_do=(
                     f"With {city_phrase}, isolate cooking smoke by closing kitchen/bedroom doors "
                     "and venting kitchen air outward while cooking."
@@ -344,7 +357,7 @@ def build_fallback_indoor_assessment(
                 title="Cut Down Indoor Incense & Dhoop Smoke",
                 priority="medium",
                 category="indoor_air",
-                target_members=["Whole family"],
+                target_members=primary_targets,
                 what_to_do=(
                     f"During {city_phrase}, pause or shorten indoor incense/dhoop burning when "
                     "windows stay closed."
@@ -367,7 +380,7 @@ def build_fallback_indoor_assessment(
                 title="Trap Settled Floor Dust Instead of Sweeping",
                 priority="medium",
                 category="indoor_air",
-                target_members=["Whole family"],
+                target_members=primary_targets,
                 what_to_do=(
                     f"With {city_phrase}, use damp mopping instead of dry brooms so settled dust "
                     "does not stay airborne."
@@ -392,7 +405,7 @@ def build_fallback_indoor_assessment(
             ),
             priority="high" if risk.constraints.recommend_windows_closed else "medium",
             category="indoor_air",
-            target_members=["Whole family"],
+            target_members=primary_targets,
             what_to_do=(
                 f"Keep windows closed against {city_phrase} and run your True-HEPA purifier in the main occupied room."
                 if questionnaire.has_hepa_purifier
@@ -414,11 +427,46 @@ def build_fallback_indoor_assessment(
         )
     )
 
+    if vulnerable_targets:
+        group_list = ", ".join(vulnerable_targets)
+        recs.append(
+            RecommendationItem(
+                item_id="in_family_sanctuary",
+                title="Prioritize Clean Air for Sensitive Bedrooms",
+                priority="high"
+                if risk.severity_tier
+                in (AqiCategory.POOR, AqiCategory.VERY_POOR, AqiCategory.SEVERE)
+                or len(sources) >= 1
+                else "medium",
+                category="health_precaution",
+                target_members=vulnerable_targets,
+                what_to_do=(
+                    f"Because your household includes {group_list}, keep their sleeping room the "
+                    f"best-sealed, smoke-free space against {city_phrase}."
+                ),
+                why=(
+                    f"Young lungs, older adults, and sensitive airways react faster to combined "
+                    f"indoor particles and {city_phrase}."
+                ),
+                if_you_continue=(
+                    "Even if the whole home cannot be sealed, keep that bedroom door closed during "
+                    "cooking, cleaning, or rush-hour smog peaks."
+                ),
+                alternative="Run any fan or purifier in that bedroom first for 30 minutes before bedtime.",
+                supporting_data=f"Household profile: {group_list}; {evidence}",
+            )
+        )
+
+    has_vulnerability = bool(vulnerable_targets) or risk.sensitive_groups_present
     risk_level = (
         "high"
-        if len(sources) >= 3 or risk.severity_tier in (AqiCategory.VERY_POOR, AqiCategory.SEVERE)
+        if len(sources) >= 3
+        or risk.severity_tier in (AqiCategory.VERY_POOR, AqiCategory.SEVERE)
+        or (has_vulnerability and (len(sources) >= 2 or risk.severity_tier == AqiCategory.POOR))
         else "elevated"
-        if len(sources) >= 1 or risk.severity_tier == AqiCategory.POOR
+        if len(sources) >= 1
+        or risk.severity_tier == AqiCategory.POOR
+        or (has_vulnerability and risk.severity_tier == AqiCategory.MODERATE)
         else "moderate"
     )
 
