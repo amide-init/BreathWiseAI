@@ -119,12 +119,15 @@ export function ProfilePage() {
       },
     });
 
+    let addedCount = 0;
+    const failedNames: string[] = [];
+
     if (saved.familyId && draft.members.length > 0) {
       const existingNames = new Set(members.map((m) => m.nickname.trim().toLowerCase()));
       const newOnes = draft.members.filter(
         (m) => !existingNames.has(m.nickname.trim().toLowerCase()),
       );
-      await Promise.allSettled(
+      const results = await Promise.allSettled(
         newOnes.map((m) =>
           createMember(
             {
@@ -145,11 +148,26 @@ export function ProfilePage() {
           ),
         ),
       );
+      results.forEach((res, idx) => {
+        if (res.status === 'fulfilled') {
+          addedCount += 1;
+        } else {
+          failedNames.push(newOnes[idx]?.nickname ?? 'Member');
+        }
+      });
     }
 
-    setHouseholdFeedback(
-      `AI updated your household & added ${draft.members.length} member profile(s). Refresh your Daily Plan to apply!`,
-    );
+    if (failedNames.length > 0) {
+      setHouseholdError(`Household saved, but could not add: ${failedNames.join(', ')}.`);
+    } else if (addedCount > 0) {
+      setHouseholdFeedback(
+        `AI updated your household & added ${addedCount} new member profile${addedCount === 1 ? '' : 's'}. Refresh your Daily Plan to apply!`,
+      );
+    } else {
+      setHouseholdFeedback(
+        'AI updated your household habits (all mentioned members were already in your family list).',
+      );
+    }
   }
 
   useEffect(() => {
