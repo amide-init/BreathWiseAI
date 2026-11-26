@@ -10,11 +10,23 @@ import {
   type ParsedHouseholdDraft,
 } from '@/services/profile-ai.service';
 
-const EXAMPLE_PROMPTS = [
-  'Me, wife, and 7yo son with mild dust allergy; I ride a scooter 15 km, we light dhoop daily, and have no purifier.',
-  'Living with my 68yo dad who walks early morning; I drive 20 km, someone smokes on the balcony, we have a kitchen chimney.',
-  'Solo working adult working from home, morning runner, LPG kitchen with exhaust, no HEPA purifier.',
-];
+const EXAMPLE_PRESETS = [
+  {
+    label: 'Family with young child',
+    prompt:
+      'Me, wife, and 7yo son with mild dust allergy; I ride a scooter 15 km, we light dhoop daily, and have no purifier.',
+  },
+  {
+    label: 'With elderly parent',
+    prompt:
+      'Living with my 68yo dad who walks early morning; I drive 20 km, someone smokes on the balcony, we have a kitchen chimney.',
+  },
+  {
+    label: 'Solo · Work from home',
+    prompt:
+      'Solo working adult working from home, morning runner, LPG kitchen with exhaust, no HEPA purifier.',
+  },
+] as const;
 
 interface AiFamilyInputProps {
   onApplyDraft: (draft: ParsedHouseholdDraft) => Promise<void> | void;
@@ -126,18 +138,21 @@ export function AiFamilyInput({
         />
 
         <div className="mt-2.5 flex flex-wrap items-center justify-between gap-2">
-          <div className="flex flex-wrap gap-1.5">
-            {EXAMPLE_PROMPTS.slice(0, compact ? 2 : 3).map((sample, idx) => (
+          <div className="flex flex-wrap items-center gap-1.5">
+            <span className="text-[11px] font-medium text-[#5F6368] dark:text-[#9AA0A6]">
+              Quick fill:
+            </span>
+            {EXAMPLE_PRESETS.slice(0, compact ? 2 : 3).map((preset) => (
               <button
-                key={idx}
+                key={preset.label}
                 type="button"
                 onClick={() => {
-                  setText(sample);
-                  void handleParse(sample);
+                  setText(preset.prompt);
+                  void handleParse(preset.prompt);
                 }}
                 className="cursor-pointer rounded-full border border-[#DADCE0] bg-[#F8F9FA] px-3 py-1 text-[11px] font-medium text-[#3C4043] transition-colors hover:border-[#4285F4]/50 hover:bg-[#E8F0FE]/60 hover:text-[#1A73E8] dark:border-white/[0.1] dark:bg-white/[0.04] dark:text-[#C4C7C5] dark:hover:border-[#8AB4F8]/50 dark:hover:text-[#8AB4F8]"
               >
-                Try example {idx + 1}
+                {preset.label}
               </button>
             ))}
           </div>
