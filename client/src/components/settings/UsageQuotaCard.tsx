@@ -1,4 +1,4 @@
-import { Activity, Clock, Loader2, RefreshCw, Sparkles } from 'lucide-react';
+import { Activity, Loader2, RefreshCw, Shield, Sparkles } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 
 import { Alert } from '@/components/ui/alert';
@@ -9,17 +9,6 @@ import { useAuth } from '@/hooks/useAuth';
 import { cn } from '@/lib/cn';
 import type { UsageCategoryItem, UserUsageSummary } from '@/models/usage.model';
 import { fetchUserUsage } from '@/services/usage.service';
-
-function formatLocalResetTime(iso: string): string {
-  const parsed = Date.parse(iso);
-  if (Number.isNaN(parsed)) {
-    return 'midnight UTC';
-  }
-  return new Date(parsed).toLocaleTimeString([], {
-    hour: 'numeric',
-    minute: '2-digit',
-  });
-}
 
 function barColorClass(percentUsed: number): string {
   if (percentUsed >= 100) {
@@ -66,7 +55,7 @@ export function UsageQuotaCard() {
         const data = await fetchUserUsage(user.uid, { forceRefresh });
         setUsage(data);
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'Unable to load your daily usage right now.');
+        setError(err instanceof Error ? err.message : 'Unable to load your account usage.');
       } finally {
         setLoading(false);
         setRefreshing(false);
@@ -90,12 +79,12 @@ export function UsageQuotaCard() {
         <div className="flex flex-wrap items-center justify-between gap-2">
           <CardTitle className="flex items-center gap-2">
             <Activity className="h-5 w-5 text-[#4285F4] dark:text-[#8AB4F8]" aria-hidden="true" />
-            AI &amp; Daily Usage
+            AI &amp; Account Usage
           </CardTitle>
           <div className="flex items-center gap-2">
             {usage ? (
               <Badge variant={overallPercent >= 80 ? 'warning' : 'default'}>
-                {usage.totalUsed} / {usage.totalLimit} today
+                {usage.totalUsed} / {usage.totalLimit} lifetime credits
               </Badge>
             ) : null}
             <Button
@@ -114,8 +103,8 @@ export function UsageQuotaCard() {
           </div>
         </div>
         <CardDescription>
-          Fair-use daily limits per account to keep BreathWiseAI fast and responsive. Cached live
-          AQI reads and cached translations do not count against your quota.
+          One-time lifetime credit allowance per account (does not reset daily or monthly). Cached
+          live AQI reads and cached translations do not use credits.
         </CardDescription>
       </CardHeader>
 
@@ -125,7 +114,7 @@ export function UsageQuotaCard() {
         {loading && !usage ? (
           <div className="flex items-center justify-center gap-2 py-8 text-xs text-[#5F6368] dark:text-[#9AA0A6]">
             <Loader2 className="h-4 w-4 animate-spin text-[#4285F4]" aria-hidden="true" />
-            <span>Loading today&apos;s usage…</span>
+            <span>Loading account usage…</span>
           </div>
         ) : usage ? (
           <>
@@ -161,7 +150,7 @@ export function UsageQuotaCard() {
                       <div
                         className="h-2 w-full overflow-hidden rounded-full bg-[#E8EAED] dark:bg-white/[0.08]"
                         role="progressbar"
-                        aria-label={`${cat.label} usage`}
+                        aria-label={`${cat.label} lifetime usage`}
                         aria-valuenow={cat.used}
                         aria-valuemin={0}
                         aria-valuemax={cat.limit}
@@ -182,11 +171,13 @@ export function UsageQuotaCard() {
 
             <div className="flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-[#4285F4]/20 bg-[#E8F0FE]/55 px-3.5 py-2.5 text-xs text-[#3C4043] dark:border-[#8AB4F8]/20 dark:bg-[#4285F4]/10 dark:text-[#BDC1C6]">
               <span className="inline-flex items-center gap-1.5">
-                <Clock className="h-3.5 w-3.5 text-[#1A73E8] dark:text-[#8AB4F8]" aria-hidden="true" />
+                <Shield
+                  className="h-3.5 w-3.5 text-[#1A73E8] dark:text-[#8AB4F8]"
+                  aria-hidden="true"
+                />
                 <span>
-                  Daily quotas reset at{' '}
-                  <strong>{formatLocalResetTime(usage.resetsAt)}</strong> local time ({usage.date}{' '}
-                  UTC)
+                  <strong>Lifetime Account Quota</strong> — fixed per-account allowance (no daily or
+                  monthly auto-reset)
                 </span>
               </span>
               <span className="inline-flex items-center gap-1.5 text-[11px]">

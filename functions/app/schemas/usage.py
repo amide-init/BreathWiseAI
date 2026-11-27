@@ -1,4 +1,4 @@
-"""Per-user daily rate-limit & usage summary schemas."""
+"""Per-user lifetime rate-limit & account usage summary schemas."""
 
 from __future__ import annotations
 
@@ -18,7 +18,7 @@ UsageBucketKey = Literal[
 
 
 class UsageCategoryItem(ApiModel):
-    """Usage breakdown for a single rate-limited user feature."""
+    """Lifetime usage breakdown for a single rate-limited user feature."""
 
     key: UsageBucketKey
     label: str
@@ -30,10 +30,9 @@ class UsageCategoryItem(ApiModel):
 
 
 class UserUsageSummary(ApiModel):
-    """Daily usage and quota status returned to the Settings Usage dashboard."""
+    """Lifetime account usage and quota status returned to the Settings Usage dashboard."""
 
-    date: str
-    resets_at: str
+    quota_scope: Literal["lifetime"] = "lifetime"
     burst_limit_per_minute: int = Field(ge=1)
     total_used: int = Field(ge=0)
     total_limit: int = Field(ge=1)

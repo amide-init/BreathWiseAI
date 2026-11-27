@@ -1,4 +1,4 @@
-"""Per-user daily & per-minute rate limiting + Settings Usage Summary service."""
+"""Per-user lifetime & per-minute burst rate limiting + Settings Usage Summary service."""
 
 from __future__ import annotations
 
@@ -6,50 +6,48 @@ import os
 import threading
 import time
 from collections import defaultdict, deque
-from datetime import UTC, datetime, timedelta
 
 from app.repositories.usage_repo import UsageRepository
 from app.schemas.usage import UsageBucketKey, UsageCategoryItem, UserUsageSummary
-from app.utils.datetime_utils import to_iso_utc, utc_now
 from app.utils.errors import RateLimitError
 from app.utils.ttl_cache import TTLCache
 
-# Metadata + configurable daily limits per user (overridable via env vars)
+# One-time lifetime allowance per account (no daily/monthly auto-reset; overridable via env vars)
 _BUCKET_META: tuple[tuple[UsageBucketKey, str, str, str, int], ...] = (
     (
         "chatMessages",
         "AI Chat Messages",
         "Conversational Q&A turns in Ask BreathWiseAI",
-        "RATE_LIMIT_CHAT_DAILY",
-        30,
+        "RATE_LIMIT_CHAT_LIFETIME",
+        25,
     ),
     (
         "dailyPlans",
         "AI Daily Plans",
         "Personalized morning, afternoon & evening clean-air plans",
-        "RATE_LIMIT_DAILY_PLAN_DAILY",
-        10,
+        "RATE_LIMIT_DAILY_PLAN_LIFETIME",
+        5,
     ),
     (
         "indoorAssessments",
         "Indoor Air Assessments",
         "Questionnaire-based indoor air risk & harm-reduction checks",
-        "RATE_LIMIT_INDOOR_DAILY",
-        10,
+        "RATE_LIMIT_INDOOR_LIFETIME",
+        5,
     ),
     (
         "profileParses",
         "AI Profile Auto-Fills",
         "Server-side natural-language family & home parsing",
-        "RATE_LIMIT_PROFILE_PARSE_DAILY",
-        15,
+        "RATE_LIMIT_PROFILE_PARSE_LIFETIME",
+        5,
     ),
     (
         "impactLogs",
         "Impact Action Logs",
         "CO₂ avoided & exposure-protection actions logged",
-        "RATE_LIMIT_IMPACT_LOG_DAILY",
-        40,
+        "RATE_LIMIT_IMPACT_LOG_LIFETIME",
+        50,
     ),
 )
 
@@ -63,7 +61,7 @@ _BURST_TIMESTAMPS: dict[str, deque[float]] = defaultdict(deque)
 _USAGE_L1_CACHE: TTLCache[UserUsageSummary] = TTLCache(max_size=256, ttl_seconds=15.0)
 
 
-def _get_daily_limit(env_var: str, default_val: int) -> int:
+def _get_limit(env_var: str, default_val: int) -> int:
     raw = os.getenv(env_var)
     if raw is None:
         return default_val
@@ -74,16 +72,7 @@ def _get_daily_limit(env_var: str, default_val: int) -> int:
 
 
 def _get_burst_limit_per_minute() -> int:
-    return _get_daily_limit("RATE_LIMIT_AI_BURST_PER_MIN", 8)
-
-
-def _utc_day_bounds(reference_now: datetime) -> tuple[str, str]:
-    utc_dt = reference_now.astimezone(UTC)
-    date_str = utc_dt.strftime("%Y-%m-%d")
-    next_midnight = (utc_dt + timedelta(days=1)).replace(
-        hour=0, minute=0, second=0, microsecond=0
-    )
-    return date_str, to_iso_utc(next_midnight)
+    return _get_limit("RATE_LIMIT_AI_BURST_PER_MIN", 8)
 
 
 def clear_usage_runtime_caches() -> None:
@@ -94,7 +83,7 @@ def clear_usage_runtime_caches() -> None:
 
 
 class UsageService:
-    """Enforces per-user burst + daily quotas and produces Settings Usage summaries."""
+    """Enforces per-user burst + lifetime account quotas and produces Settings Usage summaries."""
 
     def __init__(
         self,
@@ -108,8 +97,8 @@ class UsageService:
     def _bucket_config(self, bucket: str) -> tuple[str, int]:
         for key, label, _desc, env_var, default_limit in _BUCKET_META:
             if key == bucket:
-                return label, _get_daily_limit(env_var, default_limit)
-        return bucket, 30
+                return label, _get_limit(env_var, default_limit)
+        return bucket, 25
 
     def _check_burst(self, *, user_id: str, bucket: str) -> None:
         if bucket not in _AI_BURST_BUCKETS:
@@ -128,58 +117,41 @@ class UsageService:
                 )
             window.append(now_mono)
 
-    def consume(
-        self,
-        *,
-        user_id: str,
-        bucket: str,
-        now: datetime | None = None,
-    ) -> int:
-        """Enforce per-minute burst + daily per-user quota and increment usage count."""
+    def consume(self, *, user_id: str, bucket: str) -> int:
+        """Enforce per-minute burst + lifetime per-user quota and increment usage count."""
         self._check_burst(user_id=user_id, bucket=bucket)
 
-        reference_now = now or utc_now()
-        date_str, _resets_at = _utc_day_bounds(reference_now)
         label, limit = self._bucket_config(bucket)
-
         new_count, allowed = self._repo.check_and_increment(
             user_id=user_id,
             bucket=bucket,
             limit=limit,
-            date_str=date_str,
         )
-        _USAGE_L1_CACHE.invalidate(f"{user_id}:{date_str}")
+        _USAGE_L1_CACHE.invalidate(f"lifetime:{user_id}")
 
         if not allowed:
             raise RateLimitError(
-                f"Daily limit reached for {label} ({limit}/{limit}). "
-                "Your quota resets at midnight UTC — check Settings > Usage for details."
+                f"Account limit reached for {label} ({limit}/{limit} lifetime credits used). "
+                "View your usage breakdown in Settings."
             )
         return new_count
 
-    def get_usage_summary(
-        self,
-        *,
-        user_id: str,
-        now: datetime | None = None,
-    ) -> UserUsageSummary:
-        """Return today's per-feature usage breakdown and remaining quota for `user_id`."""
-        reference_now = now or utc_now()
-        date_str, resets_at = _utc_day_bounds(reference_now)
-        cache_key = f"{user_id}:{date_str}"
+    def get_usage_summary(self, *, user_id: str) -> UserUsageSummary:
+        """Return lifetime per-feature usage breakdown and remaining quota for `user_id`."""
+        cache_key = f"lifetime:{user_id}"
 
         if self._use_l1_cache:
             cached = _USAGE_L1_CACHE.get(cache_key)
             if cached is not None:
                 return cached
 
-        counts = self._repo.get_daily_counts(user_id=user_id, date_str=date_str)
+        counts = self._repo.get_lifetime_counts(user_id=user_id)
         categories: list[UsageCategoryItem] = []
         total_used = 0
         total_limit = 0
 
         for key, label, description, env_var, default_limit in _BUCKET_META:
-            limit = _get_daily_limit(env_var, default_limit)
+            limit = _get_limit(env_var, default_limit)
             used = min(counts.get(key, 0), limit)
             remaining = max(0, limit - used)
             percent_used = min(100, round((used / limit) * 100)) if limit > 0 else 0
@@ -198,8 +170,7 @@ class UsageService:
             )
 
         summary = UserUsageSummary(
-            date=date_str,
-            resets_at=resets_at,
+            quota_scope="lifetime",
             burst_limit_per_minute=_get_burst_limit_per_minute(),
             total_used=total_used,
             total_limit=total_limit,
