@@ -108,7 +108,8 @@ def planning_reasoning_node(state: BreatheWiseState) -> dict[str, Any]:
         if context.member_descriptors or context.member_schedule_hints:
             selected_tools.append("analyze_family_schedule_risks")
     else:  # chat — select only tools relevant to the user's question + city AQI
-        selected_tools.append("estimate_indoor_outdoor_interaction")
+        is_follow_up = bool(state.get("chat_history"))
+
         if any(
             kw in user_query
             for kw in (
@@ -118,6 +119,9 @@ def planning_reasoning_node(state: BreatheWiseState) -> dict[str, Any]:
                 "play",
                 "outside",
                 "window",
+                "air out",
+                "ventilat",
+                "breeze",
                 "time",
                 "morning",
                 "evening",
@@ -135,11 +139,23 @@ def planning_reasoning_node(state: BreatheWiseState) -> dict[str, Any]:
                     "kid",
                     "child",
                     "toddler",
+                    "baby",
+                    "son",
+                    "daughter",
                     "school",
+                    "father",
+                    "dad",
+                    "mother",
+                    "mom",
                     "parent",
                     "elder",
                     "senior",
                     "grandparent",
+                    "grandma",
+                    "grandpa",
+                    "wife",
+                    "husband",
+                    "spouse",
                     "schedule",
                     "routine",
                     "when",
@@ -150,6 +166,8 @@ def planning_reasoning_node(state: BreatheWiseState) -> dict[str, Any]:
             and (context.member_descriptors or context.member_schedule_hints)
         ):
             selected_tools.append("analyze_family_schedule_risks")
+            if "analyze_forecast_windows" not in selected_tools:
+                selected_tools.append("analyze_forecast_windows")
         if any(
             kw in user_query
             for kw in (
@@ -190,28 +208,40 @@ def planning_reasoning_node(state: BreatheWiseState) -> dict[str, Any]:
             )
         ):
             selected_tools.append("analyze_city_pollutants_and_weather")
-        if (
-            any(
-                kw in user_query
-                for kw in (
-                    "smoke",
-                    "smoking",
-                    "cigarette",
-                    "dhoop",
-                    "incense",
-                    "cook",
-                    "purifier",
-                    "hepa",
-                    "indoor",
-                    "broom",
-                    "dust",
-                )
+        asks_indoor_or_habits = any(
+            kw in user_query
+            for kw in (
+                "smoke",
+                "smoking",
+                "cigarette",
+                "dhoop",
+                "incense",
+                "cook",
+                "kitchen",
+                "purifier",
+                "hepa",
+                "indoor",
+                "home",
+                "room",
+                "bedroom",
+                "broom",
+                "dust",
+                "mop",
+                "clean",
+                "window",
+                "air out",
+                "ventilat",
             )
-            or smoking
-            or incense
-            or not has_hepa
-        ):
+        )
+        # Only attach indoor harm-reduction playbooks when relevant to the turn
+        # (never flood unrelated follow-ups like "tasks for my father" with cooking/mopping chores).
+        if asks_indoor_or_habits or (not is_follow_up and (smoking or incense)):
+            selected_tools.append("estimate_indoor_outdoor_interaction")
             selected_tools.append("lookup_harm_reduction_playbooks")
+        elif not selected_tools:
+            selected_tools.append("estimate_indoor_outdoor_interaction")
+            if not is_follow_up and (smoking or incense or not has_hepa):
+                selected_tools.append("lookup_harm_reduction_playbooks")
         if any(
             kw in user_query
             for kw in (

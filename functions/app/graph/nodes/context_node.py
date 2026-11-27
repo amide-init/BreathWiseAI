@@ -35,7 +35,19 @@ def sanitize_family_aggregate(
 
     for member in family.members:
         role_label = member.role.replace("_", " ")
-        descriptors.append(f"{member.role} ({member.age_group})")
+        hp = member.optional_health_profile
+        member_tags: list[str] = [member.age_group]
+        if hp:
+            if hp.has_respiratory_sensitivity:
+                member_tags.append("respiratory sensitivity")
+            if hp.has_cardiac_sensitivity:
+                member_tags.append("cardiac sensitivity")
+            if hp.is_pregnant:
+                member_tags.append("pregnant")
+        if member.commute_mode:
+            member_tags.append(f"commute: {member.commute_mode}")
+        descriptors.append(f"{member.role} ({', '.join(member_tags)})")
+
         if (
             member.schedule.leave_home_time
             or member.schedule.return_home_time
@@ -57,7 +69,6 @@ def sanitize_family_aggregate(
         if member.role == "elderly" or member.age_group == "60_plus":
             has_elderly = True
 
-        hp = member.optional_health_profile
         if hp and (hp.has_respiratory_sensitivity or hp.has_cardiac_sensitivity or hp.is_pregnant):
             has_sensitivity = True
 

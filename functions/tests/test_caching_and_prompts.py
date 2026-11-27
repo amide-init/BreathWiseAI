@@ -532,3 +532,110 @@ def test_gemini_provider_passes_thinking_budget_and_reuses_client(monkeypatch: A
     assert captured_configs[0].max_output_tokens == 700
     assert captured_configs[0].thinking_config.thinking_budget == 0
     clear_shared_genai_clients()
+
+
+def test_followup_chat_for_father_avoids_indoor_chore_flood_and_keeps_pii_free_descriptors() -> None:
+    from app.graph.nodes.context_node import sanitize_family_aggregate
+    from app.graph.nodes.planning_node import planning_reasoning_node
+    from app.repositories.family_repo import FamilyAggregate
+    from app.schemas.profile import (
+        ExercisePreferences,
+        FamilyMember,
+        IndoorEquipment,
+        MemberSchedule,
+        OptionalHealthProfile,
+        TransportationHabits,
+    )
+
+    family = FamilyAggregate(
+        family_id="fam_1",
+        owner_user_id="u1",
+        household_name="Sharma Home",
+        location_label="Jhumri Telaiya",
+        transportation=TransportationHabits(primary_mode="two_wheeler", daily_commute_km=10.0),
+        exercise=ExercisePreferences(prefers_outdoor=True, preferred_window="morning"),
+        indoor_equipment=IndoorEquipment(has_hepa_purifier=False, has_kitchen_exhaust=False),
+        members=[
+            FamilyMember(
+                member_id="m1",
+                nickname="Ramesh",
+                role="elderly",
+                age_group="60_plus",
+                commute_mode="walk_cycle",
+                schedule=MemberSchedule(outdoor_play_or_exercise_time="07:00"),
+                optional_health_profile=OptionalHealthProfile(
+                    has_respiratory_sensitivity=True,
+                    notes="Private inhaler note that must never appear",
+                ),
+            ),
+            FamilyMember(
+                member_id="m2",
+                nickname="Aarav",
+                role="child_toddler",
+                age_group="0_5",
+            ),
+        ],
+    )
+    ctx = sanitize_family_aggregate(family, fallback_location_label="Jhumri Telaiya")
+    # PII-free descriptors carry sensitivity & commute without leaking names or notes
+    joined = " ".join(ctx.member_descriptors)
+    assert "respiratory sensitivity" in joined
+    assert "commute: walk_cycle" in joined
+    assert "Ramesh" not in joined
+    assert "inhaler" not in joined
+    assert any("outdoor ~07:00" in hint for hint in ctx.member_schedule_hints)
+
+    env = AirQualityResponse(
+        location_id="jhumri",
+        location_name="Jhumri Telaiya",
+        current=CurrentAirQuality(
+            aqi=129,
+            category=AqiCategory.MODERATE,
+            health_guidance="Moderate.",
+            readings=[],
+            source="WAQI",
+            freshness_status=FreshnessStatus.FRESH,
+        ),
+        weather=WeatherSnapshot(
+            temp_c=16.0,
+            humidity_pct=74.0,
+            wind_speed_kmh=6.0,
+            source="Open-Meteo",
+            freshness_status=FreshnessStatus.FRESH,
+        ),
+    )
+    risk = assess_risk(current_aqi=env.current, context=ctx, forecasts=[])
+
+    # Follow-up asking about father should route to family schedule + forecast, NOT cooking/no-HEPA chores
+    plan_out = planning_reasoning_node(
+        {
+            "workflow_mode": "chat",
+            "sanitized_context": ctx,
+            "environment_data": env,
+            "risk_assessment": risk,
+            "user_query": "tell me specific task for my father here",
+            "chat_history": [
+                {"role": "user", "content": "check what can i do for my family"},
+                {"role": "assistant", "content": "In Jhumri Telaiya, AQI is 129..."},
+            ],
+        }
+    )
+    selected = plan_out["reasoning_plan"].selected_tools
+    assert "analyze_family_schedule_risks" in selected
+    assert "analyze_forecast_windows" in selected
+    assert "lookup_harm_reduction_playbooks" not in selected
+
+    sys_prompt, usr_prompt = build_chat_prompts(
+        user_query="tell me specific task for my father here",
+        chat_history=[
+            {"role": "user", "content": "check what can i do for my family"},
+            {"role": "assistant", "content": "In Jhumri Telaiya, AQI is 129..."},
+        ],
+        context=ctx,
+        env=env,
+        risk=risk,
+        docs=list(VERIFIED_KNOWLEDGE_DOCS[:2]),
+    )
+    assert "FOLLOW-UP TURN" in sys_prompt
+    assert "Do NOT repeat" in sys_prompt
+    assert '"IS_FOLLOW_UP_TURN":true' in usr_prompt

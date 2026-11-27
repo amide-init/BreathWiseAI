@@ -212,15 +212,30 @@ def build_chat_prompts(
     tool_results: ToolExecutionBundle | None = None,
     validation_errors: list[str] | None = None,
 ) -> tuple[str, str]:
+    is_follow_up = bool(chat_history)
+    turn_rule = (
+        "- FOLLOW-UP TURN: `RECENT_HISTORY` already established the city, weather, and household setup. "
+        "Do NOT repeat the full city/temperature/humidity/toddler/no-HEPA intro — jump directly into "
+        "answering the user's new question, citing AQI or forecast figures only where directly helpful."
+        if is_follow_up
+        else "- FIRST TURN: Briefly ground your answer in the selected city's live AQI (1 concise opening sentence), then answer directly."
+    )
     system_prompt = (
         f"{_SYSTEM_BASE}\n"
         "CHAT RESPONSE RULES:\n"
-        "- Answer concisely in plain, supportive language, explicitly citing the selected city's live AQI & weather alongside household context and `TOOL_EXECUTION_RESULTS` (including `impactHistoryAnalysis`, `familyScheduleRisks`, and `cityPollutantAnalysis` when present).\n"
-        "- For realistic habits (smoking, incense, scooter commute, no purifier, going out), give BOTH honest health risk AND concrete minimum-loss steps.\n"
-        "- Provide 2–3 helpful, context-aware `followUpSuggestions`."
+        f"{turn_rule}\n"
+        "- PERSON-SPECIFIC QUESTIONS: When the user asks about a specific family member (e.g., father, mother, elder, toddler, school child), "
+        "focus specifically on THAT member's age group, health sensitivity, outdoor/walk/commute timing, and personal protection — "
+        "do NOT recycle unrelated cooking/mopping chores unless they explicitly asked about cooking or cleaning.\n"
+        "- FORECAST HOURS FOR AIRING OUT: When `forecastWindowAnalysis` has `lowestForecastClock` and `lowestForecastAqi` "
+        "(even when `safeWindows` is empty because AQI stays >100), honestly note there is no 'Good/Satisfactory (<100)' window today "
+        "AND cite the lowest projected forecast hour vs. peak hour for brief 5–10 min cross-ventilation (never falsely label >100 AQI as 'safe').\n"
+        "- FORMATTING: Put every numbered step or bullet on its own new line (`\\n`). Keep answers concise and scannable.\n"
+        "- FOLLOW-UP CHIPS: Provide 2–3 fresh `followUpSuggestions` covering NEW angles — NEVER repeat questions or topics already answered in `RECENT_HISTORY`."
     )
     payload = {
         "USER_QUESTION": user_query,
+        "IS_FOLLOW_UP_TURN": is_follow_up,
         "RECENT_HISTORY": chat_history[-6:],
         "AGENT_REASONING_PLAN": reasoning_plan.model_dump(by_alias=True, exclude_none=True)
         if reasoning_plan

@@ -36,6 +36,16 @@ TOOL_REGISTRY: dict[str, str] = {
 }
 
 
+def _format_clock_label(iso_timestamp: str) -> str:
+    """Convert an ISO timestamp into a clean clock string like '2:00 PM' for user readability."""
+    hour = _parse_forecast_hour(iso_timestamp)
+    if hour is None:
+        return iso_timestamp
+    suffix = "AM" if hour < 12 else "PM"
+    hour_12 = 12 if hour % 12 == 0 else hour % 12
+    return f"{hour_12}:00 {suffix}"
+
+
 def analyze_forecast_windows(
     *,
     env: AirQualityResponse,
@@ -60,18 +70,20 @@ def analyze_forecast_windows(
 
     cleanest = min(valid_points, key=lambda p: p.estimated_naqi or 999)
     worst = max(valid_points, key=lambda p: p.estimated_naqi or 0)
+    cleanest_clock = _format_clock_label(cleanest.forecast_for)
+    worst_clock = _format_clock_label(worst.forecast_for)
     safe_windows = list(risk.safe_forecast_windows)
 
     if safe_windows:
         summary = (
             f"Forecast for {city} shows cleaner hours around {', '.join(safe_windows[:3])} "
-            f"(lowest projected AQI ~{cleanest.estimated_naqi} at {cleanest.forecast_for})."
+            f"(lowest projected AQI ~{cleanest.estimated_naqi} around {cleanest_clock})."
         )
     else:
         summary = (
-            f"Forecast for {city} stays elevated (lowest projected AQI ~{cleanest.estimated_naqi} "
-            f"at {cleanest.forecast_for}, peak ~{worst.estimated_naqi}); no low-pollution outdoor "
-            "window exists today."
+            f"Forecast for {city} stays above AQI 100 all day (no Good/Satisfactory outdoor window); "
+            f"lowest projected hour is around {cleanest_clock} (~AQI {cleanest.estimated_naqi}) "
+            f"vs. peak around {worst_clock} (~AQI {worst.estimated_naqi})."
         )
 
     return {
@@ -80,7 +92,10 @@ def analyze_forecast_windows(
         "allowSpecificSafeWindowClaims": bool(risk.constraints.allow_specific_safe_window_claims),
         "lowestForecastAqi": cleanest.estimated_naqi,
         "lowestForecastTime": cleanest.forecast_for,
+        "lowestForecastClock": cleanest_clock,
         "peakForecastAqi": worst.estimated_naqi,
+        "peakForecastTime": worst.forecast_for,
+        "peakForecastClock": worst_clock,
         "safeWindows": safe_windows[:4],
         "summary": summary,
     }

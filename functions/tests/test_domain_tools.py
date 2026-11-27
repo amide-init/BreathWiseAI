@@ -252,3 +252,31 @@ def test_analyze_city_pollutants_coarse_dust_and_active_clearing() -> None:
     assert result["windDispersion"] == "active_clearing"
     assert result["humidityNote"] == "dry_dust_prone"
     assert result["unavailablePollutants"] == []
+
+
+def test_forecast_windows_reports_readable_lowest_and_peak_clock_when_above_100() -> None:
+    from app.graph.tools.domain_tools import analyze_forecast_windows
+
+    forecasts = [
+        ForecastPoint(
+            forecast_for="2026-11-27T08:00:00Z",
+            estimated_naqi=175,
+            source="Open-Meteo",
+        ),
+        ForecastPoint(
+            forecast_for="2026-11-27T14:00:00Z",
+            estimated_naqi=115,
+            source="Open-Meteo",
+        ),
+    ]
+    env = _make_env(aqi=129, category=AqiCategory.MODERATE, forecasts=forecasts)
+    risk = assess_risk(current_aqi=env.current, context=SanitizedContext(), forecasts=forecasts)
+
+    result = analyze_forecast_windows(env=env, risk=risk)
+    assert result["safeWindows"] == []
+    assert result["lowestForecastAqi"] == 115
+    assert result["lowestForecastClock"] == "2:00 PM"
+    assert result["peakForecastAqi"] == 175
+    assert result["peakForecastClock"] == "8:00 AM"
+    assert "2:00 PM" in result["summary"]
+    assert "8:00 AM" in result["summary"]
