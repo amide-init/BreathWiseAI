@@ -1,10 +1,93 @@
+import { Schema } from 'firebase/ai';
+
 import { callFunction } from '@/lib/callable-client';
+import { generateStructuredClientJson } from '@/lib/firebase-ai';
 import type { MemberAgeGroup, MemberRole, TransportMode } from '@/models/family.model';
 import type {
   CookingFuelType,
   DustCleaningMethod,
   WindowSealingQuality,
 } from '@/models/indoor.model';
+
+const VALID_TRANSPORT_MODES: readonly TransportMode[] = [
+  'personal_car',
+  'two_wheeler',
+  'carpool',
+  'public_transit',
+  'walk_cycle',
+  'wfh',
+];
+const VALID_MEMBER_ROLES: readonly MemberRole[] = [
+  'working_adult',
+  'child_school',
+  'child_toddler',
+  'elderly',
+  'homemaker',
+  'other',
+];
+const VALID_AGE_GROUPS: readonly MemberAgeGroup[] = [
+  '0_5',
+  '6_12',
+  '13_17',
+  '18_45',
+  '46_60',
+  '60_plus',
+];
+const VALID_COOKING_FUELS: readonly CookingFuelType[] = [
+  'lpg_gas',
+  'electric_induction',
+  'biomass_solid',
+  'mixed',
+];
+const VALID_CLEANING_METHODS: readonly DustCleaningMethod[] = [
+  'dry_broom',
+  'wet_mop',
+  'hepa_vacuum',
+  'mixed',
+];
+const VALID_WINDOW_SEALING: readonly WindowSealingQuality[] = ['poor', 'moderate', 'good'];
+
+const HOUSEHOLD_DRAFT_SCHEMA = Schema.object({
+  properties: {
+    householdName: Schema.string({ description: 'Short friendly name for the household.' }),
+    cityMentioned: Schema.string({ nullable: true, description: 'City name if mentioned, else null.' }),
+    primaryCommuteMode: Schema.enumString({ enum: [...VALID_TRANSPORT_MODES] }),
+    dailyCommuteKm: Schema.number({ description: 'Estimated daily round-trip commute km (0-200).' }),
+    exerciseActivityType: Schema.string({ description: 'Primary exercise type (walk, run, cycle, yoga).' }),
+    prefersOutdoorExercise: Schema.boolean(),
+    hasHepaPurifier: Schema.boolean(),
+    hasKitchenExhaust: Schema.boolean(),
+    indoorSmokingPresent: Schema.boolean(),
+    incenseOrDhoopDaily: Schema.boolean(),
+    cookingFuel: Schema.enumString({ enum: [...VALID_COOKING_FUELS] }),
+    dustCleaningMethod: Schema.enumString({ enum: [...VALID_CLEANING_METHODS] }),
+    windowSealingQuality: Schema.enumString({ enum: [...VALID_WINDOW_SEALING] }),
+    members: Schema.array({
+      items: Schema.object({
+        properties: {
+          nickname: Schema.string({ description: 'Short nickname or role label (e.g. Me, Wife, Aarav, Dad).' }),
+          role: Schema.enumString({ enum: [...VALID_MEMBER_ROLES] }),
+          ageGroup: Schema.enumString({ enum: [...VALID_AGE_GROUPS] }),
+          hasRespiratorySensitivity: Schema.boolean(),
+          hasCardiacSensitivity: Schema.boolean(),
+          isPregnant: Schema.boolean(),
+        },
+      }),
+    }),
+    summaryNote: Schema.string({ description: 'Warm, non-judgmental 1-sentence confirmation of what was understood.' }),
+  },
+  optionalProperties: ['cityMentioned'],
+});
+
+const HOUSEHOLD_SYSTEM_INSTRUCTION = [
+  'You are BreathWiseAI’s household setup assistant for Indian families.',
+  'Extract a clean structured household draft from the user’s casual description (English, Hindi, or mixed Indian speech).',
+  'RULES:',
+  '1. Extract every family member mentioned (only include "Me" if the user refers to themselves or no other member is named) with short nicknames (e.g. Me, Wife, Aarav, Dad), accurate role, ageGroup, and sensitivity flags ONLY if mentioned.',
+  '2. Accurately capture honest indoor habits: indoorSmokingPresent (true if smoking at home/balcony is mentioned), incenseOrDhoopDaily (true if agarbatti/dhoop/puja smoke is mentioned), hasHepaPurifier (false unless user says they own one), hasKitchenExhaust, cookingFuel, dustCleaningMethod, windowSealingQuality, and commute mode/km.',
+  '3. Never diagnose medical conditions; map asthma/dust allergy mentions strictly to hasRespiratorySensitivity: true.',
+  '4. Write a warm 1-sentence summaryNote confirming what was understood (zero judgment).',
+].join('\n');
 
 export interface ParsedMemberDraft {
   nickname: string;
@@ -257,18 +340,128 @@ export function parseHouseholdLocally(description: string): ParsedHouseholdDraft
   };
 }
 
+function pickEnum<T extends string>(value: unknown, allowed: readonly T[], fallback: T): T {
+  return typeof value === 'string' && (allowed as readonly string[]).includes(value)
+    ? (value as T)
+    : fallback;
+}
+
+export function sanitizeParsedHouseholdDraft(
+  raw: Partial<ParsedHouseholdDraft>,
+  fallbackDescription: string,
+): ParsedHouseholdDraft {
+  const baseline = parseHouseholdLocally(fallbackDescription);
+  const rawMembers: unknown[] = Array.isArray(raw.members) ? raw.members : [];
+  const members: ParsedMemberDraft[] = rawMembers
+    .filter((m): m is Partial<ParsedMemberDraft> => Boolean(m && typeof m === 'object'))
+    .slice(0, 12)
+    .map((m, idx) => ({
+      nickname:
+        typeof m.nickname === 'string' && m.nickname.trim()
+          ? m.nickname.trim().slice(0, 40)
+          : idx === 0
+            ? 'Me'
+            : `Member ${idx + 1}`,
+      role: pickEnum(m.role, VALID_MEMBER_ROLES, 'working_adult'),
+      ageGroup: pickEnum(m.ageGroup, VALID_AGE_GROUPS, '18_45'),
+      hasRespiratorySensitivity: Boolean(m.hasRespiratorySensitivity),
+      hasCardiacSensitivity: Boolean(m.hasCardiacSensitivity),
+      isPregnant: Boolean(m.isPregnant),
+    }));
+
+  const kmRaw = typeof raw.dailyCommuteKm === 'number' && Number.isFinite(raw.dailyCommuteKm)
+    ? raw.dailyCommuteKm
+    : baseline.dailyCommuteKm;
+
+  return {
+    householdName:
+      typeof raw.householdName === 'string' && raw.householdName.trim()
+        ? raw.householdName.trim().slice(0, 60)
+        : baseline.householdName,
+    cityMentioned:
+      typeof raw.cityMentioned === 'string' && raw.cityMentioned.trim()
+        ? raw.cityMentioned.trim().slice(0, 60)
+        : null,
+    primaryCommuteMode: pickEnum(
+      raw.primaryCommuteMode,
+      VALID_TRANSPORT_MODES,
+      baseline.primaryCommuteMode,
+    ),
+    dailyCommuteKm: Math.min(200, Math.max(0, Math.round(kmRaw * 10) / 10)),
+    exerciseActivityType:
+      typeof raw.exerciseActivityType === 'string' && raw.exerciseActivityType.trim()
+        ? raw.exerciseActivityType.trim().slice(0, 40)
+        : baseline.exerciseActivityType,
+    prefersOutdoorExercise:
+      typeof raw.prefersOutdoorExercise === 'boolean'
+        ? raw.prefersOutdoorExercise
+        : baseline.prefersOutdoorExercise,
+    hasHepaPurifier:
+      typeof raw.hasHepaPurifier === 'boolean' ? raw.hasHepaPurifier : baseline.hasHepaPurifier,
+    hasKitchenExhaust:
+      typeof raw.hasKitchenExhaust === 'boolean'
+        ? raw.hasKitchenExhaust
+        : baseline.hasKitchenExhaust,
+    indoorSmokingPresent:
+      typeof raw.indoorSmokingPresent === 'boolean'
+        ? raw.indoorSmokingPresent
+        : baseline.indoorSmokingPresent,
+    incenseOrDhoopDaily:
+      typeof raw.incenseOrDhoopDaily === 'boolean'
+        ? raw.incenseOrDhoopDaily
+        : baseline.incenseOrDhoopDaily,
+    cookingFuel: pickEnum(raw.cookingFuel, VALID_COOKING_FUELS, baseline.cookingFuel),
+    dustCleaningMethod: pickEnum(
+      raw.dustCleaningMethod,
+      VALID_CLEANING_METHODS,
+      baseline.dustCleaningMethod,
+    ),
+    windowSealingQuality: pickEnum(
+      raw.windowSealingQuality,
+      VALID_WINDOW_SEALING,
+      baseline.windowSealingQuality,
+    ),
+    members: members.length > 0 ? members : baseline.members,
+    summaryNote:
+      typeof raw.summaryNote === 'string' && raw.summaryNote.trim()
+        ? raw.summaryNote.trim().slice(0, 220)
+        : baseline.summaryNote,
+    fallbackUsed: Boolean(raw.fallbackUsed),
+  };
+}
+
+/**
+ * Natural-language Household & Family parser (3-tier resilience chain):
+ * 1. Primary: Client-side Firebase AI Logic (`firebase/ai` · `gemini-2.5-flash-lite`) — instant, zero cold start.
+ * 2. Secondary backup: `parse_household_profile` Cloud Function callable.
+ * 3. Guaranteed offline fallback: `parseHouseholdLocally()` deterministic parser.
+ */
 export async function parseHouseholdDescription(description: string): Promise<ParsedHouseholdDraft> {
+  const cleaned = description.trim().slice(0, 800);
+
+  // Tier 1: Direct client-side Firebase AI Logic
+  const clientAiDraft = await generateStructuredClientJson<Partial<ParsedHouseholdDraft>>({
+    systemInstruction: HOUSEHOLD_SYSTEM_INSTRUCTION,
+    prompt: `Household description:\n${cleaned}`,
+    responseSchema: HOUSEHOLD_DRAFT_SCHEMA,
+  });
+  if (clientAiDraft && Array.isArray(clientAiDraft.members) && clientAiDraft.members.length > 0) {
+    return sanitizeParsedHouseholdDraft({ ...clientAiDraft, fallbackUsed: false }, cleaned);
+  }
+
+  // Tier 2: Existing Cloud Function backup
   try {
     const result = await callFunction<{ description: string }, ParsedHouseholdDraft>(
       'parse_household_profile',
-      { description },
+      { description: cleaned },
     );
     if (result && Array.isArray(result.members) && result.members.length > 0) {
-      return result;
+      return sanitizeParsedHouseholdDraft(result, cleaned);
     }
-    return parseHouseholdLocally(description);
   } catch {
-    // Graceful local fallback when the Gen 2 callable isn't deployed yet or network is offline
-    return parseHouseholdLocally(description);
+    // Fall through cleanly to Tier 3 deterministic parser
   }
+
+  // Tier 3: Deterministic client parser
+  return parseHouseholdLocally(cleaned);
 }

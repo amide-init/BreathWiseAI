@@ -7,6 +7,7 @@ import {
   ChevronUp,
   Home,
   Info,
+  Loader2,
   RefreshCw,
   SlidersHorizontal,
   Sparkles,
@@ -46,6 +47,7 @@ import {
   type IndoorRiskLevel,
   type WindowSealingQuality,
 } from '@/models/indoor.model';
+import { parseIndoorQuestionnaireDescription } from '@/services/indoor-ai.service';
 import { assessIndoorAir } from '@/services/indoor.service';
 import type { RecommendationItem } from '@/types';
 
@@ -125,6 +127,30 @@ export function IndoorAdvisorPanel() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [selectedItem, setSelectedItem] = useState<RecommendationItem | null>(null);
+  const [quickFillText, setQuickFillText] = useState('');
+  const [quickFilling, setQuickFilling] = useState(false);
+  const [quickFillNote, setQuickFillNote] = useState<string | null>(null);
+
+  async function handleQuickFillIndoor() {
+    const query = quickFillText.trim();
+    if (query.length < 4 || quickFilling) {
+      return;
+    }
+    setQuickFilling(true);
+    setQuickFillNote(null);
+    setError(null);
+    try {
+      const { answers } = await parseIndoorQuestionnaireDescription(query, form);
+      setForm(answers);
+      setQuickFillNote(
+        'All 7 answers updated — review below and tap Estimate Indoor Air Risk.',
+      );
+    } catch {
+      setError('Could not auto-fill from that sentence. Please adjust the 7 options directly.');
+    } finally {
+      setQuickFilling(false);
+    }
+  }
 
   // Sync cached Indoor Plan whenever user switches city
   useEffect(() => {
@@ -406,6 +432,49 @@ export function IndoorAdvisorPanel() {
             </CardDescription>
           </CardHeader>
           <CardContent>
+            {/* Client-Side Firebase AI Logic Quick-Fill Bar */}
+            <div className="mb-5 rounded-2xl border border-[#4285F4]/25 bg-[#E8F0FE]/55 p-3.5 dark:border-[#8AB4F8]/25 dark:bg-[#4285F4]/10">
+              <div className="mb-1.5 flex items-center gap-1.5 text-xs font-semibold text-[#1A73E8] dark:text-[#8AB4F8]">
+                <Sparkles className="h-3.5 w-3.5" aria-hidden="true" />
+                <span>Auto-fill answers from 1 sentence (optional)</span>
+              </div>
+              <div className="flex flex-col gap-2 sm:flex-row">
+                <input
+                  type="text"
+                  maxLength={320}
+                  value={quickFillText}
+                  onChange={(e) => setQuickFillText(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      void handleQuickFillIndoor();
+                    }
+                  }}
+                  placeholder="e.g., LPG gas with chimney, wet mop, daily dhoop, balcony smoking, loose windows, no HEPA…"
+                  className="min-w-0 flex-1 rounded-xl border border-[#DADCE0] bg-white px-3 py-2 text-xs text-[#202124] outline-none focus:border-[#4285F4] dark:border-white/[0.12] dark:bg-[#131314] dark:text-[#E3E3E3] dark:placeholder:text-[#9AA0A6]"
+                />
+                <Button
+                  type="button"
+                  variant="brand"
+                  size="sm"
+                  disabled={quickFilling || quickFillText.trim().length < 4}
+                  onClick={() => void handleQuickFillIndoor()}
+                >
+                  {quickFilling ? (
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" />
+                  ) : (
+                    <Sparkles className="h-3.5 w-3.5" aria-hidden="true" />
+                  )}
+                  <span>{quickFilling ? 'Filling…' : 'Auto-Fill'}</span>
+                </Button>
+              </div>
+              {quickFillNote ? (
+                <p className="mt-1.5 text-[11px] font-medium text-[#137333] dark:text-[#81C995]">
+                  {quickFillNote}
+                </p>
+              ) : null}
+            </div>
+
             <form onSubmit={handleSubmit} className="space-y-5">
               {error ? <Alert variant="danger">{error}</Alert> : null}
 

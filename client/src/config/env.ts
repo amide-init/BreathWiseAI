@@ -15,6 +15,9 @@ export const env = {
   functionsRegion: import.meta.env.VITE_FUNCTIONS_REGION ?? 'asia-south1',
   apiBaseUrl: (import.meta.env.VITE_API_BASE_URL ?? '/api').replace(/\/$/, ''),
   useEmulators: import.meta.env.VITE_USE_EMULATORS === 'true',
+  aiLogicModel: import.meta.env.VITE_FIREBASE_AI_MODEL ?? 'gemini-2.5-flash-lite',
+  enableClientAiLogic: import.meta.env.VITE_ENABLE_CLIENT_AI_LOGIC !== 'false',
+  recaptchaSiteKey: import.meta.env.VITE_FIREBASE_RECAPTCHA_SITE_KEY ?? '',
 } as const;
 
 export const isFirebaseConfigured = Boolean(

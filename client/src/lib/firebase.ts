@@ -1,4 +1,6 @@
+import { getAI, GoogleAIBackend, type AI } from 'firebase/ai';
 import { getApp, getApps, initializeApp, type FirebaseApp } from 'firebase/app';
+import { initializeAppCheck, ReCaptchaV3Provider, type AppCheck } from 'firebase/app-check';
 import { connectAuthEmulator, getAuth, type Auth } from 'firebase/auth';
 import {
   connectFirestoreEmulator,
@@ -17,6 +19,8 @@ let appInstance: FirebaseApp | null = null;
 let authInstance: Auth | null = null;
 let dbInstance: Firestore | null = null;
 let functionsInstance: Functions | null = null;
+let appCheckInstance: AppCheck | null = null;
+let aiInstance: AI | null = null;
 let authEmulatorConnected = false;
 let firestoreEmulatorConnected = false;
 let functionsEmulatorConnected = false;
@@ -87,4 +91,47 @@ export function getFirebaseFunctions(): Functions | null {
     }
   }
   return functionsInstance;
+}
+
+/**
+ * Initializes Firebase App Check when `VITE_FIREBASE_RECAPTCHA_SITE_KEY` is configured.
+ * In local development, enables the auto-generated debug token so localhost works seamlessly.
+ */
+export function ensureFirebaseAppCheck(app: FirebaseApp): AppCheck | null {
+  if (appCheckInstance || !env.recaptchaSiteKey || typeof window === 'undefined') {
+    return appCheckInstance;
+  }
+  try {
+    if (import.meta.env.DEV) {
+      const globalSelf = globalThis as typeof globalThis & {
+        FIREBASE_APPCHECK_DEBUG_TOKEN?: boolean | string;
+      };
+      if (globalSelf.FIREBASE_APPCHECK_DEBUG_TOKEN === undefined) {
+        globalSelf.FIREBASE_APPCHECK_DEBUG_TOKEN = true;
+      }
+    }
+    appCheckInstance = initializeAppCheck(app, {
+      provider: new ReCaptchaV3Provider(env.recaptchaSiteKey),
+      isTokenAutoRefreshEnabled: true,
+    });
+  } catch {
+    // Non-blocking: App Check may already be initialized across Vite HMR reloads
+  }
+  return appCheckInstance;
+}
+
+/**
+ * Returns the lazily initialized Firebase AI Logic client (`GoogleAIBackend`),
+ * used strictly for lightweight client-side form auto-fill helpers.
+ */
+export function getFirebaseAI(): AI | null {
+  const app = getFirebaseApp();
+  if (!app || !env.enableClientAiLogic) {
+    return null;
+  }
+  ensureFirebaseAppCheck(app);
+  if (!aiInstance) {
+    aiInstance = getAI(app, { backend: new GoogleAIBackend() });
+  }
+  return aiInstance;
 }
