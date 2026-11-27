@@ -1,13 +1,16 @@
 import {
   ArrowUp,
   BookOpen,
+  Check,
   ChevronDown,
   ChevronUp,
+  Copy,
   Home,
   Leaf,
   Loader2,
   MapPin,
   MessageSquarePlus,
+  RefreshCw,
   ShieldAlert,
   Sparkles,
   Trash2,
@@ -23,6 +26,7 @@ import {
 } from '@/components/illustrations/GoogleAirIllustrations';
 import { AgentTracePill } from '@/components/shared/AgentTracePill';
 import { AqiBadge } from '@/components/shared/AqiBadge';
+import { ChatMarkdown } from '@/components/shared/ChatMarkdown';
 import { Alert } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/hooks/useAuth';
@@ -44,13 +48,26 @@ const CHAT_CACHE_TTL_MS = 5 * 60 * 1000;
 function AssistantMessageCard({
   msg,
   onFollowUpClick,
+  onRegenerate,
   disabled,
 }: {
   msg: ChatMessageItem;
   onFollowUpClick: (prompt: string) => void;
+  onRegenerate?: () => void;
   disabled: boolean;
 }) {
   const [citationsOpen, setCitationsOpen] = useState(false);
+  const [copied, setCopied] = useState(false);
+
+  async function handleCopy() {
+    try {
+      await navigator.clipboard.writeText(msg.content);
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 1800);
+    } catch {
+      // Clipboard may be unavailable in non-secure contexts
+    }
+  }
 
   return (
     <div className="flex justify-start">
@@ -84,11 +101,43 @@ function AssistantMessageCard({
           </Alert>
         ) : null}
 
-        <p className="whitespace-pre-line text-sm leading-relaxed text-[#202124] dark:text-[#E3E3E3]">
-          {msg.content}
-        </p>
+        <ChatMarkdown content={msg.content} />
 
-        <AgentTracePill trace={msg.agentTrace} />
+        <div className="flex flex-wrap items-center justify-between gap-2 pt-0.5">
+          <AgentTracePill trace={msg.agentTrace} />
+          <div className="flex items-center gap-1">
+            <button
+              type="button"
+              onClick={() => void handleCopy()}
+              aria-label="Copy response"
+              className="inline-flex cursor-pointer items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-medium text-[#5F6368] transition-colors hover:bg-[#F1F3F4] hover:text-[#202124] dark:text-[#9AA0A6] dark:hover:bg-white/[0.08] dark:hover:text-[#E3E3E3]"
+            >
+              {copied ? (
+                <>
+                  <Check className="h-3 w-3 text-[#34A853] dark:text-[#81C995]" aria-hidden="true" />
+                  <span>Copied</span>
+                </>
+              ) : (
+                <>
+                  <Copy className="h-3 w-3" aria-hidden="true" />
+                  <span>Copy</span>
+                </>
+              )}
+            </button>
+            {onRegenerate ? (
+              <button
+                type="button"
+                disabled={disabled}
+                onClick={onRegenerate}
+                aria-label="Regenerate response"
+                className="inline-flex cursor-pointer items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-medium text-[#5F6368] transition-colors hover:bg-[#F1F3F4] hover:text-[#1A73E8] disabled:opacity-40 dark:text-[#9AA0A6] dark:hover:bg-white/[0.08] dark:hover:text-[#8AB4F8]"
+              >
+                <RefreshCw className="h-3 w-3" aria-hidden="true" />
+                <span>Regenerate</span>
+              </button>
+            ) : null}
+          </div>
+        </div>
 
         {msg.citations.length > 0 ? (
           <div className="border-t border-[#E8EAED] pt-2.5 dark:border-white/[0.08]">
@@ -515,7 +564,7 @@ export function AssistantPage() {
               Loading conversation…
             </div>
           ) : (
-            messages.map((msg) =>
+            messages.map((msg, idx) =>
               msg.role === 'user' ? (
                 <div key={msg.messageId} className="flex justify-end">
                   <div className="cloud-card max-w-[85%] rounded-3xl rounded-br-md bg-[#4285F4] px-4 py-3 text-sm leading-relaxed text-white sm:max-w-[75%] dark:bg-[#8AB4F8] dark:text-[#131314]">
@@ -527,6 +576,15 @@ export function AssistantPage() {
                   key={msg.messageId}
                   msg={msg}
                   onFollowUpClick={(p) => void submitPrompt(p)}
+                  onRegenerate={(() => {
+                    if (idx !== messages.length - 1) {
+                      return undefined;
+                    }
+                    const prevUser = [...messages.slice(0, idx)]
+                      .reverse()
+                      .find((m) => m.role === 'user');
+                    return prevUser ? () => void submitPrompt(prevUser.content) : undefined;
+                  })()}
                   disabled={sending}
                 />
               ),
