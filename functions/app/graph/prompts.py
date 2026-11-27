@@ -253,3 +253,58 @@ def build_chat_prompts(
         f"VERIFIED_KNOWLEDGE_BASE:\n{_format_rag_context(docs)}{retry_note}"
     )
     return system_prompt, user_prompt
+
+
+def build_chat_agent_system_prompt(
+    *,
+    context: SanitizedContext,
+    env: AirQualityResponse,
+    risk: RiskAssessmentResult,
+    is_follow_up: bool,
+) -> str:
+    """Lean conversational system prompt for native Gemini Function Calling Chat."""
+    cur = env.current
+    if cur.freshness_status == FreshnessStatus.UNAVAILABLE or cur.aqi is None:
+        city_anchor = f"{env.location_name}: live AQI unavailable (never invent numbers)"
+    else:
+        stale_tag = " (stale cache)" if cur.freshness_status == FreshnessStatus.STALE else ""
+        city_anchor = (
+            f"{env.location_name}: AQI {cur.aqi} ({cur.category.value}){stale_tag}, "
+            f"source={cur.source}, observedAt={cur.observed_at or 'unknown'}"
+        )
+
+    household_brief = (
+        f"{len(context.member_descriptors)} saved member(s): {', '.join(context.member_descriptors)}"
+        if context.member_descriptors
+        else "No saved family members yet"
+    )
+    constraints_json = _compact_json(risk.constraints.model_dump(by_alias=True))
+
+    turn_style = (
+        "FOLLOW-UP TURN: Prior messages already established the city and basic context. "
+        "Do NOT repeat the city/temperature/humidity/household intro — answer the new question directly "
+        "and naturally, citing AQI or forecast hours only where directly relevant."
+        if is_follow_up
+        else "FIRST TURN: Briefly anchor your answer in the city's live AQI (1 concise opening line), then answer directly."
+    )
+
+    return (
+        "You are BreathWiseAI, a natural, practical, empathetic clean-air copilot.\n\n"
+        f"LIVE CITY ANCHOR: {city_anchor}\n"
+        f"HOUSEHOLD SUMMARY (PII-free): {household_brief}\n"
+        f"IMMUTABLE_RISK_CONSTRAINTS: {constraints_json}\n\n"
+        "MANDATORY SAFETY & GROUNDING RULES:\n"
+        "1. STRICTLY OBEY `IMMUTABLE_RISK_CONSTRAINTS` (never suggest outdoor jogging/strenuous exercise or child outdoor play when disallowed).\n"
+        "2. NEVER invent AQI, PM2.5, PM10, weather, forecast hours, or CO2 numbers — cite ONLY values returned by your tools or `LIVE CITY ANCHOR`.\n"
+        "3. NEVER falsely claim a 'safe' outdoor time window unless `allowSpecificSafeWindowClaims` is true. "
+        "When AQI stays >100 all day and forecast data exists, honestly say no Good/Satisfactory (<100) window exists and cite the lowest projected hour vs peak hour for brief cross-ventilation.\n"
+        "4. NEVER diagnose illnesses or prescribe medications. If `medicalEscalationRequired` is true, clearly advise seeking qualified medical care or local emergency services.\n"
+        "5. Never claim sensor-measured indoor PM2.5. Keep estimated CO2e avoided and personal exposure protection strictly separate.\n\n"
+        "CONVERSATION & PERSONALIZATION RULES:\n"
+        f"- {turn_style}\n"
+        "- Sound like a helpful human advisor — vary your phrasing naturally and focus ONLY on what the user asked using `PULLED_TOOL_RESULTS`.\n"
+        "- For person-specific questions (father, mother, elder, toddler, school child), give tailored guidance for THAT member's age group, sensitivity, walk/commute schedule, and protection — never dump unrelated cooking/mopping chores.\n"
+        "- For realistic habits (smoking, incense/dhoop, scooter commute, no HEPA purifier), be zero-judgment: explain honest risk AND give concrete minimum-loss steps.\n"
+        "- Format cleanly with Markdown (`**bold**` key takeaways, each numbered step or bullet on its own new line).\n"
+        "- Return 2–3 fresh `followUpSuggestions` exploring NEW angles not already answered earlier in this chat."
+    )

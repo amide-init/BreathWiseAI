@@ -6,11 +6,13 @@ import logging
 from typing import Any
 
 from app.graph.prompts import (
+    build_chat_agent_system_prompt,
     build_chat_prompts,
     build_daily_plan_prompts,
     build_indoor_advisor_prompts,
 )
 from app.graph.state import BreatheWiseState
+from app.graph.tools.chat_tools import CHAT_TOOL_LABELS, build_chat_tool_runtime
 from app.providers.base import StructuredLLMProvider
 from app.providers.gemini_provider import GeminiStructuredProvider
 from app.rag.retriever import KnowledgeRetriever, docs_to_citations
@@ -20,6 +22,7 @@ from app.schemas.planner import (
     IndoorAssessmentResponse,
     IndoorQuestionnaire,
 )
+from app.services.impact_service import ImpactService
 from app.utils.errors import UpstreamProviderError
 from app.utils.logger import log_event
 
@@ -54,8 +57,9 @@ def build_recommendation_node(
     *,
     llm_provider: StructuredLLMProvider | None = None,
     retriever: KnowledgeRetriever | None = None,
+    impact_service: ImpactService | None = None,
 ):
-    """Create Node 6 (`recommendation_agent`) with injectable LLM & RAG retriever."""
+    """Create Node 6 (`recommendation_agent`) with injectable LLM, RAG retriever & ImpactService."""
     llm = llm_provider or GeminiStructuredProvider()
     rag = retriever or KnowledgeRetriever()
 
@@ -68,6 +72,90 @@ def build_recommendation_node(
         tool_results = state.get("tool_results")
         validation_errors = state.get("validation_errors") or []
         trace = list(state.get("agent_trace") or [])
+
+        # Dynamic pull-on-demand Gemini Function Calling path for live conversational Chat
+        if mode == "chat" and isinstance(llm, GeminiStructuredProvider):
+            chat_history = state.get("chat_history") or []
+            user_query = state.get("user_query") or ""
+            runtime = build_chat_tool_runtime(
+                state=state,
+                retriever=rag,
+                impact_service=impact_service,
+            )
+            chat_sys_prompt = build_chat_agent_system_prompt(
+                context=context,
+                env=env,
+                risk=risk,
+                is_follow_up=bool(chat_history),
+            )
+            try:
+                generated_chat, called_tools = llm.generate_structured_with_tools(
+                    system_prompt=chat_sys_prompt,
+                    user_message=user_query,
+                    chat_history=chat_history,
+                    tool_declarations=runtime.declarations,
+                    tool_handlers=runtime.handlers,
+                    response_schema=ChatReply,
+                    validation_errors=validation_errors,
+                    temperature=0.45,
+                    max_output_tokens=750,
+                    thinking_level="MINIMAL",
+                    operation_name="chat_with_tools",
+                )
+                docs = list(runtime.collected_docs)
+                if not docs:
+                    docs = rag.retrieve(
+                        workflow_mode="chat",
+                        risk_tier=risk.severity_tier,
+                        sensitive_groups_present=risk.sensitive_groups_present,
+                        medical_escalation_required=risk.constraints.medical_escalation_required,
+                        user_query=user_query,
+                        top_k=2 if not risk.constraints.medical_escalation_required else 3,
+                    )
+
+                # Replace generic Node 5 tool trace with the exact tools Gemini dynamically chose
+                updated_trace = [step for step in trace if not step.startswith("Ran ")]
+                if called_tools:
+                    pretty = [CHAT_TOOL_LABELS.get(name, name) for name in called_tools]
+                    updated_trace.append(
+                        f"AI selected {len(called_tools)} tool"
+                        f"{'' if len(called_tools) == 1 else 's'}: {', '.join(pretty)}"
+                    )
+                else:
+                    updated_trace.append("Answered directly from live city AQI & conversation context")
+
+                generated_chat.citations = docs_to_citations(docs)
+                generated_chat.environmental_snapshot = env.current
+                generated_chat.agent_trace = updated_trace
+                generated_chat.medical_disclaimer_shown = True
+                generated_chat.fallback_mode = False
+                return {
+                    "retrieved_docs": docs,
+                    "agent_trace": updated_trace,
+                    "draft_output": generated_chat.model_dump(by_alias=True),
+                    "llm_failed": False,
+                }
+            except UpstreamProviderError as exc:
+                log_event(
+                    "recommendation_llm_fallback",
+                    level=logging.WARNING,
+                    mode=mode,
+                    provider=exc.provider,
+                    message=exc.message,
+                )
+                fallback_docs = state.get("retrieved_docs") or rag.retrieve(
+                    workflow_mode="chat",
+                    risk_tier=risk.severity_tier,
+                    sensitive_groups_present=risk.sensitive_groups_present,
+                    medical_escalation_required=risk.constraints.medical_escalation_required,
+                    user_query=user_query,
+                    top_k=2,
+                )
+                return {
+                    "retrieved_docs": fallback_docs,
+                    "draft_output": None,
+                    "llm_failed": True,
+                }
 
         # Adaptive RAG top_k: 2 concise docs for normal chat, 3 for plans/indoor/medical escalation
         rag_top_k = (

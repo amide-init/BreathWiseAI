@@ -59,7 +59,11 @@ def compile_breathewise_graph(
     builder.add_node("tool_executor_node", build_tool_executor_node(impact_service=impact_service))
     builder.add_node(
         "recommendation_agent",
-        build_recommendation_node(llm_provider=llm_provider, retriever=retriever),
+        build_recommendation_node(
+            llm_provider=llm_provider,
+            retriever=retriever,
+            impact_service=impact_service,
+        ),
     )
     builder.add_node("validation_node", validation_node)
 
