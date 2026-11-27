@@ -481,7 +481,9 @@ def test_compact_prompt_reduces_payload_size_while_keeping_safety_fields() -> No
     assert "Can my child play outside?" in chat_prompt
 
 
-def test_gemini_provider_passes_thinking_budget_and_reuses_client(monkeypatch: Any) -> None:
+def test_gemini_provider_passes_thinking_level_and_reuses_client(monkeypatch: Any) -> None:
+    from google.genai import types
+
     clear_shared_genai_clients()
     created_clients: list[Any] = []
     captured_configs: list[Any] = []
@@ -514,7 +516,7 @@ def test_gemini_provider_passes_thinking_budget_and_reuses_client(monkeypatch: A
         user_prompt="usr",
         response_schema=ChatReply,
         max_output_tokens=700,
-        thinking_budget=0,
+        thinking_level="MINIMAL",
         operation_name="chat",
     )
     res2 = provider.generate_structured(
@@ -522,7 +524,7 @@ def test_gemini_provider_passes_thinking_budget_and_reuses_client(monkeypatch: A
         user_prompt="usr",
         response_schema=ChatReply,
         max_output_tokens=700,
-        thinking_budget=0,
+        thinking_level="MINIMAL",
         operation_name="chat",
     )
     assert res1.content.startswith("Grounded reply")
@@ -530,7 +532,7 @@ def test_gemini_provider_passes_thinking_budget_and_reuses_client(monkeypatch: A
     # Shared genai.Client reused across warm calls
     assert len(created_clients) == 1
     assert captured_configs[0].max_output_tokens == 700
-    assert captured_configs[0].thinking_config.thinking_budget == 0
+    assert captured_configs[0].thinking_config.thinking_level == types.ThinkingLevel.MINIMAL
     clear_shared_genai_clients()
 
 

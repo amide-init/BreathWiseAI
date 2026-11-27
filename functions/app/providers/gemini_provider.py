@@ -58,6 +58,28 @@ def _extract_usage_metrics(response: Any) -> dict[str, int | None]:
     }
 
 
+def _build_thinking_config(
+    *,
+    model_name: str,
+    thinking_level: types.ThinkingLevel | str | None,
+) -> types.ThinkingConfig | None:
+    """Select the model-compatible ThinkingConfig (Gemini 3 uses thinking_level, 2.5 uses budget)."""
+    if thinking_level is None:
+        return None
+    normalized = model_name.lower()
+    if normalized.startswith("gemini-3"):
+        level = (
+            thinking_level
+            if isinstance(thinking_level, types.ThinkingLevel)
+            else types.ThinkingLevel(str(thinking_level).upper())
+        )
+        return types.ThinkingConfig(thinking_level=level)
+    if normalized.startswith("gemini-2.5"):
+        budget = 0 if str(thinking_level).upper() == "MINIMAL" else 256
+        return types.ThinkingConfig(thinking_budget=budget)
+    return None
+
+
 class GeminiStructuredProvider:
     """Bounded Google Gemini client enforcing strict Pydantic JSON structured outputs."""
 
@@ -85,7 +107,7 @@ class GeminiStructuredProvider:
         user_prompt: str,
         response_schema: type[TModel],
         max_output_tokens: int | None = None,
-        thinking_budget: int | None = 0,
+        thinking_level: types.ThinkingLevel | str | None = types.ThinkingLevel.MINIMAL,
         operation_name: str = "structured_generation",
     ) -> TModel:
         api_key = self._resolve_api_key()
@@ -101,16 +123,31 @@ class GeminiStructuredProvider:
             }
             if max_output_tokens is not None:
                 config_kwargs["max_output_tokens"] = max_output_tokens
-            if thinking_budget is not None:
-                config_kwargs["thinking_config"] = types.ThinkingConfig(
-                    thinking_budget=thinking_budget
-                )
-
-            response = client.models.generate_content(
-                model=self._settings.gemini_model,
-                contents=user_prompt,
-                config=types.GenerateContentConfig(**config_kwargs),
+            thinking_cfg = _build_thinking_config(
+                model_name=self._settings.gemini_model,
+                thinking_level=thinking_level,
             )
+            if thinking_cfg is not None:
+                config_kwargs["thinking_config"] = thinking_cfg
+
+            try:
+                response = client.models.generate_content(
+                    model=self._settings.gemini_model,
+                    contents=user_prompt,
+                    config=types.GenerateContentConfig(**config_kwargs),
+                )
+            except Exception as first_exc:  # noqa: BLE001
+                # Defensive retry without thinking_config if a future model rejects it
+                if "thinking_config" in config_kwargs and "thinking" in str(first_exc).lower():
+                    config_kwargs.pop("thinking_config", None)
+                    response = client.models.generate_content(
+                        model=self._settings.gemini_model,
+                        contents=user_prompt,
+                        config=types.GenerateContentConfig(**config_kwargs),
+                    )
+                else:
+                    raise
+
             raw_text = response.text
             if not raw_text:
                 raise UpstreamProviderError(self.provider_name, "Empty structured response.")
@@ -122,7 +159,7 @@ class GeminiStructuredProvider:
                 operation=operation_name,
                 model=self._settings.gemini_model,
                 latency_ms=latency_ms,
-                thinking_budget=thinking_budget,
+                thinking_level=str(thinking_level) if thinking_level is not None else None,
                 **_extract_usage_metrics(response),
             )
             return parsed

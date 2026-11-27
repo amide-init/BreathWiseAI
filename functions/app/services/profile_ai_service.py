@@ -167,7 +167,7 @@ class ProfileAiService:
                     user_prompt=f"Household description:\n{cleaned}",
                     response_schema=ParsedHouseholdDraft,
                     max_output_tokens=1024,
-                    thinking_budget=0,
+                    thinking_level="MINIMAL",
                     operation_name="parse_household_profile",
                 )
             else:

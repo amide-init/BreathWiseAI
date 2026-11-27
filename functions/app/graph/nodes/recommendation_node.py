@@ -40,7 +40,7 @@ def _invoke_structured_llm(
             user_prompt=user_prompt,
             response_schema=response_schema,
             max_output_tokens=max_output_tokens,
-            thinking_budget=0,
+            thinking_level="MINIMAL",
             operation_name=operation_name,
         )
     return llm.generate_structured(

@@ -306,7 +306,7 @@ class TranslationService:
                         user_prompt=user_prompt,
                         response_schema=TranslationBatchLLMOutput,
                         max_output_tokens=2048,
-                        thinking_budget=0,
+                        thinking_level="MINIMAL",
                         operation_name="translate_texts",
                     )
                 else:
