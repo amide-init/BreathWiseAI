@@ -28,7 +28,7 @@ class AppSettings:
     graph_max_validation_retries: int = 1
 
     # AI model configuration
-    gemini_model: str = "gemini-2.5-flash-lite"
+    gemini_model: str = "gemini-3.5-flash-lite"
 
     # CORS allowed origins (comma-separated or '*')
     cors_allowed_origin: str = "*"
@@ -48,6 +48,6 @@ def get_settings() -> AppSettings:
         forecast_cache_ttl_minutes=int(os.getenv("FORECAST_CACHE_TTL_MINUTES", "180")),
         http_timeout_seconds=float(os.getenv("HTTP_TIMEOUT_SECONDS", "8.0")),
         gemini_timeout_seconds=float(os.getenv("GEMINI_TIMEOUT_SECONDS", "20.0")),
-        gemini_model=os.getenv("GEMINI_MODEL", "gemini-2.5-flash-lite"),
+        gemini_model=os.getenv("GEMINI_MODEL", "gemini-3.5-flash-lite"),
         cors_allowed_origin=os.getenv("CORS_ALLOWED_ORIGIN", "*"),
     )
