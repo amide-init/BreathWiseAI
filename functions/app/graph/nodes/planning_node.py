@@ -90,18 +90,26 @@ def planning_reasoning_node(state: BreatheWiseState) -> dict[str, Any]:
     if mode == "daily_plan":
         selected_tools = [
             "analyze_forecast_windows",
+            "analyze_city_pollutants_and_weather",
             "estimate_indoor_outdoor_interaction",
             "lookup_harm_reduction_playbooks",
             "compare_commute_exposure_and_co2",
+            "analyze_my_impact_history",
         ]
+        if context.member_descriptors or context.member_schedule_hints:
+            selected_tools.append("analyze_family_schedule_risks")
     elif mode == "indoor_advisor":
         selected_tools = [
             "estimate_indoor_outdoor_interaction",
+            "analyze_city_pollutants_and_weather",
             "lookup_harm_reduction_playbooks",
             "analyze_forecast_windows",
         ]
-    else:  # chat — select tools relevant to the user's question + city AQI
-        selected_tools.append("estimate_indoor_outdoor_interaction")
+        if context.member_descriptors or context.member_schedule_hints:
+            selected_tools.append("analyze_family_schedule_risks")
+    else:  # chat — select only tools relevant to the user's question + city AQI
+        is_follow_up = bool(state.get("chat_history"))
+
         if any(
             kw in user_query
             for kw in (
@@ -111,9 +119,15 @@ def planning_reasoning_node(state: BreatheWiseState) -> dict[str, Any]:
                 "play",
                 "outside",
                 "window",
+                "air out",
+                "ventilat",
+                "breeze",
                 "time",
                 "morning",
                 "evening",
+                "forecast",
+                "hour",
+                "later",
             )
         ):
             selected_tools.append("analyze_forecast_windows")
@@ -121,24 +135,113 @@ def planning_reasoning_node(state: BreatheWiseState) -> dict[str, Any]:
             any(
                 kw in user_query
                 for kw in (
-                    "smoke",
-                    "smoking",
-                    "cigarette",
-                    "dhoop",
-                    "incense",
-                    "cook",
-                    "purifier",
-                    "hepa",
-                    "indoor",
-                    "broom",
-                    "dust",
+                    "family",
+                    "kid",
+                    "child",
+                    "toddler",
+                    "baby",
+                    "son",
+                    "daughter",
+                    "school",
+                    "father",
+                    "dad",
+                    "mother",
+                    "mom",
+                    "parent",
+                    "elder",
+                    "senior",
+                    "grandparent",
+                    "grandma",
+                    "grandpa",
+                    "wife",
+                    "husband",
+                    "spouse",
+                    "schedule",
+                    "routine",
+                    "when",
+                    "walk",
+                    "play",
                 )
             )
-            or smoking
-            or incense
-            or not has_hepa
+            and (context.member_descriptors or context.member_schedule_hints)
         ):
+            selected_tools.append("analyze_family_schedule_risks")
+            if "analyze_forecast_windows" not in selected_tools:
+                selected_tools.append("analyze_forecast_windows")
+        if any(
+            kw in user_query
+            for kw in (
+                "impact",
+                "co2",
+                "carbon",
+                "emission",
+                "streak",
+                "progress",
+                "history",
+                "log",
+                "saved",
+                "sustainab",
+                "eco",
+                "footprint",
+            )
+        ):
+            selected_tools.append("analyze_my_impact_history")
+        if any(
+            kw in user_query
+            for kw in (
+                "pm2.5",
+                "pm25",
+                "pm10",
+                "no2",
+                "so2",
+                "ozone",
+                "o3",
+                "pollutant",
+                "dust",
+                "smog",
+                "wind",
+                "humid",
+                "weather",
+                "why",
+                "bad",
+                "air",
+            )
+        ):
+            selected_tools.append("analyze_city_pollutants_and_weather")
+        asks_indoor_or_habits = any(
+            kw in user_query
+            for kw in (
+                "smoke",
+                "smoking",
+                "cigarette",
+                "dhoop",
+                "incense",
+                "cook",
+                "kitchen",
+                "purifier",
+                "hepa",
+                "indoor",
+                "home",
+                "room",
+                "bedroom",
+                "broom",
+                "dust",
+                "mop",
+                "clean",
+                "window",
+                "air out",
+                "ventilat",
+            )
+        )
+        # Only attach indoor harm-reduction playbooks when relevant to the turn
+        # (never flood unrelated follow-ups like "tasks for my father" with cooking/mopping chores).
+        if asks_indoor_or_habits or (not is_follow_up and (smoking or incense)):
+            selected_tools.append("estimate_indoor_outdoor_interaction")
             selected_tools.append("lookup_harm_reduction_playbooks")
+        elif not selected_tools:
+            selected_tools.append("estimate_indoor_outdoor_interaction")
+            if not is_follow_up and (smoking or incense or not has_hepa):
+                selected_tools.append("lookup_harm_reduction_playbooks")
         if any(
             kw in user_query
             for kw in (
@@ -151,6 +254,7 @@ def planning_reasoning_node(state: BreatheWiseState) -> dict[str, Any]:
                 "bus",
                 "drive",
                 "travel",
+                "carpool",
             )
         ):
             selected_tools.append("compare_commute_exposure_and_co2")

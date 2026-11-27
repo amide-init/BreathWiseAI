@@ -35,11 +35,32 @@ def sanitize_family_aggregate(
 
     for member in family.members:
         role_label = member.role.replace("_", " ")
-        descriptors.append(f"{member.role} ({member.age_group})")
-        if member.schedule.leave_home_time or member.schedule.return_home_time:
-            leave = member.schedule.leave_home_time or "unspecified"
-            ret = member.schedule.return_home_time or "unspecified"
-            schedule_hints.append(f"{role_label}: leaves ~{leave}, returns ~{ret}")
+        hp = member.optional_health_profile
+        member_tags: list[str] = [member.age_group]
+        if hp:
+            if hp.has_respiratory_sensitivity:
+                member_tags.append("respiratory sensitivity")
+            if hp.has_cardiac_sensitivity:
+                member_tags.append("cardiac sensitivity")
+            if hp.is_pregnant:
+                member_tags.append("pregnant")
+        if member.commute_mode:
+            member_tags.append(f"commute: {member.commute_mode}")
+        descriptors.append(f"{member.role} ({', '.join(member_tags)})")
+
+        if (
+            member.schedule.leave_home_time
+            or member.schedule.return_home_time
+            or member.schedule.outdoor_play_or_exercise_time
+        ):
+            parts: list[str] = []
+            if member.schedule.leave_home_time:
+                parts.append(f"leaves ~{member.schedule.leave_home_time}")
+            if member.schedule.return_home_time:
+                parts.append(f"returns ~{member.schedule.return_home_time}")
+            if member.schedule.outdoor_play_or_exercise_time:
+                parts.append(f"outdoor ~{member.schedule.outdoor_play_or_exercise_time}")
+            schedule_hints.append(f"{role_label}: {', '.join(parts)}")
         if member.role == "child_toddler" or member.age_group == "0_5":
             has_toddlers = True
             has_children = True
@@ -48,7 +69,6 @@ def sanitize_family_aggregate(
         if member.role == "elderly" or member.age_group == "60_plus":
             has_elderly = True
 
-        hp = member.optional_health_profile
         if hp and (hp.has_respiratory_sensitivity or hp.has_cardiac_sensitivity or hp.is_pregnant):
             has_sensitivity = True
 

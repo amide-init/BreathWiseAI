@@ -45,6 +45,17 @@ class AgentReasoningPlan(ApiModel):
     must_cite_city_aqi: bool = True
 
 
+ToolName = Literal[
+    "analyze_forecast_windows",
+    "estimate_indoor_outdoor_interaction",
+    "lookup_harm_reduction_playbooks",
+    "compare_commute_exposure_and_co2",
+    "analyze_my_impact_history",
+    "analyze_family_schedule_risks",
+    "analyze_city_pollutants_and_weather",
+]
+
+
 class ToolExecutionBundle(ApiModel):
     """Structured outputs collected by Node 5 (`tool_executor_node`)."""
 
@@ -53,6 +64,9 @@ class ToolExecutionBundle(ApiModel):
     indoor_outdoor_interaction: dict[str, Any] = Field(default_factory=dict)
     harm_reduction_playbooks: list[dict[str, str]] = Field(default_factory=list)
     commute_analysis: dict[str, Any] = Field(default_factory=dict)
+    impact_history_analysis: dict[str, Any] = Field(default_factory=dict)
+    family_schedule_risks: dict[str, Any] = Field(default_factory=dict)
+    city_pollutant_analysis: dict[str, Any] = Field(default_factory=dict)
 
 
 class RecommendationItem(ApiModel):

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from app.graph.workflow import compile_breathewise_graph
+from app.graph.workflow import get_default_breathewise_graph
 from app.rag.retriever import docs_to_citations
 from app.repositories.plan_repo import DailyPlanRepository
 from app.utils.datetime_utils import utc_now
@@ -20,7 +20,7 @@ class PlannerService:
         graph: Any | None = None,
     ) -> None:
         self._plan_repo = plan_repo or DailyPlanRepository()
-        self._graph = graph or compile_breathewise_graph()
+        self._graph = graph or get_default_breathewise_graph()
 
     def generate_daily_plan(
         self,

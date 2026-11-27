@@ -31,8 +31,8 @@ import { useFamilyProfile } from '@/hooks/useFamilyProfile';
 import { useSelectedLocation } from '@/hooks/useSelectedLocation';
 import {
   AQI_FRESHNESS_MAX_AGE_MS,
-  getSessionCached,
-  setSessionCached,
+  getLocalCached,
+  setLocalCached,
 } from '@/lib/client-cache';
 import { cn } from '@/lib/cn';
 import {
@@ -114,14 +114,14 @@ export function IndoorAdvisorPanel() {
   const cacheKey = user ? indoorCacheKey(user.uid, selectedLocation.locationId, familySig) : null;
 
   const [assessment, setAssessment] = useState<IndoorAssessmentResult | null>(() =>
-    cacheKey ? getSessionCached<IndoorAssessmentResult>(cacheKey) : null,
+    cacheKey ? getLocalCached<IndoorAssessmentResult>(cacheKey) : null,
   );
   const [form, setForm] = useState<IndoorQuestionnaireInput>(() => {
-    const cached = cacheKey ? getSessionCached<IndoorAssessmentResult>(cacheKey) : null;
+    const cached = cacheKey ? getLocalCached<IndoorAssessmentResult>(cacheKey) : null;
     return cached?.questionnaire ?? DEFAULT_INDOOR_QUESTIONNAIRE;
   });
   const [showForm, setShowForm] = useState<boolean>(() => {
-    const cached = cacheKey ? getSessionCached<IndoorAssessmentResult>(cacheKey) : null;
+    const cached = cacheKey ? getLocalCached<IndoorAssessmentResult>(cacheKey) : null;
     return !cached;
   });
   const [submitting, setSubmitting] = useState(false);
@@ -154,7 +154,7 @@ export function IndoorAdvisorPanel() {
 
   // Sync cached Indoor Plan whenever user switches city
   useEffect(() => {
-    const nextCached = cacheKey ? getSessionCached<IndoorAssessmentResult>(cacheKey) : null;
+    const nextCached = cacheKey ? getLocalCached<IndoorAssessmentResult>(cacheKey) : null;
     setAssessment(nextCached);
     if (nextCached?.questionnaire) {
       setForm(nextCached.questionnaire);
@@ -212,7 +212,7 @@ export function IndoorAdvisorPanel() {
       setAssessment(result);
       setShowForm(false);
       if (cacheKey) {
-        setSessionCached(cacheKey, result, AQI_FRESHNESS_MAX_AGE_MS);
+        setLocalCached(cacheKey, result, AQI_FRESHNESS_MAX_AGE_MS);
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unable to generate indoor air assessment.');
