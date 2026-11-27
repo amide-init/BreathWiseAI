@@ -65,14 +65,21 @@ def run_callable(
     handler: Callable[[https_fn.CallableRequest[Any]], Any],
     *,
     require_auth: bool = True,
+    rate_limit_bucket: str | None = None,
 ) -> Any:
-    """Execute a callable handler with unified auth, error mapping, and latency logging."""
+    """Execute a callable handler with unified auth, per-user rate limits, and latency logging."""
     request_id = f"req_{uuid.uuid4().hex[:12]}"
     started = time.perf_counter()
 
     try:
+        auth_user: AuthenticatedUser | None = None
         if require_auth:
-            require_callable_auth(req)
+            auth_user = require_callable_auth(req)
+
+        if rate_limit_bucket and auth_user is not None:
+            from app.services.usage_service import UsageService
+
+            UsageService().consume(user_id=auth_user.uid, bucket=rate_limit_bucket)
 
         result = handler(req)
         payload = result.model_dump(by_alias=True) if isinstance(result, BaseModel) else result

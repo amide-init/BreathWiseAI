@@ -532,7 +532,9 @@ def test_gemini_provider_passes_thinking_level_and_reuses_client(monkeypatch: An
     # Shared genai.Client reused across warm calls
     assert len(created_clients) == 1
     assert captured_configs[0].max_output_tokens == 700
-    assert captured_configs[0].thinking_config.thinking_level == types.ThinkingLevel.MINIMAL
+    # Gemini 2.5 uses thinking_budget=0; Gemini 3 uses thinking_level=MINIMAL
+    tc = captured_configs[0].thinking_config
+    assert tc.thinking_budget == 0 or tc.thinking_level == types.ThinkingLevel.MINIMAL
     clear_shared_genai_clients()
 
 

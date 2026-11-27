@@ -15,6 +15,7 @@ import {
 import { useEffect, useState, type FormEvent } from 'react';
 import { Link } from 'react-router-dom';
 
+import { UsageQuotaCard } from '@/components/settings/UsageQuotaCard';
 import { MedicalDisclaimer } from '@/components/shared/MedicalDisclaimer';
 import { Alert } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
@@ -104,6 +105,9 @@ export function SettingsPage() {
           </Link>
         </div>
       </div>
+
+      {/* 0. Per-User AI & Daily Usage Quotas */}
+      <UsageQuotaCard />
 
       {/* 1. Language (Real-Time Frontend Translation) */}
       <Card>

@@ -26,6 +26,7 @@ from app.routes.location_routes import handle_location_search_callable
 from app.routes.planner_routes import handle_generate_daily_plan_callable
 from app.routes.profile_ai_routes import handle_parse_household_profile_callable
 from app.routes.translation_routes import handle_translate_texts_callable
+from app.routes.usage_routes import handle_get_user_usage_callable
 from app.utils.callable_utils import run_callable
 
 _settings = get_settings()
@@ -74,9 +75,13 @@ def get_air_quality(req: https_fn.CallableRequest[Any]) -> Any:
     secrets=["GEMINI_API_KEY", "WAQI_API_TOKEN"],
 )
 def generate_daily_plan(req: https_fn.CallableRequest[Any]) -> Any:
-    """Authenticated callable running the 5-node LangGraph Daily Planner (FR-06)."""
+    """Authenticated callable running the 7-node LangGraph Daily Planner (FR-06)."""
     return run_callable(
-        "generate_daily_plan", req, handle_generate_daily_plan_callable, require_auth=True
+        "generate_daily_plan",
+        req,
+        handle_generate_daily_plan_callable,
+        require_auth=True,
+        rate_limit_bucket="dailyPlans",
     )
 
 
@@ -89,7 +94,11 @@ def generate_daily_plan(req: https_fn.CallableRequest[Any]) -> Any:
 def assess_indoor_air(req: https_fn.CallableRequest[Any]) -> Any:
     """Authenticated callable running the questionnaire-based Indoor Air Advisor (FR-07)."""
     return run_callable(
-        "assess_indoor_air", req, handle_assess_indoor_air_callable, require_auth=True
+        "assess_indoor_air",
+        req,
+        handle_assess_indoor_air_callable,
+        require_auth=True,
+        rate_limit_bucket="indoorAssessments",
     )
 
 
@@ -100,9 +109,13 @@ def assess_indoor_air(req: https_fn.CallableRequest[Any]) -> Any:
     secrets=["GEMINI_API_KEY", "WAQI_API_TOKEN"],
 )
 def send_chat_message(req: https_fn.CallableRequest[Any]) -> Any:
-    """Authenticated callable running the 5-node LangGraph Conversational Assistant (FR-08)."""
+    """Authenticated callable running the dynamic tool-calling Conversational Assistant (FR-08)."""
     return run_callable(
-        "send_chat_message", req, handle_send_chat_message_callable, require_auth=True
+        "send_chat_message",
+        req,
+        handle_send_chat_message_callable,
+        require_auth=True,
+        rate_limit_bucket="chatMessages",
     )
 
 
@@ -114,7 +127,11 @@ def send_chat_message(req: https_fn.CallableRequest[Any]) -> Any:
 def log_impact_action(req: https_fn.CallableRequest[Any]) -> Any:
     """Authenticated callable calculating & logging emissions or exposure actions (FR-09/10)."""
     return run_callable(
-        "log_impact_action", req, handle_log_impact_action_callable, require_auth=True
+        "log_impact_action",
+        req,
+        handle_log_impact_action_callable,
+        require_auth=True,
+        rate_limit_bucket="impactLogs",
     )
 
 
@@ -165,5 +182,21 @@ def parse_household_profile(req: https_fn.CallableRequest[Any]) -> Any:
         "parse_household_profile",
         req,
         handle_parse_household_profile_callable,
+        require_auth=True,
+        rate_limit_bucket="profileParses",
+    )
+
+
+@https_fn.on_call(
+    region=_settings.region,
+    memory=options.MemoryOption.MB_256,
+    timeout_sec=15,
+)
+def get_user_usage(req: https_fn.CallableRequest[Any]) -> Any:
+    """Authenticated callable returning today's per-user quota usage breakdown for Settings."""
+    return run_callable(
+        "get_user_usage",
+        req,
+        handle_get_user_usage_callable,
         require_auth=True,
     )
