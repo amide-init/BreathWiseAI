@@ -1,4 +1,4 @@
-import { Leaf, Shield, X } from 'lucide-react';
+import { Leaf, Loader2, Shield, Sparkles, X } from 'lucide-react';
 import { useState, type FormEvent } from 'react';
 
 import { Alert } from '@/components/ui/alert';
@@ -13,6 +13,7 @@ import {
   type ImpactDomain,
   type LogImpactInput,
 } from '@/models/impact.model';
+import { parseImpactActionDescription } from '@/services/impact-ai.service';
 
 const FIELD_CLASS =
   'w-full rounded-xl border border-[#DADCE0] bg-[#F8F9FA] px-3 py-2 text-sm text-[#202124] outline-none transition-colors focus:border-[#4285F4] focus:bg-white focus:ring-2 focus:ring-[#4285F4]/25 dark:border-white/[0.12] dark:bg-[#131314] dark:text-[#E3E3E3] dark:focus:border-[#8AB4F8]';
@@ -53,8 +54,59 @@ export function LogImpactModal({
   const [durationMinutes, setDurationMinutes] = useState('45');
   const [activityReplaced, setActivityReplaced] = useState('');
 
+  const [aiQuickText, setAiQuickText] = useState('');
+  const [aiFilling, setAiFilling] = useState(false);
+  const [aiNote, setAiNote] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  async function handleAiQuickFill() {
+    const query = aiQuickText.trim();
+    if (query.length < 4 || aiFilling) {
+      return;
+    }
+    setAiFilling(true);
+    setError(null);
+    setAiNote(null);
+    try {
+      const draft = await parseImpactActionDescription(query);
+      setDomain(draft.impactDomain);
+      if (draft.impactDomain === 'emissions_reduction') {
+        setEmissionsAction(draft.actionType as EmissionsAction);
+        if (draft.distanceKm) {
+          setDistanceKm(String(draft.distanceKm));
+        }
+        if (draft.baselineMode) {
+          setBaselineMode(draft.baselineMode);
+        }
+        if (draft.alternativeMode) {
+          setTransitAlt(draft.alternativeMode);
+        }
+        if (draft.occupancy) {
+          setOccupancy(String(draft.occupancy));
+        }
+        if (draft.kwhSaved) {
+          setKwhSaved(String(draft.kwhSaved));
+        }
+      } else {
+        setExposureAction(draft.actionType as ExposureAction);
+        if (draft.durationMinutes) {
+          setDurationMinutes(String(draft.durationMinutes));
+        }
+        if (draft.activityReplaced) {
+          setActivityReplaced(draft.activityReplaced);
+        }
+      }
+      if (draft.title) {
+        setTitle(draft.title);
+      }
+      setAiNote('Fields pre-filled — review below and tap Save Action for verified calculation.');
+    } catch {
+      setError('Could not auto-fill from that sentence. You can still fill the fields below.');
+    } finally {
+      setAiFilling(false);
+    }
+  }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -133,6 +185,49 @@ export function LogImpactModal({
           >
             <X className="h-4 w-4" />
           </button>
+        </div>
+
+        {/* Client-Side Firebase AI Logic Quick-Fill Bar */}
+        <div className="mb-4 rounded-2xl border border-[#4285F4]/25 bg-[#E8F0FE]/55 p-3 dark:border-[#8AB4F8]/25 dark:bg-[#4285F4]/10">
+          <div className="mb-1.5 flex items-center gap-1.5 text-[11px] font-semibold text-[#1A73E8] dark:text-[#8AB4F8]">
+            <Sparkles className="h-3.5 w-3.5" aria-hidden="true" />
+            <span>Quick Fill with AI (optional)</span>
+          </div>
+          <div className="flex gap-2">
+            <input
+              type="text"
+              maxLength={240}
+              value={aiQuickText}
+              onChange={(e) => setAiQuickText(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                  void handleAiQuickFill();
+                }
+              }}
+              placeholder="e.g., Carpooled 18 km with 3 colleagues, or 45 min indoor yoga…"
+              className="min-w-0 flex-1 rounded-xl border border-[#DADCE0] bg-white px-3 py-1.5 text-xs text-[#202124] outline-none focus:border-[#4285F4] dark:border-white/[0.12] dark:bg-[#131314] dark:text-[#E3E3E3] dark:placeholder:text-[#9AA0A6]"
+            />
+            <Button
+              type="button"
+              variant="brand"
+              size="sm"
+              disabled={aiFilling || aiQuickText.trim().length < 4}
+              onClick={() => void handleAiQuickFill()}
+            >
+              {aiFilling ? (
+                <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" />
+              ) : (
+                <Sparkles className="h-3.5 w-3.5" aria-hidden="true" />
+              )}
+              <span>{aiFilling ? 'Filling…' : 'Fill'}</span>
+            </Button>
+          </div>
+          {aiNote ? (
+            <p className="mt-1.5 text-[11px] font-medium text-[#137333] dark:text-[#81C995]">
+              {aiNote}
+            </p>
+          ) : null}
         </div>
 
         {/* Domain Selector */}
