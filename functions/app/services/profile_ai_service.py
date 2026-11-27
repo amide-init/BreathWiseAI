@@ -161,11 +161,21 @@ class ProfileAiService:
         )
 
         try:
-            parsed = self._llm.generate_structured(
-                system_prompt=system_prompt,
-                user_prompt=f"Household description:\n{cleaned}",
-                response_schema=ParsedHouseholdDraft,
-            )
+            if isinstance(self._llm, GeminiStructuredProvider):
+                parsed = self._llm.generate_structured(
+                    system_prompt=system_prompt,
+                    user_prompt=f"Household description:\n{cleaned}",
+                    response_schema=ParsedHouseholdDraft,
+                    max_output_tokens=1024,
+                    thinking_budget=0,
+                    operation_name="parse_household_profile",
+                )
+            else:
+                parsed = self._llm.generate_structured(
+                    system_prompt=system_prompt,
+                    user_prompt=f"Household description:\n{cleaned}",
+                    response_schema=ParsedHouseholdDraft,
+                )
             parsed.fallback_used = False
             if not parsed.members:
                 parsed.members = [

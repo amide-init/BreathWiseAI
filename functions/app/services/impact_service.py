@@ -10,13 +10,20 @@ from app.domain.impact_calculator import compute_impact
 from app.repositories.impact_repo import ImpactRepository
 from app.schemas.impact import ImpactDomain, ImpactLogRequest
 from app.utils.datetime_utils import utc_now
+from app.utils.ttl_cache import IMPACT_L1_CACHE
 
 
 class ImpactService:
     """Computes, persists, and summarizes strictly separated emissions & exposure metrics."""
 
-    def __init__(self, *, impact_repo: ImpactRepository | None = None) -> None:
+    def __init__(
+        self,
+        *,
+        impact_repo: ImpactRepository | None = None,
+        use_l1_cache: bool | None = None,
+    ) -> None:
         self._repo = impact_repo or ImpactRepository()
+        self._use_l1_cache = (impact_repo is None) if use_l1_cache is None else use_l1_cache
 
     def log_action(self, *, user_id: str, req: ImpactLogRequest) -> dict[str, Any]:
         computed = compute_impact(req)
@@ -34,10 +41,18 @@ class ImpactService:
             if computed.exposure_context
             else None,
         }
-        return self._repo.save_log(user_id=user_id, payload=payload)
+        saved = self._repo.save_log(user_id=user_id, payload=payload)
+        IMPACT_L1_CACHE.invalidate_prefix(f"{user_id}:")
+        return saved
 
     def get_summary(self, *, user_id: str, days: int = 14) -> dict[str, Any]:
         clamped_days = max(7, min(days, 90))
+        cache_key = f"{user_id}:{clamped_days}"
+        if self._use_l1_cache:
+            cached = IMPACT_L1_CACHE.get(cache_key)
+            if cached is not None:
+                return dict(cached)
+
         today = utc_now().date()
         start_date = (today - timedelta(days=clamped_days - 1)).isoformat()
 
@@ -89,7 +104,7 @@ class ImpactService:
                 }
             )
 
-        return {
+        summary = {
             "windowDays": clamped_days,
             "emissions": {
                 "totalEstimatedCo2AvoidedKg": round(total_co2_kg, 3),
@@ -105,7 +120,11 @@ class ImpactService:
             "dailySeries": daily_series,
             "recentLogs": logs[:50],
         }
+        if self._use_l1_cache:
+            IMPACT_L1_CACHE.set(cache_key, dict(summary))
+        return summary
 
     def delete_action(self, *, user_id: str, log_id: str) -> dict[str, Any]:
         deleted = self._repo.delete_log(user_id=user_id, log_id=log_id)
+        IMPACT_L1_CACHE.invalidate_prefix(f"{user_id}:")
         return {"deleted": deleted, "logId": log_id}

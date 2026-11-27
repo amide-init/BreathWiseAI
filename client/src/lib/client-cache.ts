@@ -9,9 +9,48 @@ interface CacheEntry<T> {
 const memoryStore = new Map<string, CacheEntry<unknown>>();
 const inflightRequests = new Map<string, Promise<unknown>>();
 const SESSION_CACHE_PREFIX = 'breathewise:sc:';
+const LOCAL_CACHE_PREFIX = 'breathewise:lc:';
 
 export const AQI_FRESHNESS_MAX_AGE_MS = 30 * 60 * 1000; // 30 min CPCB freshness SLA
 export const AQI_SOFT_REVALIDATE_MS = 5 * 60 * 1000; // Silently revalidate after 5 min
+
+export function getLocalCached<T>(key: string, now = Date.now()): T | null {
+  const mem = getCached<T>(key, now);
+  if (mem && mem.isFresh) {
+    return mem.value;
+  }
+  try {
+    if (typeof localStorage === 'undefined') {
+      return null;
+    }
+    const raw = localStorage.getItem(`${LOCAL_CACHE_PREFIX}${key}`);
+    if (!raw) {
+      return null;
+    }
+    const parsed = JSON.parse(raw) as CacheEntry<T>;
+    if (now - parsed.storedAt > parsed.ttlMs) {
+      localStorage.removeItem(`${LOCAL_CACHE_PREFIX}${key}`);
+      return null;
+    }
+    setCached(key, parsed.value, parsed.ttlMs - (now - parsed.storedAt), now);
+    return parsed.value;
+  } catch {
+    return null;
+  }
+}
+
+export function setLocalCached<T>(key: string, value: T, ttlMs: number, now = Date.now()): void {
+  setCached(key, value, ttlMs, now);
+  try {
+    if (typeof localStorage === 'undefined') {
+      return;
+    }
+    const entry: CacheEntry<T> = { value, storedAt: now, ttlMs };
+    localStorage.setItem(`${LOCAL_CACHE_PREFIX}${key}`, JSON.stringify(entry));
+  } catch {
+    // Ignore storage quota or private mode restrictions
+  }
+}
 
 export function getSessionCached<T>(key: string, now = Date.now()): T | null {
   const mem = getCached<T>(key, now);
@@ -99,13 +138,20 @@ export function clearAllCaches(): void {
   memoryStore.clear();
   inflightRequests.clear();
   try {
-    if (typeof sessionStorage === 'undefined') {
-      return;
+    if (typeof sessionStorage !== 'undefined') {
+      for (let i = sessionStorage.length - 1; i >= 0; i -= 1) {
+        const k = sessionStorage.key(i);
+        if (k && k.startsWith(SESSION_CACHE_PREFIX)) {
+          sessionStorage.removeItem(k);
+        }
+      }
     }
-    for (let i = sessionStorage.length - 1; i >= 0; i -= 1) {
-      const k = sessionStorage.key(i);
-      if (k && k.startsWith(SESSION_CACHE_PREFIX)) {
-        sessionStorage.removeItem(k);
+    if (typeof localStorage !== 'undefined') {
+      for (let i = localStorage.length - 1; i >= 0; i -= 1) {
+        const k = localStorage.key(i);
+        if (k && k.startsWith(LOCAL_CACHE_PREFIX)) {
+          localStorage.removeItem(k);
+        }
       }
     }
   } catch {

@@ -24,6 +24,32 @@ from app.utils.errors import UpstreamProviderError
 from app.utils.logger import log_event
 
 
+def _invoke_structured_llm(
+    llm: StructuredLLMProvider,
+    *,
+    system_prompt: str,
+    user_prompt: str,
+    response_schema: type[Any],
+    max_output_tokens: int,
+    operation_name: str,
+) -> Any:
+    """Pass token-budget hints to GeminiStructuredProvider while keeping test stubs compatible."""
+    if isinstance(llm, GeminiStructuredProvider):
+        return llm.generate_structured(
+            system_prompt=system_prompt,
+            user_prompt=user_prompt,
+            response_schema=response_schema,
+            max_output_tokens=max_output_tokens,
+            thinking_budget=0,
+            operation_name=operation_name,
+        )
+    return llm.generate_structured(
+        system_prompt=system_prompt,
+        user_prompt=user_prompt,
+        response_schema=response_schema,
+    )
+
+
 def build_recommendation_node(
     *,
     llm_provider: StructuredLLMProvider | None = None,
@@ -43,13 +69,17 @@ def build_recommendation_node(
         validation_errors = state.get("validation_errors") or []
         trace = list(state.get("agent_trace") or [])
 
+        # Adaptive RAG top_k: 2 concise docs for normal chat, 3 for plans/indoor/medical escalation
+        rag_top_k = (
+            2 if (mode == "chat" and not risk.constraints.medical_escalation_required) else 3
+        )
         docs = state.get("retrieved_docs") or rag.retrieve(
             workflow_mode=mode,
             risk_tier=risk.severity_tier,
             sensitive_groups_present=risk.sensitive_groups_present,
             medical_escalation_required=risk.constraints.medical_escalation_required,
             user_query=state.get("user_query"),
-            top_k=4,
+            top_k=rag_top_k,
         )
 
         try:
@@ -63,10 +93,13 @@ def build_recommendation_node(
                     tool_results=tool_results,
                     validation_errors=validation_errors,
                 )
-                generated = llm.generate_structured(
+                generated = _invoke_structured_llm(
+                    llm,
                     system_prompt=sys_prompt,
                     user_prompt=usr_prompt,
                     response_schema=DailyPlanSections,
+                    max_output_tokens=2200,
+                    operation_name="daily_plan",
                 )
                 draft = generated.model_dump(by_alias=True)
 
@@ -82,10 +115,13 @@ def build_recommendation_node(
                     tool_results=tool_results,
                     validation_errors=validation_errors,
                 )
-                generated_indoor = llm.generate_structured(
+                generated_indoor = _invoke_structured_llm(
+                    llm,
                     system_prompt=sys_prompt,
                     user_prompt=usr_prompt,
                     response_schema=IndoorAssessmentResponse,
+                    max_output_tokens=1400,
+                    operation_name="indoor_advisor",
                 )
                 generated_indoor.assessment_basis = "estimated_questionnaire"
                 generated_indoor.citations = docs_to_citations(docs)
@@ -105,10 +141,13 @@ def build_recommendation_node(
                     tool_results=tool_results,
                     validation_errors=validation_errors,
                 )
-                generated_chat = llm.generate_structured(
+                generated_chat = _invoke_structured_llm(
+                    llm,
                     system_prompt=sys_prompt,
                     user_prompt=usr_prompt,
                     response_schema=ChatReply,
+                    max_output_tokens=700,
+                    operation_name="chat",
                 )
                 generated_chat.citations = docs_to_citations(docs)
                 generated_chat.environmental_snapshot = env.current

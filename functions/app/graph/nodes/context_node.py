@@ -36,10 +36,19 @@ def sanitize_family_aggregate(
     for member in family.members:
         role_label = member.role.replace("_", " ")
         descriptors.append(f"{member.role} ({member.age_group})")
-        if member.schedule.leave_home_time or member.schedule.return_home_time:
-            leave = member.schedule.leave_home_time or "unspecified"
-            ret = member.schedule.return_home_time or "unspecified"
-            schedule_hints.append(f"{role_label}: leaves ~{leave}, returns ~{ret}")
+        if (
+            member.schedule.leave_home_time
+            or member.schedule.return_home_time
+            or member.schedule.outdoor_play_or_exercise_time
+        ):
+            parts: list[str] = []
+            if member.schedule.leave_home_time:
+                parts.append(f"leaves ~{member.schedule.leave_home_time}")
+            if member.schedule.return_home_time:
+                parts.append(f"returns ~{member.schedule.return_home_time}")
+            if member.schedule.outdoor_play_or_exercise_time:
+                parts.append(f"outdoor ~{member.schedule.outdoor_play_or_exercise_time}")
+            schedule_hints.append(f"{role_label}: {', '.join(parts)}")
         if member.role == "child_toddler" or member.age_group == "0_5":
             has_toddlers = True
             has_children = True

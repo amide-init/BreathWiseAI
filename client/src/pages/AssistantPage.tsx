@@ -4,6 +4,7 @@ import {
   ChevronDown,
   ChevronUp,
   Home,
+  Leaf,
   Loader2,
   MapPin,
   MessageSquarePlus,
@@ -365,30 +366,31 @@ export function AssistantPage() {
 
   const starterCards = [
     {
-      label: 'Outdoor & Play',
-      prompt: `Is it safe for kids to play outside or go for a walk in ${selectedLocation.city} today?`,
+      label: 'Family & Forecast',
+      prompt: `Check today's PM2.5 vs dust in ${selectedLocation.city} and safest school, play, or walk times for my family.`,
       icon: Wind,
       accent:
         'bg-[#4285F4]/12 text-[#1A73E8] border-[#4285F4]/25 dark:bg-[#8AB4F8]/15 dark:text-[#8AB4F8] dark:border-[#8AB4F8]/25',
     },
     {
-      label: 'Indoor Fixes (No HEPA)',
-      prompt: `What are the best zero-cost ways to keep indoor air cleaner in ${selectedLocation.city} without a HEPA purifier?`,
-      icon: Home,
+      label: 'My Impact & Streak',
+      prompt:
+        'Review my 14-day CO₂ avoided & exposure protection streak, and suggest my easiest next win.',
+      icon: Leaf,
       accent:
         'bg-[#34A853]/12 text-[#1E8E3E] border-[#34A853]/25 dark:bg-[#81C995]/15 dark:text-[#81C995] dark:border-[#81C995]/25',
     },
     {
-      label: 'Harm-Reduction',
-      prompt: `Someone smokes or lights dhoop at home while ${selectedLocation.city} AQI is elevated — what are realistic lower-loss steps?`,
-      icon: Sparkles,
+      label: 'Indoor & Harm-Reduction',
+      prompt: `What are realistic zero-cost indoor fixes in ${selectedLocation.city} without a HEPA purifier (even with cooking or dhoop)?`,
+      icon: Home,
       accent:
         'bg-[#FBBC05]/18 text-[#9A6700] border-[#FBBC05]/30 dark:bg-[#FDD663]/15 dark:text-[#FDD663] dark:border-[#FDD663]/25',
     },
     {
-      label: 'Commute Protection',
-      prompt: `How should I protect myself during my daily commute in ${selectedLocation.city} today?`,
-      icon: MapPin,
+      label: 'City Air & Commute',
+      prompt: `Why is ${selectedLocation.city}'s air like this today (wind & pollutants), and how should I adjust my daily commute?`,
+      icon: Sparkles,
       accent:
         'bg-[#EA4335]/12 text-[#C5221F] border-[#EA4335]/25 dark:bg-[#F28B82]/15 dark:text-[#F28B82] dark:border-[#F28B82]/25',
     },

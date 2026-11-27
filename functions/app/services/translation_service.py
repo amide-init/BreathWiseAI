@@ -300,11 +300,21 @@ class TranslationService:
             )
 
             try:
-                llm_output = self._llm.generate_structured(
-                    system_prompt=system_prompt,
-                    user_prompt=user_prompt,
-                    response_schema=TranslationBatchLLMOutput,
-                )
+                if isinstance(self._llm, GeminiStructuredProvider):
+                    llm_output = self._llm.generate_structured(
+                        system_prompt=system_prompt,
+                        user_prompt=user_prompt,
+                        response_schema=TranslationBatchLLMOutput,
+                        max_output_tokens=2048,
+                        thinking_budget=0,
+                        operation_name="translate_texts",
+                    )
+                else:
+                    llm_output = self._llm.generate_structured(
+                        system_prompt=system_prompt,
+                        user_prompt=user_prompt,
+                        response_schema=TranslationBatchLLMOutput,
+                    )
             except UpstreamProviderError as exc:
                 log_event(
                     "translation_batch_fallback",

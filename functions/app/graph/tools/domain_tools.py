@@ -7,12 +7,33 @@ safe windows.
 
 from __future__ import annotations
 
+import re
+from datetime import datetime
 from typing import Any
 
 from app.schemas.common import AqiCategory, FreshnessStatus
-from app.schemas.environment import AirQualityResponse
+from app.schemas.environment import AirQualityResponse, ForecastPoint
 from app.schemas.planner import IndoorQuestionnaire, RiskAssessmentResult
 from app.schemas.profile import SanitizedContext
+
+_TIME_HHMM_RE = re.compile(r"\b(\d{1,2}):(\d{2})\b")
+
+_EXERCISE_WINDOW_HOURS: dict[str, tuple[int, int]] = {
+    "morning": (6, 10),
+    "afternoon": (12, 16),
+    "evening": (17, 20),
+    "flexible": (7, 19),
+}
+
+TOOL_REGISTRY: dict[str, str] = {
+    "analyze_forecast_windows": "Inspect real hourly forecast points for cleaner/peak hours.",
+    "estimate_indoor_outdoor_interaction": "Combine live outdoor AQI with household gear & indoor habits.",
+    "lookup_harm_reduction_playbooks": "Return realistic minimum-loss steps for daily habits and gaps.",
+    "compare_commute_exposure_and_co2": "Compare commute exposure and estimated CO2e trade-offs.",
+    "analyze_my_impact_history": "Summarize 14-day emissions avoided and exposure-protection streak.",
+    "analyze_family_schedule_risks": "Map household member routines & exercise window against hourly AQI.",
+    "analyze_city_pollutants_and_weather": "Analyze city pollutant mix (PM2.5/PM10 ratio), wind dispersion & haze.",
+}
 
 
 def analyze_forecast_windows(
@@ -348,4 +369,372 @@ def compare_commute_exposure_and_co2(
         "dailyKm": km,
         "estimatedDailyCarCo2Kg": solo_car_co2 if mode == "personal_car" else None,
         "realisticTip": realistic_tip,
+    }
+
+
+def _compute_active_streak(daily_series: list[dict[str, Any]]) -> tuple[int, int]:
+    """Compute (current_streak_days, active_days_in_window) from chronological dailySeries."""
+    if not daily_series:
+        return 0, 0
+
+    active_flags = [
+        (float(day.get("estimatedCo2Kg") or 0.0) > 0.0) or (int(day.get("exposureActions") or 0) > 0)
+        for day in daily_series
+    ]
+    active_days = sum(1 for flag in active_flags if flag)
+
+    # Allow streak to continue if today has no log yet but yesterday did.
+    idx = len(active_flags) - 1
+    if idx >= 0 and not active_flags[idx]:
+        idx -= 1
+    streak = 0
+    while idx >= 0 and active_flags[idx]:
+        streak += 1
+        idx -= 1
+    return streak, active_days
+
+
+def analyze_my_impact_history(
+    *,
+    impact_summary: dict[str, Any] | None,
+    risk: RiskAssessmentResult,
+) -> dict[str, Any]:
+    """Tool 5: Deterministically summarize user's 14-day emissions & exposure logs.
+
+    Strictly separates personal exposure reduction from estimated CO2e emissions avoided.
+    Never invents past actions or CO2 savings when history is empty or unavailable.
+    """
+    if not impact_summary:
+        return {
+            "hasHistory": False,
+            "windowDays": 14,
+            "emissions": {
+                "totalEstimatedCo2AvoidedKg": 0.0,
+                "actionCount": 0,
+                "isEstimate": True,
+            },
+            "exposure": {
+                "totalProtectiveActions": 0,
+                "totalProtectedMinutes": 0,
+            },
+            "activeDaysLast14": 0,
+            "currentStreakDays": 0,
+            "lastLoggedDate": None,
+            "recommendedNextAction": (
+                "No clean-air or commute actions logged yet. Log one protective habit (indoor workout or HEPA run) "
+                "or one lower-emission commute swap (metro/carpool/WFH) to start tracking."
+            ),
+            "separationNote": "Emissions avoided (kg CO2e estimate) and personal exposure protection are tracked separately.",
+        }
+
+    emissions = impact_summary.get("emissions") or {}
+    exposure = impact_summary.get("exposure") or {}
+    daily_series = impact_summary.get("dailySeries") or []
+    recent_logs = impact_summary.get("recentLogs") or []
+
+    total_co2 = round(float(emissions.get("totalEstimatedCo2AvoidedKg") or 0.0), 3)
+    emissions_count = int(emissions.get("actionCount") or 0)
+    by_em_type = emissions.get("byActionTypeKg") or {}
+    top_em_type = max(by_em_type.items(), key=lambda kv: float(kv[1]))[0] if by_em_type else None
+
+    exposure_count = int(exposure.get("totalProtectiveActions") or 0)
+    protected_minutes = int(exposure.get("totalProtectedMinutes") or 0)
+    by_exp_type = exposure.get("byActionTypeCount") or {}
+    top_exp_type = max(by_exp_type.items(), key=lambda kv: int(kv[1]))[0] if by_exp_type else None
+
+    streak_days, active_days = _compute_active_streak(daily_series)
+    last_logged = str(recent_logs[0].get("loggedDate")) if recent_logs else None
+    has_history = (emissions_count + exposure_count) > 0
+
+    avg_co2_per_action = round(total_co2 / emissions_count, 2) if emissions_count > 0 else 0.0
+    projected_weekly_co2 = round(avg_co2_per_action * 2, 2) if emissions_count > 0 else None
+
+    if risk.severity_tier in (AqiCategory.POOR, AqiCategory.VERY_POOR, AqiCategory.SEVERE):
+        next_tip = (
+            "Today's air is elevated — prioritize a personal exposure-protection action "
+            "(indoor exercise swap, sealing rooms, or N95 commute) and log it under Exposure Protection."
+        )
+    elif emissions_count == 0:
+        next_tip = (
+            "Air allows flexible planning — try logging one emissions-saving commute swap "
+            "(public transit, carpool, or WFH) to start your estimated CO2e tracker."
+        )
+    else:
+        next_tip = (
+            f"Repeating your top swap ({(top_em_type or 'commute_swap').replace('_', ' ')}) "
+            f"twice a week would add ~{projected_weekly_co2} kg CO2e avoided/week (estimate)."
+        )
+
+    return {
+        "hasHistory": has_history,
+        "windowDays": int(impact_summary.get("windowDays") or 14),
+        "emissions": {
+            "totalEstimatedCo2AvoidedKg": total_co2,
+            "actionCount": emissions_count,
+            "topActionType": top_em_type,
+            "projectedWeeklyIfRepeated2xKg": projected_weekly_co2,
+            "isEstimate": True,
+        },
+        "exposure": {
+            "totalProtectiveActions": exposure_count,
+            "totalProtectedMinutes": protected_minutes,
+            "topActionType": top_exp_type,
+        },
+        "activeDaysLast14": active_days,
+        "currentStreakDays": streak_days,
+        "lastLoggedDate": last_logged,
+        "recommendedNextAction": next_tip,
+        "separationNote": "Emissions avoided (kg CO2e estimate) and personal exposure protection are tracked separately.",
+    }
+
+
+def _parse_forecast_hour(forecast_for: str) -> int | None:
+    try:
+        return datetime.fromisoformat(forecast_for.replace("Z", "+00:00")).hour
+    except ValueError:
+        match = _TIME_HHMM_RE.search(forecast_for)
+        if match:
+            hour = int(match.group(1))
+            if 0 <= hour <= 23:
+                return hour
+        return None
+
+
+def _match_forecast_for_hour(
+    valid_points: list[ForecastPoint], target_hour: int
+) -> ForecastPoint | None:
+    best: tuple[int, ForecastPoint] | None = None
+    for pt in valid_points:
+        pt_hour = _parse_forecast_hour(pt.forecast_for)
+        if pt_hour is None:
+            continue
+        diff = min(abs(pt_hour - target_hour), 24 - abs(pt_hour - target_hour))
+        if best is None or diff < best[0]:
+            best = (diff, pt)
+    if best is not None and best[0] <= 2:
+        return best[1]
+    return None
+
+
+def _classify_slot_risk(aqi: int | None, *, sensitive: bool) -> str:
+    if aqi is None:
+        return "unknown"
+    if aqi > 200 or (sensitive and aqi > 150):
+        return "high"
+    if aqi > 100 or (sensitive and aqi > 80):
+        return "moderate"
+    return "low"
+
+
+def analyze_family_schedule_risks(
+    *,
+    context: SanitizedContext,
+    env: AirQualityResponse,
+    risk: RiskAssessmentResult,
+) -> dict[str, Any]:
+    """Tool 6: Map PII-free family routines & exercise window against hourly city forecasts."""
+    city = env.location_name
+    valid_points = [pt for pt in (env.forecasts or []) if pt.estimated_naqi is not None]
+    forecast_available = bool(valid_points)
+
+    sensitive_groups: list[str] = []
+    if context.has_toddlers:
+        sensitive_groups.append("toddlers (0-5)")
+    elif context.has_children:
+        sensitive_groups.append("children")
+    if context.has_elderly:
+        sensitive_groups.append("older adults (60+)")
+    if context.has_respiratory_or_cardiac_sensitivity:
+        sensitive_groups.append("respiratory/cardiac sensitivity")
+
+    schedule_risks: list[dict[str, Any]] = []
+    for hint in context.member_schedule_hints[:6]:
+        role_part = hint.split(":", 1)[0].strip()
+        is_sensitive_member = any(
+            tok in role_part.lower() for tok in ("child", "toddler", "elderly", "senior")
+        ) or context.has_respiratory_or_cardiac_sensitivity
+
+        times_found = _TIME_HHMM_RE.findall(hint)
+        if not times_found:
+            schedule_risks.append(
+                {
+                    "target": role_part,
+                    "window": hint,
+                    "projectedAqi": env.current.aqi,
+                    "riskLevel": _classify_slot_risk(env.current.aqi, sensitive=is_sensitive_member),
+                }
+            )
+            continue
+
+        for hh_str, mm_str in times_found[:2]:
+            hour = int(hh_str)
+            if not (0 <= hour <= 23):
+                continue
+            matched = _match_forecast_for_hour(valid_points, hour) if forecast_available else None
+            projected_aqi = matched.estimated_naqi if matched else env.current.aqi
+            slot_level = _classify_slot_risk(projected_aqi, sensitive=is_sensitive_member)
+            schedule_risks.append(
+                {
+                    "target": role_part,
+                    "window": f"{hour:02d}:{mm_str}",
+                    "projectedAqi": projected_aqi,
+                    "basis": "hourly_forecast" if matched else "current_reading",
+                    "riskLevel": slot_level,
+                }
+            )
+
+    # Evaluate household exercise preference window against forecast points
+    ex_start, ex_end = _EXERCISE_WINDOW_HOURS.get(context.exercise_window, (6, 10))
+    window_points = [
+        pt
+        for pt in valid_points
+        if (h := _parse_forecast_hour(pt.forecast_for)) is not None and ex_start <= h <= ex_end
+    ]
+    ex_aqi = (
+        round(sum(pt.estimated_naqi or 0 for pt in window_points) / len(window_points))
+        if window_points
+        else env.current.aqi
+    )
+    exercise_slot_risk = _classify_slot_risk(ex_aqi, sensitive=bool(sensitive_groups))
+
+    cleaner_hours = (
+        list(risk.safe_forecast_windows[:3])
+        if risk.constraints.allow_specific_safe_window_claims
+        else []
+    )
+
+    if not forecast_available:
+        summary = (
+            f"Hourly forecast unavailable for {city}; evaluate {len(context.member_descriptors)} "
+            "household member routine(s) strictly against current live AQI without claiming safer hours."
+        )
+    elif cleaner_hours:
+        summary = (
+            f"Evaluated {len(schedule_risks)} family routine slot(s) in {city}; "
+            f"lower-AQI forecast hours exist around {', '.join(cleaner_hours)}."
+        )
+    else:
+        summary = (
+            f"Evaluated {len(schedule_risks)} family routine slot(s) in {city}; "
+            "no low-pollution outdoor forecast window is available today."
+        )
+
+    return {
+        "city": city,
+        "profileComplete": context.profile_complete,
+        "householdMemberCount": len(context.member_descriptors),
+        "sensitiveGroups": sensitive_groups,
+        "forecastAvailable": forecast_available,
+        "scheduleRisks": schedule_risks[:6],
+        "exercisePreference": {
+            "window": context.exercise_window,
+            "activity": context.exercise_activity_type,
+            "prefersOutdoor": context.prefers_outdoor_exercise,
+            "projectedAqi": ex_aqi,
+            "riskLevel": exercise_slot_risk,
+        },
+        "cleanerForecastHours": cleaner_hours,
+        "summary": summary,
+    }
+
+
+def analyze_city_pollutants_and_weather(
+    *,
+    env: AirQualityResponse,
+    risk: RiskAssessmentResult,
+) -> dict[str, Any]:
+    """Tool 7: Deterministically analyze city pollutant mix, PM2.5/PM10 ratio & wind dispersion."""
+    city = env.location_name
+    cur = env.current
+    weather = env.weather
+
+    measured: dict[str, float] = {}
+    unavailable: list[str] = []
+    for reading in cur.readings:
+        if reading.value is not None and reading.freshness_status != FreshnessStatus.UNAVAILABLE:
+            measured[reading.pollutant] = round(float(reading.value), 1)
+        else:
+            unavailable.append(reading.pollutant)
+
+    pm25 = measured.get("PM2.5")
+    pm10 = measured.get("PM10")
+    ratio: float | None = None
+    signature = "unavailable"
+    filtration_hint = "Follow live AQI precautions; pollutant breakdown is partial."
+
+    if pm25 is not None and pm10 is not None and pm10 > 0:
+        ratio = round(pm25 / pm10, 2)
+        if ratio >= 0.6:
+            signature = "fine_combustion_smog"
+            filtration_hint = (
+                "High PM2.5/PM10 ratio indicates fine combustion/traffic smog — cloth masks are "
+                "ineffective; use snug N95 outdoors and sealed doors/HEPA indoors."
+            )
+        elif ratio <= 0.4:
+            signature = "coarse_dust_dominant"
+            filtration_hint = (
+                "Coarse dust (PM10) dominates — keep road-facing windows shut, wet-mop settled "
+                "dust, and wear an N95 near construction or dusty roads."
+            )
+        else:
+            signature = "mixed_urban_particulate"
+            filtration_hint = (
+                "Mixed fine smog and road dust — combine sealed indoor spaces with wet mopping "
+                "and snug N95 protection during outdoor commutes."
+            )
+    elif pm25 is not None:
+        signature = "pm25_measured_only"
+        filtration_hint = (
+            "PM2.5 is measured while PM10 is unavailable — focus on fine-particle protection "
+            "(N95 outdoors, tight window sealing indoors)."
+        )
+
+    wind = weather.wind_speed_kmh
+    if wind is None:
+        wind_dispersion = "unavailable"
+    elif wind < 6.0:
+        wind_dispersion = "stagnant_trapping"
+    elif wind <= 15.0:
+        wind_dispersion = "moderate_mixing"
+    else:
+        wind_dispersion = "active_clearing"
+
+    humidity = weather.humidity_pct
+    if humidity is None:
+        humidity_note = "unavailable"
+    elif humidity >= 75.0:
+        humidity_note = "high_humidity_haze"
+    elif humidity <= 30.0:
+        humidity_note = "dry_dust_prone"
+    else:
+        humidity_note = "normal"
+
+    summary_parts = [
+        f"{city} AQI {cur.aqi} ({cur.category.value})"
+        if cur.aqi is not None
+        else f"{city} live AQI unavailable"
+    ]
+    if ratio is not None:
+        summary_parts.append(f"PM2.5/PM10={ratio} ({signature.replace('_', ' ')})")
+    if wind is not None:
+        summary_parts.append(f"wind {round(wind, 1)} km/h ({wind_dispersion.replace('_', ' ')})")
+    if unavailable:
+        summary_parts.append(f"unavailable sensors: {', '.join(unavailable)}")
+
+    return {
+        "city": city,
+        "freshness": cur.freshness_status.value,
+        "riskTier": risk.severity_tier.value,
+        "dominantPollutant": cur.dominant_pollutant,
+        "measuredPollutants": measured,
+        "unavailablePollutants": unavailable,
+        "pm25ToPm10Ratio": ratio,
+        "particleSignature": signature,
+        "filtrationHint": filtration_hint,
+        "windSpeedKmh": round(wind, 1) if wind is not None else None,
+        "windDispersion": wind_dispersion,
+        "humidityPct": round(humidity, 1) if humidity is not None else None,
+        "humidityNote": humidity_note,
+        "tempC": round(weather.temp_c, 1) if weather.temp_c is not None else None,
+        "summary": "; ".join(summary_parts),
     }

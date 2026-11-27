@@ -90,17 +90,24 @@ def planning_reasoning_node(state: BreatheWiseState) -> dict[str, Any]:
     if mode == "daily_plan":
         selected_tools = [
             "analyze_forecast_windows",
+            "analyze_city_pollutants_and_weather",
             "estimate_indoor_outdoor_interaction",
             "lookup_harm_reduction_playbooks",
             "compare_commute_exposure_and_co2",
+            "analyze_my_impact_history",
         ]
+        if context.member_descriptors or context.member_schedule_hints:
+            selected_tools.append("analyze_family_schedule_risks")
     elif mode == "indoor_advisor":
         selected_tools = [
             "estimate_indoor_outdoor_interaction",
+            "analyze_city_pollutants_and_weather",
             "lookup_harm_reduction_playbooks",
             "analyze_forecast_windows",
         ]
-    else:  # chat — select tools relevant to the user's question + city AQI
+        if context.member_descriptors or context.member_schedule_hints:
+            selected_tools.append("analyze_family_schedule_risks")
+    else:  # chat — select only tools relevant to the user's question + city AQI
         selected_tools.append("estimate_indoor_outdoor_interaction")
         if any(
             kw in user_query
@@ -114,9 +121,75 @@ def planning_reasoning_node(state: BreatheWiseState) -> dict[str, Any]:
                 "time",
                 "morning",
                 "evening",
+                "forecast",
+                "hour",
+                "later",
             )
         ):
             selected_tools.append("analyze_forecast_windows")
+        if (
+            any(
+                kw in user_query
+                for kw in (
+                    "family",
+                    "kid",
+                    "child",
+                    "toddler",
+                    "school",
+                    "parent",
+                    "elder",
+                    "senior",
+                    "grandparent",
+                    "schedule",
+                    "routine",
+                    "when",
+                    "walk",
+                    "play",
+                )
+            )
+            and (context.member_descriptors or context.member_schedule_hints)
+        ):
+            selected_tools.append("analyze_family_schedule_risks")
+        if any(
+            kw in user_query
+            for kw in (
+                "impact",
+                "co2",
+                "carbon",
+                "emission",
+                "streak",
+                "progress",
+                "history",
+                "log",
+                "saved",
+                "sustainab",
+                "eco",
+                "footprint",
+            )
+        ):
+            selected_tools.append("analyze_my_impact_history")
+        if any(
+            kw in user_query
+            for kw in (
+                "pm2.5",
+                "pm25",
+                "pm10",
+                "no2",
+                "so2",
+                "ozone",
+                "o3",
+                "pollutant",
+                "dust",
+                "smog",
+                "wind",
+                "humid",
+                "weather",
+                "why",
+                "bad",
+                "air",
+            )
+        ):
+            selected_tools.append("analyze_city_pollutants_and_weather")
         if (
             any(
                 kw in user_query
@@ -151,6 +224,7 @@ def planning_reasoning_node(state: BreatheWiseState) -> dict[str, Any]:
                 "bus",
                 "drive",
                 "travel",
+                "carpool",
             )
         ):
             selected_tools.append("compare_commute_exposure_and_co2")
