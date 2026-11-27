@@ -16,8 +16,7 @@ export interface UsageCategoryItem {
 }
 
 export interface UserUsageSummary {
-  date: string;
-  resetsAt: string;
+  quotaScope: 'lifetime';
   burstLimitPerMinute: number;
   totalUsed: number;
   totalLimit: number;

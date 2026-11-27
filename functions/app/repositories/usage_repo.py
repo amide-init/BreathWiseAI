@@ -1,7 +1,7 @@
-"""Firestore repository for atomic per-user daily quota counters (`user_usage/{uid}_{date}`).
+"""Firestore repository for atomic per-user lifetime quota counters (`user_usage/{uid}`).
 
 Strictly Admin-SDK-only (blocked to clients via default catch-all in firestore.rules)
-so users can never tamper with or reset their own rate-limit counters.
+so users can never tamper with or reset their own account quota counters.
 """
 
 from __future__ import annotations
@@ -16,13 +16,13 @@ from app.utils.logger import log_event
 
 
 class UsageRepository(BaseFirestoreRepository):
-    """Atomic Firestore transaction counter per user and UTC day."""
+    """Atomic Firestore transaction counter per user account (lifetime scope)."""
 
     COLLECTION = "user_usage"
 
     @staticmethod
-    def doc_id(user_id: str, date_str: str) -> str:
-        return f"{user_id}_{date_str}"
+    def doc_id(user_id: str) -> str:
+        return user_id
 
     def check_and_increment(
         self,
@@ -30,16 +30,15 @@ class UsageRepository(BaseFirestoreRepository):
         user_id: str,
         bucket: str,
         limit: int,
-        date_str: str,
     ) -> tuple[int, bool]:
-        """Atomically verify `used < limit` and increment `counts.{bucket}`.
+        """Atomically verify `used < limit` and increment `counts.{bucket}` for `user_id`.
 
         Returns `(count_after_check, allowed)`. Fails open on transient Firestore outages
         so a database hiccup never causes a false lockout.
         """
         try:
             db = self.db
-            doc_ref = db.collection(self.COLLECTION).document(self.doc_id(user_id, date_str))
+            doc_ref = db.collection(self.COLLECTION).document(self.doc_id(user_id))
             transaction = db.transaction()
 
             @firestore.transactional
@@ -58,7 +57,7 @@ class UsageRepository(BaseFirestoreRepository):
                     doc_ref,
                     {
                         "userId": user_id,
-                        "date": date_str,
+                        "quotaScope": "lifetime",
                         "counts": counts,
                         "totalUsed": total_used,
                         "updatedAt": firestore.SERVER_TIMESTAMP,
@@ -77,14 +76,10 @@ class UsageRepository(BaseFirestoreRepository):
             )
             return 0, True
 
-    def get_daily_counts(self, *, user_id: str, date_str: str) -> dict[str, int]:
-        """Read current day's usage counts for `user_id` (zeros when no doc exists yet)."""
+    def get_lifetime_counts(self, *, user_id: str) -> dict[str, int]:
+        """Read lifetime usage counts for `user_id` (zeros when no doc exists yet)."""
         try:
-            snap = (
-                self.db.collection(self.COLLECTION)
-                .document(self.doc_id(user_id, date_str))
-                .get()
-            )
+            snap = self.db.collection(self.COLLECTION).document(self.doc_id(user_id)).get()
             if not snap.exists:
                 return {}
             data = snap.to_dict() or {}
