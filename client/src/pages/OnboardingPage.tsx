@@ -5,8 +5,10 @@ import {
   Loader2,
   LocateFixed,
   MapPin,
+  Search,
   Sparkles,
   Users,
+  X,
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -29,7 +31,7 @@ import { useSelectedLocation } from '@/hooks/useSelectedLocation';
 import { cn } from '@/lib/cn';
 import { detectUserGpsLocation } from '@/lib/geolocation';
 import type { SaveMemberInput, TransportMode } from '@/models/family.model';
-import { fetchAirQuality } from '@/services/air-quality.service';
+import { fetchAirQuality, searchLocations } from '@/services/air-quality.service';
 import type { ParsedHouseholdDraft } from '@/services/profile-ai.service';
 import type { AirQualityResponse, LocationOption } from '@/types';
 
@@ -61,6 +63,10 @@ export function OnboardingPage() {
 
   const [step, setStep] = useState<1 | 2 | 3>(1);
   const [city, setCity] = useState<LocationOption>(selectedLocation);
+  const [cityQuery, setCityQuery] = useState('');
+  const [cityResults, setCityResults] = useState<LocationOption[]>([]);
+  const [searchingCities, setSearchingCities] = useState(false);
+  const [citySearchError, setCitySearchError] = useState<string | null>(null);
   const [cityPreview, setCityPreview] = useState<AirQualityResponse | null>(null);
   const [loadingPreview, setLoadingPreview] = useState(false);
   const [locatingGps, setLocatingGps] = useState(false);
@@ -77,6 +83,47 @@ export function OnboardingPage() {
 
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Debounced live city search inside Step 1
+  useEffect(() => {
+    const trimmed = cityQuery.trim();
+    if (trimmed.length < 2) {
+      setCityResults([]);
+      setCitySearchError(null);
+      setSearchingCities(false);
+      return;
+    }
+
+    let cancelled = false;
+    setSearchingCities(true);
+    setCitySearchError(null);
+    const timer = window.setTimeout(() => {
+      searchLocations(trimmed)
+        .then((results) => {
+          if (!cancelled) {
+            setCityResults(results);
+          }
+        })
+        .catch((err: unknown) => {
+          if (!cancelled) {
+            setCityResults([]);
+            setCitySearchError(
+              err instanceof Error ? err.message : 'Unable to search cities right now.',
+            );
+          }
+        })
+        .finally(() => {
+          if (!cancelled) {
+            setSearchingCities(false);
+          }
+        });
+    }, 300);
+
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timer);
+    };
+  }, [cityQuery]);
 
   // Live AQI preview right inside Step 1 so the user sees instant value
   useEffect(() => {
@@ -361,10 +408,10 @@ export function OnboardingPage() {
             {step === 1 ? (
               <div className="space-y-4">
                 <div className="flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-slate-200/80 bg-slate-50/80 px-4 py-3 dark:border-white/[0.07] dark:bg-[#0B0E12]">
-                  <div className="flex items-center gap-2 text-sm">
-                    <MapPin className="h-4 w-4 text-teal-600 dark:text-teal-400" />
-                    <span className="font-semibold" data-no-translate="true">
-                      {city.city}
+                  <div className="flex min-w-0 items-center gap-2 text-sm">
+                    <MapPin className="h-4 w-4 shrink-0 text-teal-600 dark:text-teal-400" />
+                    <span className="truncate font-semibold" data-no-translate="true">
+                      {city.label || city.city}
                     </span>
                   </div>
                   {loadingPreview ? (
@@ -376,6 +423,91 @@ export function OnboardingPage() {
                       category={cityPreview.current.category}
                       aqi={cityPreview.current.aqi}
                     />
+                  ) : null}
+                </div>
+
+                {/* Search any city or town */}
+                <div className="space-y-2">
+                  <div className="relative">
+                    <Search
+                      className="pointer-events-none absolute top-1/2 left-3.5 h-4 w-4 -translate-y-1/2 text-[#5F6368] dark:text-[#9AA0A6]"
+                      aria-hidden="true"
+                    />
+                    <input
+                      type="text"
+                      value={cityQuery}
+                      onChange={(e) => setCityQuery(e.target.value)}
+                      placeholder="Search any city or town (e.g., Pune, Jaipur, Patna, Jhumri Telaiya…)"
+                      aria-label="Search any city or town"
+                      className="w-full rounded-2xl border border-[#DADCE0] bg-[#F8F9FA] py-2.5 pr-9 pl-10 text-sm text-[#202124] outline-none transition-colors placeholder:text-[#5F6368] focus:border-[#4285F4] focus:bg-white focus:ring-2 focus:ring-[#4285F4]/20 dark:border-white/[0.1] dark:bg-[#131314] dark:text-[#E3E3E3] dark:placeholder:text-[#9AA0A6] dark:focus:border-[#8AB4F8]"
+                    />
+                    {searchingCities ? (
+                      <Loader2
+                        className="absolute top-1/2 right-3.5 h-4 w-4 -translate-y-1/2 animate-spin text-[#4285F4] dark:text-[#8AB4F8]"
+                        aria-hidden="true"
+                      />
+                    ) : cityQuery ? (
+                      <button
+                        type="button"
+                        aria-label="Clear city search"
+                        onClick={() => {
+                          setCityQuery('');
+                          setCityResults([]);
+                          setCitySearchError(null);
+                        }}
+                        className="absolute top-1/2 right-3 flex h-5 w-5 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full text-[#5F6368] hover:bg-black/5 dark:text-[#9AA0A6] dark:hover:bg-white/10"
+                      >
+                        <X className="h-3.5 w-3.5" />
+                      </button>
+                    ) : null}
+                  </div>
+
+                  {citySearchError ? (
+                    <p className="text-xs text-[#C5221F] dark:text-[#F28B82]">{citySearchError}</p>
+                  ) : null}
+
+                  {cityQuery.trim().length >= 2 && !searchingCities && cityResults.length === 0 && !citySearchError ? (
+                    <p className="rounded-xl border border-dashed border-[#DADCE0] px-3.5 py-2.5 text-xs text-[#5F6368] dark:border-white/[0.1] dark:text-[#9AA0A6]">
+                      No matching cities found for &ldquo;{cityQuery.trim()}&rdquo;. Try another
+                      city name or use GPS below.
+                    </p>
+                  ) : null}
+
+                  {cityResults.length > 0 ? (
+                    <div
+                      data-no-translate="true"
+                      className="max-h-48 overflow-y-auto rounded-2xl border border-[#DADCE0] bg-white p-1.5 shadow-sm dark:border-white/[0.1] dark:bg-[#131314]"
+                    >
+                      {cityResults.map((loc) => {
+                        const active = loc.locationId === city.locationId;
+                        return (
+                          <button
+                            key={loc.locationId}
+                            type="button"
+                            onClick={() => {
+                              setCity(loc);
+                              setCityQuery('');
+                              setCityResults([]);
+                            }}
+                            className={cn(
+                              'flex w-full cursor-pointer items-center justify-between gap-2 rounded-xl px-3 py-2 text-left text-xs transition-colors',
+                              active
+                                ? 'bg-[#4285F4]/12 font-semibold text-[#1A73E8] dark:bg-[#8AB4F8]/15 dark:text-[#8AB4F8]'
+                                : 'text-[#202124] hover:bg-[#F1F3F4] dark:text-[#E3E3E3] dark:hover:bg-white/[0.06]',
+                            )}
+                          >
+                            <span className="flex min-w-0 items-center gap-2">
+                              <MapPin
+                                className="h-3.5 w-3.5 shrink-0 text-[#4285F4] dark:text-[#8AB4F8]"
+                                aria-hidden="true"
+                              />
+                              <span className="truncate">{loc.label || loc.city}</span>
+                            </span>
+                            {active ? <Check className="h-3.5 w-3.5 shrink-0" /> : null}
+                          </button>
+                        );
+                      })}
+                    </div>
                   ) : null}
                 </div>
 
@@ -394,26 +526,35 @@ export function OnboardingPage() {
                   {locatingGps ? 'Detecting GPS location…' : 'Use My Current Location (GPS)'}
                 </Button>
 
-                <div className="grid grid-cols-2 gap-2 sm:grid-cols-3" data-no-translate="true">
-                  {QUICK_PICK_CITIES.map((c) => {
-                    const active = c.locationId === city.locationId;
-                    return (
-                      <button
-                        key={c.locationId}
-                        type="button"
-                        onClick={() => setCity(c)}
-                        className={cn(
-                          'flex cursor-pointer items-center gap-2 rounded-xl border px-3 py-2.5 text-left text-xs font-medium transition-all',
-                          active
-                            ? 'border-teal-500/60 bg-teal-500/10 text-teal-800 dark:border-teal-400/50 dark:bg-teal-400/12 dark:text-teal-200'
-                            : 'border-slate-200/80 bg-slate-50/50 text-slate-700 hover:border-slate-300 dark:border-white/[0.07] dark:bg-white/[0.02] dark:text-[#CBD5E1] dark:hover:border-white/[0.15]',
-                        )}
-                      >
-                        <MapPin className="h-3.5 w-3.5 shrink-0 text-teal-600 dark:text-teal-400" />
-                        <span className="truncate">{c.city}</span>
-                      </button>
-                    );
-                  })}
+                <div className="space-y-1.5">
+                  <p className="text-[11px] font-medium text-[#5F6368] dark:text-[#9AA0A6]">
+                    Or quick-pick a popular city:
+                  </p>
+                  <div className="grid grid-cols-2 gap-2 sm:grid-cols-3" data-no-translate="true">
+                    {QUICK_PICK_CITIES.map((c) => {
+                      const active = c.locationId === city.locationId;
+                      return (
+                        <button
+                          key={c.locationId}
+                          type="button"
+                          onClick={() => {
+                            setCity(c);
+                            setCityQuery('');
+                            setCityResults([]);
+                          }}
+                          className={cn(
+                            'flex cursor-pointer items-center gap-2 rounded-xl border px-3 py-2.5 text-left text-xs font-medium transition-all',
+                            active
+                              ? 'border-teal-500/60 bg-teal-500/10 text-teal-800 dark:border-teal-400/50 dark:bg-teal-400/12 dark:text-teal-200'
+                              : 'border-slate-200/80 bg-slate-50/50 text-slate-700 hover:border-slate-300 dark:border-white/[0.07] dark:bg-white/[0.02] dark:text-[#CBD5E1] dark:hover:border-white/[0.15]',
+                          )}
+                        >
+                          <MapPin className="h-3.5 w-3.5 shrink-0 text-teal-600 dark:text-teal-400" />
+                          <span className="truncate">{c.city}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
                 </div>
               </div>
             ) : null}
