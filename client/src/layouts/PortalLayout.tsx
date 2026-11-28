@@ -66,7 +66,7 @@ export function PortalLayout() {
   const { pathname } = useLocation();
   const activeRoute = getNavItemByPath(pathname);
   const { user, signOut } = useAuth();
-  const { selectedLocation, openPicker } = useSelectedLocation();
+  const { selectedLocationDisplayName, openPicker } = useSelectedLocation();
 
   useDocumentTitle(activeRoute.documentTitle);
 
@@ -205,8 +205,8 @@ export function PortalLayout() {
                 className="h-3.5 w-3.5 text-[#EA4335] dark:text-[#F28B82]"
                 aria-hidden="true"
               />
-              <span className="max-w-[115px] truncate sm:max-w-[160px]">
-                {selectedLocation.city}
+              <span className="max-w-[140px] truncate sm:max-w-[220px]">
+                {selectedLocationDisplayName}
               </span>
             </button>
 

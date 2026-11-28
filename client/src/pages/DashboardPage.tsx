@@ -43,7 +43,7 @@ import { getCurrentTimeWindow, TIME_WINDOW_META } from '@/lib/time-window';
 
 export function DashboardPage() {
   const { user } = useAuth();
-  const { selectedLocation, openPicker } = useSelectedLocation();
+  const { selectedLocation, selectedLocationNickname, openPicker } = useSelectedLocation();
   const { data, isLoading, isRefreshing, error, refresh } = useAirQuality();
   const { plan } = useDailyPlan();
   const [shareFeedback, setShareFeedback] = useState<'shared' | 'copied' | null>(null);
@@ -96,9 +96,19 @@ export function DashboardPage() {
           <p className="text-xs font-semibold text-emerald-700 dark:text-emerald-400">
             {windowMeta.greeting} · {windowMeta.rangeLabel}
           </p>
-          <h1 className="text-2xl font-bold tracking-tight text-zinc-950 dark:text-zinc-50">
-            {selectedLocation.city} Air Overview
-          </h1>
+          <div className="flex flex-wrap items-center gap-2">
+            <h1 className="text-2xl font-bold tracking-tight text-zinc-950 dark:text-zinc-50">
+              {selectedLocation.city} Air Overview
+            </h1>
+            {selectedLocationNickname ? (
+              <span
+                data-no-translate="true"
+                className="rounded-full border border-[#4285F4]/30 bg-[#E8F0FE] px-2.5 py-0.5 text-xs font-semibold text-[#174EA6] dark:border-[#8AB4F8]/35 dark:bg-[#4285F4]/20 dark:text-[#D2E3FC]"
+              >
+                {selectedLocationNickname}
+              </span>
+            ) : null}
+          </div>
           <p className="text-xs text-zinc-500 dark:text-zinc-400">
             Tap any <span className="font-semibold text-zinc-700 dark:text-zinc-300">ⓘ</span> icon
             to see what a metric means in plain English.

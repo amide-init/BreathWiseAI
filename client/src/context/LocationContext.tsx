@@ -3,6 +3,13 @@ import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react
 import { DEFAULT_CITY } from '@/config/cities';
 import { LocationContext, type LocationContextValue } from '@/context/location-context';
 import { useAuth } from '@/hooks/useAuth';
+import {
+  listCachedSavedCities,
+  listSavedCities,
+  removeUserCity,
+  saveUserCity,
+  type SavedCityModel,
+} from '@/services/saved-cities.service';
 import type { LocationOption } from '@/types';
 
 const STORAGE_KEY = 'breathewise:selected_location';
@@ -26,6 +33,7 @@ function readStoredLocation(): LocationOption {
 export function LocationProvider({ children }: { children: ReactNode }) {
   const { user, userProfile, updateUser } = useAuth();
   const [selectedLocation, setSelectedLocation] = useState<LocationOption>(readStoredLocation);
+  const [savedCities, setSavedCities] = useState<SavedCityModel[]>([]);
   const [isPickerOpen, setIsPickerOpen] = useState(false);
 
   // Sync saved primaryLocation from Firestore user profile when available
@@ -39,6 +47,32 @@ export function LocationProvider({ children }: { children: ReactNode }) {
       }
     }
   }, [userProfile]);
+
+  // Load user's saved/labeled cities under users/{uid}/saved_cities
+  useEffect(() => {
+    if (!user) {
+      setSavedCities([]);
+      return;
+    }
+    let cancelled = false;
+    void listCachedSavedCities(user.uid).then((cached) => {
+      if (!cancelled && cached && cached.length > 0) {
+        setSavedCities(cached);
+      }
+    });
+    void listSavedCities(user.uid)
+      .then((fresh) => {
+        if (!cancelled) {
+          setSavedCities(fresh);
+        }
+      })
+      .catch(() => {
+        // Non-blocking: quick-pick and search still work without saved cities
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [user]);
 
   const selectLocation = useCallback(
     async (location: LocationOption) => {
@@ -60,15 +94,62 @@ export function LocationProvider({ children }: { children: ReactNode }) {
     [user, updateUser],
   );
 
+  const saveCity = useCallback(
+    async (location: LocationOption, nickname?: string | null): Promise<SavedCityModel | null> => {
+      if (!user) {
+        return null;
+      }
+      const saved = await saveUserCity(user.uid, location, nickname);
+      setSavedCities((prev) => [saved, ...prev.filter((c) => c.locationId !== saved.locationId)]);
+      return saved;
+    },
+    [user],
+  );
+
+  const removeSavedCity = useCallback(
+    async (locationId: string): Promise<void> => {
+      if (!user) {
+        return;
+      }
+      await removeUserCity(user.uid, locationId);
+      setSavedCities((prev) => prev.filter((c) => c.locationId !== locationId));
+    },
+    [user],
+  );
+
+  const selectedLocationNickname = useMemo(() => {
+    const match = savedCities.find((c) => c.locationId === selectedLocation.locationId);
+    const trimmed = match?.nickname?.trim();
+    return trimmed ? trimmed : null;
+  }, [savedCities, selectedLocation.locationId]);
+
+  const selectedLocationDisplayName = selectedLocationNickname
+    ? `${selectedLocationNickname} · ${selectedLocation.city}`
+    : selectedLocation.city;
+
   const value = useMemo<LocationContextValue>(
     () => ({
       selectedLocation,
+      selectedLocationNickname,
+      selectedLocationDisplayName,
+      savedCities,
       isPickerOpen,
       openPicker: () => setIsPickerOpen(true),
       closePicker: () => setIsPickerOpen(false),
       selectLocation,
+      saveCity,
+      removeSavedCity,
     }),
-    [selectedLocation, isPickerOpen, selectLocation],
+    [
+      selectedLocation,
+      selectedLocationNickname,
+      selectedLocationDisplayName,
+      savedCities,
+      isPickerOpen,
+      selectLocation,
+      saveCity,
+      removeSavedCity,
+    ],
   );
 
   return <LocationContext.Provider value={value}>{children}</LocationContext.Provider>;

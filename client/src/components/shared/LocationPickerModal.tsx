@@ -1,4 +1,4 @@
-import { Loader2, LocateFixed, MapPin, Search, Star, X } from 'lucide-react';
+import { Check, Loader2, LocateFixed, MapPin, Pencil, Search, Star, Tag, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
 import { ModalPortal } from '@/components/ui/modal-portal';
@@ -7,67 +7,82 @@ import { useAuth } from '@/hooks/useAuth';
 import { useSelectedLocation } from '@/hooks/useSelectedLocation';
 import { detectUserGpsLocation } from '@/lib/geolocation';
 import { searchLocations } from '@/services/air-quality.service';
-import {
-  listCachedSavedCities,
-  listSavedCities,
-  removeUserCity,
-  saveUserCity,
-  type SavedCityModel,
-} from '@/services/saved-cities.service';
 import type { LocationOption } from '@/types';
+
+const PRESET_CITY_LABELS = ['My City', 'Home Town', 'Office', 'Parents', 'School'] as const;
 
 export function LocationPickerModal() {
   const { user } = useAuth();
-  const { selectedLocation, isPickerOpen, closePicker, selectLocation } = useSelectedLocation();
+  const {
+    selectedLocation,
+    savedCities,
+    isPickerOpen,
+    closePicker,
+    selectLocation,
+    saveCity,
+    removeSavedCity,
+  } = useSelectedLocation();
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<LocationOption[]>([...QUICK_PICK_CITIES]);
-  const [savedCities, setSavedCities] = useState<SavedCityModel[]>([]);
   const [togglingPinId, setTogglingPinId] = useState<string | null>(null);
+  const [editingCity, setEditingCity] = useState<LocationOption | null>(null);
+  const [labelDraft, setLabelDraft] = useState('');
+  const [savingLabel, setSavingLabel] = useState(false);
+  const [labelError, setLabelError] = useState<string | null>(null);
   const [searching, setSearching] = useState(false);
   const [locatingGps, setLocatingGps] = useState(false);
   const [gpsError, setGpsError] = useState<string | null>(null);
 
-  // Load user's pinned cities under users/{uid}/saved_cities whenever modal opens
+  // Reset inline label editor when modal closes
   useEffect(() => {
-    if (!isPickerOpen || !user) {
+    if (!isPickerOpen) {
+      setEditingCity(null);
+      setLabelDraft('');
+      setLabelError(null);
+    }
+  }, [isPickerOpen]);
+
+  const savedById = new Map(savedCities.map((c) => [c.locationId, c]));
+
+  function openLabelEditor(city: LocationOption) {
+    const existing = savedById.get(city.locationId);
+    setEditingCity(city);
+    setLabelDraft(existing?.nickname ?? '');
+    setLabelError(null);
+  }
+
+  async function handleSaveLabel(nextLabel?: string | null) {
+    if (!user || !editingCity || savingLabel) {
       return;
     }
-    let cancelled = false;
-    void listCachedSavedCities(user.uid).then((cached) => {
-      if (!cancelled && cached && cached.length > 0) {
-        setSavedCities(cached);
-      }
-    });
-    void listSavedCities(user.uid)
-      .then((fresh) => {
-        if (!cancelled) {
-          setSavedCities(fresh);
-        }
-      })
-      .catch(() => {
-        // Non-blocking: quick-pick and live search still work
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [isPickerOpen, user]);
+    const cleaned = (nextLabel !== undefined ? nextLabel : labelDraft)?.trim().slice(0, 40) || null;
+    setSavingLabel(true);
+    setLabelError(null);
+    try {
+      await saveCity(editingCity, cleaned);
+      setEditingCity(null);
+      setLabelDraft('');
+    } catch {
+      setLabelError('Could not save city label. Please try again.');
+    } finally {
+      setSavingLabel(false);
+    }
+  }
 
   async function handleTogglePin(city: LocationOption) {
     if (!user || togglingPinId) {
       return;
     }
-    const alreadyPinned = savedCities.some((c) => c.locationId === city.locationId);
+    const alreadyPinned = savedById.has(city.locationId);
     setTogglingPinId(city.locationId);
     try {
       if (alreadyPinned) {
-        await removeUserCity(user.uid, city.locationId);
-        setSavedCities((prev) => prev.filter((c) => c.locationId !== city.locationId));
+        await removeSavedCity(city.locationId);
+        if (editingCity?.locationId === city.locationId) {
+          setEditingCity(null);
+        }
       } else {
-        const saved = await saveUserCity(user.uid, city);
-        setSavedCities((prev) => [
-          saved,
-          ...prev.filter((c) => c.locationId !== saved.locationId),
-        ]);
+        await saveCity(city);
       }
     } catch {
       // Ignore transient Firestore error on optional pin action
@@ -126,8 +141,6 @@ export function LocationPickerModal() {
     return null;
   }
 
-  const pinnedIds = new Set(savedCities.map((c) => c.locationId));
-
   return (
     <ModalPortal>
       <div
@@ -145,7 +158,7 @@ export function LocationPickerModal() {
                   Select Your City
                 </h2>
                 <p className="text-xs text-[#5F6368] dark:text-[#9AA0A6]">
-                  Choose or pin cities for real-time CPCB NAQI, pollutants &amp; weather.
+                  Choose, pin, or label cities (like “My City” or “Home Town”).
                 </p>
               </div>
               <button
@@ -180,7 +193,94 @@ export function LocationPickerModal() {
               ) : null}
             </div>
 
-            {/* User's Saved / Pinned Cities (users/{uid}/saved_cities) */}
+            {/* Inline Custom City Label Editor */}
+            {user && editingCity ? (
+              <div className="mb-3 rounded-2xl border border-[#4285F4]/35 bg-[#F8FAFF] p-3 dark:border-[#8AB4F8]/30 dark:bg-[#131314]">
+                <div className="mb-2 flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-1.5 text-xs font-semibold text-[#174EA6] dark:text-[#D2E3FC]">
+                    <Tag className="h-3.5 w-3.5" aria-hidden="true" />
+                    <span className="truncate">
+                      Label for <span data-no-translate="true">{editingCity.city}</span>
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setEditingCity(null)}
+                    aria-label="Close label editor"
+                    className="flex h-6 w-6 cursor-pointer items-center justify-center rounded-full text-[#5F6368] hover:bg-black/5 dark:text-[#9AA0A6] dark:hover:bg-white/10"
+                  >
+                    <X className="h-3.5 w-3.5" />
+                  </button>
+                </div>
+
+                <div className="mb-2 flex flex-wrap gap-1.5">
+                  {PRESET_CITY_LABELS.map((preset) => {
+                    const active = labelDraft.trim().toLowerCase() === preset.toLowerCase();
+                    return (
+                      <button
+                        key={preset}
+                        type="button"
+                        onClick={() => setLabelDraft(preset)}
+                        className={`cursor-pointer rounded-full border px-2.5 py-0.5 text-[11px] font-medium transition-colors ${
+                          active
+                            ? 'border-[#4285F4] bg-[#4285F4] text-white dark:border-[#8AB4F8] dark:bg-[#8AB4F8] dark:text-[#131314]'
+                            : 'border-[#DADCE0] bg-white text-[#3C4043] hover:border-[#4285F4]/50 dark:border-white/[0.12] dark:bg-[#1E1F20] dark:text-[#E3E3E3]'
+                        }`}
+                      >
+                        {preset}
+                      </button>
+                    );
+                  })}
+                </div>
+
+                <form
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    void handleSaveLabel();
+                  }}
+                  className="flex items-center gap-1.5"
+                >
+                  <input
+                    type="text"
+                    maxLength={40}
+                    value={labelDraft}
+                    onChange={(e) => setLabelDraft(e.target.value)}
+                    placeholder="Custom label (e.g. My City, Home Town)…"
+                    className="min-w-0 flex-1 rounded-xl border border-[#DADCE0] bg-white px-3 py-1.5 text-xs text-[#202124] outline-none focus:border-[#4285F4] focus:ring-2 focus:ring-[#4285F4]/20 dark:border-white/[0.14] dark:bg-[#1E1F20] dark:text-[#E3E3E3] dark:placeholder:text-[#9AA0A6]"
+                  />
+                  {savedById.get(editingCity.locationId)?.nickname ? (
+                    <button
+                      type="button"
+                      disabled={savingLabel}
+                      onClick={() => void handleSaveLabel(null)}
+                      className="cursor-pointer rounded-xl border border-[#DADCE0] px-2.5 py-1.5 text-xs font-medium text-[#5F6368] hover:bg-black/5 disabled:opacity-50 dark:border-white/[0.12] dark:text-[#9AA0A6] dark:hover:bg-white/10"
+                    >
+                      Clear
+                    </button>
+                  ) : null}
+                  <button
+                    type="submit"
+                    disabled={savingLabel}
+                    className="inline-flex cursor-pointer items-center gap-1 rounded-xl bg-[#1A73E8] px-3 py-1.5 text-xs font-semibold text-white hover:bg-[#1765CC] disabled:opacity-60 dark:bg-[#8AB4F8] dark:text-[#131314] dark:hover:bg-[#A8C7FA]"
+                  >
+                    {savingLabel ? (
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" />
+                    ) : (
+                      <Check className="h-3.5 w-3.5" aria-hidden="true" />
+                    )}
+                    Save
+                  </button>
+                </form>
+
+                {labelError ? (
+                  <p className="mt-1.5 text-[11px] text-[#C5221F] dark:text-[#F28B82]">
+                    {labelError}
+                  </p>
+                ) : null}
+              </div>
+            ) : null}
+
+            {/* User's Saved / Labeled Cities (users/{uid}/saved_cities) */}
             {user && savedCities.length > 0 ? (
               <div className="mb-3 space-y-1.5">
                 <p className="text-[11px] font-semibold uppercase tracking-wide text-[#5F6368] dark:text-[#9AA0A6]">
@@ -201,9 +301,18 @@ export function LocationPickerModal() {
                         <button
                           type="button"
                           onClick={() => void selectLocation(city)}
-                          className="cursor-pointer truncate max-w-[160px]"
+                          className="max-w-[190px] cursor-pointer truncate"
                         >
                           {city.nickname ? `${city.nickname} · ${city.city}` : city.city}
+                        </button>
+                        <button
+                          type="button"
+                          aria-label={`Edit label for ${city.city}`}
+                          title={`Label ${city.city} (e.g. My City, Home Town)`}
+                          onClick={() => openLabelEditor(city)}
+                          className="flex h-4 w-4 cursor-pointer items-center justify-center rounded-full text-[#5F6368] hover:bg-black/5 hover:text-[#1A73E8] dark:text-[#9AA0A6] dark:hover:bg-white/10 dark:hover:text-[#8AB4F8]"
+                        >
+                          <Pencil className="h-2.5 w-2.5" />
                         </button>
                         <button
                           type="button"
@@ -248,7 +357,8 @@ export function LocationPickerModal() {
               ) : (
                 results.map((city) => {
                   const isSelected = city.locationId === selectedLocation.locationId;
-                  const isPinned = pinnedIds.has(city.locationId);
+                  const savedEntry = savedById.get(city.locationId);
+                  const isPinned = Boolean(savedEntry);
                   return (
                     <div
                       key={city.locationId}
@@ -272,37 +382,59 @@ export function LocationPickerModal() {
                           aria-hidden="true"
                         />
                         <span className="min-w-0" data-no-translate="true">
-                          <span className="block truncate text-sm font-medium">{city.city}</span>
+                          <span className="flex items-center gap-1.5 truncate text-sm font-medium">
+                            <span className="truncate">{city.city}</span>
+                            {savedEntry?.nickname ? (
+                              <span className="shrink-0 rounded-full bg-[#4285F4]/12 px-2 py-0.5 text-[10px] font-semibold text-[#1A73E8] dark:bg-[#8AB4F8]/18 dark:text-[#8AB4F8]">
+                                {savedEntry.nickname}
+                              </span>
+                            ) : null}
+                          </span>
                           <span className="block truncate text-xs text-[#5F6368] dark:text-[#9AA0A6]">
                             {city.label}
                           </span>
                         </span>
                       </button>
 
-                      <div className="flex shrink-0 items-center gap-1.5">
+                      <div className="flex shrink-0 items-center gap-1">
                         {isSelected ? (
                           <span className="rounded-full bg-[#4285F4] px-2.5 py-0.5 text-[10px] font-semibold text-white">
                             Active
                           </span>
                         ) : null}
                         {user ? (
-                          <button
-                            type="button"
-                            disabled={togglingPinId === city.locationId}
-                            onClick={() => void handleTogglePin(city)}
-                            aria-label={
-                              isPinned
-                                ? `Remove ${city.city} from saved cities`
-                                : `Save ${city.city}`
-                            }
-                            className={`flex h-7 w-7 cursor-pointer items-center justify-center rounded-full transition-colors ${
-                              isPinned
-                                ? 'text-[#FBBC05] hover:bg-black/5 dark:hover:bg-white/10'
-                                : 'text-[#9AA0A6] hover:bg-black/5 hover:text-[#FBBC05] dark:hover:bg-white/10'
-                            }`}
-                          >
-                            <Star className={`h-3.5 w-3.5 ${isPinned ? 'fill-current' : ''}`} />
-                          </button>
+                          <>
+                            <button
+                              type="button"
+                              onClick={() => openLabelEditor(city)}
+                              aria-label={`Set label for ${city.city}`}
+                              title="Set custom label (e.g. My City, Home Town)"
+                              className={`flex h-7 w-7 cursor-pointer items-center justify-center rounded-full transition-colors ${
+                                savedEntry?.nickname
+                                  ? 'text-[#1A73E8] hover:bg-black/5 dark:text-[#8AB4F8] dark:hover:bg-white/10'
+                                  : 'text-[#9AA0A6] hover:bg-black/5 hover:text-[#1A73E8] dark:hover:bg-white/10 dark:hover:text-[#8AB4F8]'
+                              }`}
+                            >
+                              <Tag className="h-3.5 w-3.5" />
+                            </button>
+                            <button
+                              type="button"
+                              disabled={togglingPinId === city.locationId}
+                              onClick={() => void handleTogglePin(city)}
+                              aria-label={
+                                isPinned
+                                  ? `Remove ${city.city} from saved cities`
+                                  : `Save ${city.city}`
+                              }
+                              className={`flex h-7 w-7 cursor-pointer items-center justify-center rounded-full transition-colors ${
+                                isPinned
+                                  ? 'text-[#FBBC05] hover:bg-black/5 dark:hover:bg-white/10'
+                                  : 'text-[#9AA0A6] hover:bg-black/5 hover:text-[#FBBC05] dark:hover:bg-white/10'
+                              }`}
+                            >
+                              <Star className={`h-3.5 w-3.5 ${isPinned ? 'fill-current' : ''}`} />
+                            </button>
+                          </>
                         ) : null}
                       </div>
                     </div>

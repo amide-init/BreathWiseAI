@@ -191,7 +191,7 @@ function AssistantMessageCard({
 
 export function AssistantPage() {
   const { user, userProfile } = useAuth();
-  const { selectedLocation } = useSelectedLocation();
+  const { selectedLocation, selectedLocationDisplayName } = useSelectedLocation();
   const { family, members } = useFamilyProfile();
   const [searchParams, setSearchParams] = useSearchParams();
 
@@ -457,9 +457,12 @@ export function AssistantPage() {
             <GoogleSparkleMark className="h-3.5 w-3.5" />
             Ask BreathWiseAI
           </span>
-          <span className="inline-flex items-center gap-1 rounded-full bg-[#4285F4]/10 px-2.5 py-1 text-[11px] font-medium text-[#1A73E8] dark:bg-[#8AB4F8]/14 dark:text-[#8AB4F8]">
+          <span
+            data-no-translate="true"
+            className="inline-flex items-center gap-1 rounded-full bg-[#4285F4]/10 px-2.5 py-1 text-[11px] font-medium text-[#1A73E8] dark:bg-[#8AB4F8]/14 dark:text-[#8AB4F8]"
+          >
             <MapPin className="h-3 w-3" aria-hidden="true" />
-            {selectedLocation.city}
+            {selectedLocationDisplayName}
           </span>
           {members.length > 0 ? (
             <span className="inline-flex items-center gap-1 rounded-full bg-[#34A853]/10 px-2.5 py-1 text-[11px] font-medium text-[#137333] dark:bg-[#81C995]/14 dark:text-[#81C995]">
