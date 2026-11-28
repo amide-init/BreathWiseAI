@@ -1,6 +1,6 @@
-"""Firestore repository for atomic per-user lifetime quota counters (`user_usage/{uid}`).
+"""Firestore repository for atomic per-user lifetime quota counters (`users/{uid}/private/usage`).
 
-Strictly Admin-SDK-only (blocked to clients via default catch-all in firestore.rules)
+Strictly Admin-SDK-only (`allow read, write: if false;` on `users/{uid}/private/{docId}`)
 so users can never tamper with or reset their own account quota counters.
 """
 
@@ -16,13 +16,19 @@ from app.utils.logger import log_event
 
 
 class UsageRepository(BaseFirestoreRepository):
-    """Atomic Firestore transaction counter per user account (lifetime scope)."""
+    """Atomic Firestore transaction counter at `users/{uid}/private/usage` (lifetime scope)."""
 
-    COLLECTION = "user_usage"
+    USERS_COLLECTION = "users"
+    PRIVATE_SUBCOLLECTION = "private"
+    USAGE_DOC_ID = "usage"
 
-    @staticmethod
-    def doc_id(user_id: str) -> str:
-        return user_id
+    def _usage_ref(self, user_id: str) -> Any:
+        return (
+            self.db.collection(self.USERS_COLLECTION)
+            .document(user_id)
+            .collection(self.PRIVATE_SUBCOLLECTION)
+            .document(self.USAGE_DOC_ID)
+        )
 
     def check_and_increment(
         self,
@@ -38,7 +44,7 @@ class UsageRepository(BaseFirestoreRepository):
         """
         try:
             db = self.db
-            doc_ref = db.collection(self.COLLECTION).document(self.doc_id(user_id))
+            doc_ref = self._usage_ref(user_id)
             transaction = db.transaction()
 
             @firestore.transactional
@@ -77,9 +83,9 @@ class UsageRepository(BaseFirestoreRepository):
             return 0, True
 
     def get_lifetime_counts(self, *, user_id: str) -> dict[str, int]:
-        """Read lifetime usage counts for `user_id` (zeros when no doc exists yet)."""
+        """Read lifetime usage counts at `users/{uid}/private/usage` (zeros when absent)."""
         try:
-            snap = self.db.collection(self.COLLECTION).document(self.doc_id(user_id)).get()
+            snap = self._usage_ref(user_id).get()
             if not snap.exists:
                 return {}
             data = snap.to_dict() or {}

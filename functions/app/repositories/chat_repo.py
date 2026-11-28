@@ -1,4 +1,4 @@
-"""Firestore repository for `chat_sessions/{sessionId}` and `messages/{messageId}` (FR-08)."""
+"""Firestore repository for `users/{uid}/chat_sessions/{sessionId}/messages/{messageId}` (FR-08)."""
 
 from __future__ import annotations
 
@@ -14,10 +14,18 @@ from app.utils.logger import log_event
 
 
 class ChatRepository(BaseFirestoreRepository):
-    """Persists and reads user-owned conversational AI sessions and messages via Admin SDK."""
+    """Persists and reads user-owned chat sessions & messages under `users/{uid}/chat_sessions`."""
 
+    USERS_COLLECTION = "users"
     SESSIONS_COLLECTION = "chat_sessions"
     MESSAGES_SUBCOLLECTION = "messages"
+
+    def _sessions_col(self, user_id: str) -> Any:
+        return (
+            self.db.collection(self.USERS_COLLECTION)
+            .document(user_id)
+            .collection(self.SESSIONS_COLLECTION)
+        )
 
     def ensure_session(
         self,
@@ -28,11 +36,12 @@ class ChatRepository(BaseFirestoreRepository):
         location_id: str,
         first_message: str,
     ) -> str:
-        """Return existing verified session ID or create a new user-owned session document."""
+        """Return existing verified session ID or create a new session under `users/{uid}/chat_sessions`."""
+        sessions_col = self._sessions_col(user_id)
         if session_id:
             try:
-                snap = self.db.collection(self.SESSIONS_COLLECTION).document(session_id).get()
-                if snap.exists and (snap.to_dict() or {}).get("userId") == user_id:
+                snap = sessions_col.document(session_id).get()
+                if snap.exists:
                     return session_id
             except Exception as exc:  # noqa: BLE001
                 log_event(
@@ -52,7 +61,7 @@ class ChatRepository(BaseFirestoreRepository):
             "updatedAt": firestore.SERVER_TIMESTAMP,
         }
         try:
-            self.db.collection(self.SESSIONS_COLLECTION).document(new_session_id).set(payload)
+            sessions_col.document(new_session_id).set(payload)
         except Exception as exc:  # noqa: BLE001
             log_event(
                 "chat_session_create_failed",
@@ -62,11 +71,17 @@ class ChatRepository(BaseFirestoreRepository):
             )
         return new_session_id
 
-    def get_recent_history(self, *, session_id: str, limit: int = 6) -> list[dict[str, str]]:
+    def get_recent_history(
+        self,
+        *,
+        user_id: str,
+        session_id: str,
+        limit: int = 6,
+    ) -> list[dict[str, str]]:
         """Load the most recent conversation turns in chronological order for prompt grounding."""
         try:
             snaps = list(
-                self.db.collection(self.SESSIONS_COLLECTION)
+                self._sessions_col(user_id)
                 .document(session_id)
                 .collection(self.MESSAGES_SUBCOLLECTION)
                 .order_by("createdAt", direction=firestore.Query.DESCENDING)
@@ -99,7 +114,7 @@ class ChatRepository(BaseFirestoreRepository):
         content: str,
         metadata: dict[str, Any] | None = None,
     ) -> dict[str, Any]:
-        """Write a single chat turn (user or assistant) under `chat_sessions/{sessionId}/messages`."""
+        """Write a single chat turn under `users/{uid}/chat_sessions/{sessionId}/messages`."""
         message_id = f"msg_{uuid.uuid4().hex[:12]}"
         now_iso = to_iso_utc(utc_now())
         record: dict[str, Any] = {
@@ -114,7 +129,7 @@ class ChatRepository(BaseFirestoreRepository):
         try:
             doc_to_write = dict(record)
             doc_to_write["createdAt"] = firestore.SERVER_TIMESTAMP
-            session_ref = self.db.collection(self.SESSIONS_COLLECTION).document(session_id)
+            session_ref = self._sessions_col(user_id).document(session_id)
             session_ref.collection(self.MESSAGES_SUBCOLLECTION).document(message_id).set(
                 doc_to_write
             )

@@ -324,8 +324,11 @@ export function AssistantPage() {
   }
 
   async function handleDeleteSession(sessionId: string) {
+    if (!user) {
+      return;
+    }
     try {
-      await deleteChatSession(sessionId);
+      await deleteChatSession(user.uid, sessionId);
       setSessions((prev) => {
         const next = prev.filter((s) => s.sessionId !== sessionId);
         if (user) {

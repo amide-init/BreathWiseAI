@@ -41,6 +41,7 @@ class PlannerService:
             existing = self._plan_repo.get_latest_plan_for_date(
                 user_id=user_id,
                 plan_date=target_date,
+                location_id=location_id,
             )
             if existing and existing.get("locationId") == location_id:
                 return existing

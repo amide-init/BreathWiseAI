@@ -38,13 +38,17 @@ class FamilyAggregate:
 
 
 class FamilyRepository(BaseFirestoreRepository):
-    """Owner-verified Firestore reads for household & member context with 60s L1 cache."""
+    """Owner-scoped Firestore reads under `users/{uid}/families/{familyId}` with 60s L1 cache."""
 
+    USERS_COLLECTION = "users"
     COLLECTION = "families"
 
     def __init__(self, db_client: Any | None = None, *, use_l1_cache: bool | None = None) -> None:
         super().__init__(db_client=db_client)
         self._use_l1_cache = (db_client is None) if use_l1_cache is None else use_l1_cache
+
+    def _families_col(self, uid: str) -> Any:
+        return self.db.collection(self.USERS_COLLECTION).document(uid).collection(self.COLLECTION)
 
     def get_family_for_user(
         self,
@@ -64,14 +68,10 @@ class FamilyRepository(BaseFirestoreRepository):
                 return None
 
             data = doc_snap.to_dict() or {}
-            if data.get("ownerUserId") != uid:
-                return None
-
             member_snaps = (
-                self.db.collection(self.COLLECTION)
+                self._families_col(uid)
                 .document(doc_snap.id)
                 .collection("members")
-                .where("ownerUserId", "==", uid)
                 .stream()
             )
             members = [_parse_member(m.id, m.to_dict() or {}) for m in member_snaps if m.exists]
@@ -102,14 +102,13 @@ class FamilyRepository(BaseFirestoreRepository):
             return None
 
     def _find_family_doc(self, *, uid: str, family_id: str | None) -> Any | None:
+        families_col = self._families_col(uid)
         if family_id:
-            snap = self.db.collection(self.COLLECTION).document(family_id).get()
-            if snap.exists and (snap.to_dict() or {}).get("ownerUserId") == uid:
+            snap = families_col.document(family_id).get()
+            if snap.exists:
                 return snap
 
-        snaps = list(
-            self.db.collection(self.COLLECTION).where("ownerUserId", "==", uid).limit(1).stream()
-        )
+        snaps = list(families_col.limit(1).stream())
         return snaps[0] if snaps else None
 
     def save_indoor_questionnaire(
@@ -119,11 +118,11 @@ class FamilyRepository(BaseFirestoreRepository):
         family_id: str,
         questionnaire: IndoorQuestionnaire,
     ) -> bool:
-        """Persist questionnaire baseline on `families/{familyId}` after ownership check."""
+        """Persist questionnaire baseline on `users/{uid}/families/{familyId}`."""
         try:
-            doc_ref = self.db.collection(self.COLLECTION).document(family_id)
+            doc_ref = self._families_col(uid).document(family_id)
             snap = doc_ref.get()
-            if not snap.exists or (snap.to_dict() or {}).get("ownerUserId") != uid:
+            if not snap.exists:
                 return False
             q_payload = questionnaire.model_dump(by_alias=True)
             q_payload["completedAt"] = to_iso_utc(utc_now())

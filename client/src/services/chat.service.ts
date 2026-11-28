@@ -7,7 +7,6 @@ import {
   orderBy,
   query,
   Timestamp,
-  where,
 } from 'firebase/firestore';
 
 import { callFunction } from '@/lib/callable-client';
@@ -20,7 +19,8 @@ import type {
 } from '@/models/chat.model';
 import type { Citation, CurrentAirQuality, LocationOption } from '@/types';
 
-const SESSIONS_COLLECTION = 'chat_sessions';
+const USERS_COLLECTION = 'users';
+const SESSIONS_SUBCOLLECTION = 'chat_sessions';
 
 function serializeTs(value: unknown): string | null {
   if (value instanceof Timestamp) {
@@ -35,8 +35,7 @@ export async function listCachedUserChatSessions(uid: string): Promise<ChatSessi
     return null;
   }
   const q = query(
-    collection(db, SESSIONS_COLLECTION),
-    where('userId', '==', uid),
+    collection(db, USERS_COLLECTION, uid, SESSIONS_SUBCOLLECTION),
     orderBy('updatedAt', 'desc'),
     limit(15),
   );
@@ -64,8 +63,7 @@ export async function listCachedSessionMessages(
     return null;
   }
   const q = query(
-    collection(db, SESSIONS_COLLECTION, sessionId, 'messages'),
-    where('userId', '==', uid),
+    collection(db, USERS_COLLECTION, uid, SESSIONS_SUBCOLLECTION, sessionId, 'messages'),
     limit(50),
   );
   const snap = await getDocsFromLocalCache(q);
@@ -119,8 +117,7 @@ export async function listUserChatSessions(uid: string): Promise<ChatSessionSumm
     return [];
   }
   const q = query(
-    collection(db, SESSIONS_COLLECTION),
-    where('userId', '==', uid),
+    collection(db, USERS_COLLECTION, uid, SESSIONS_SUBCOLLECTION),
     orderBy('updatedAt', 'desc'),
     limit(15),
   );
@@ -145,8 +142,7 @@ export async function listSessionMessages(
     return [];
   }
   const q = query(
-    collection(db, SESSIONS_COLLECTION, sessionId, 'messages'),
-    where('userId', '==', uid),
+    collection(db, USERS_COLLECTION, uid, SESSIONS_SUBCOLLECTION, sessionId, 'messages'),
     limit(50),
   );
   const snap = await getDocs(q);
@@ -174,10 +170,10 @@ export async function listSessionMessages(
   return messages.sort((a, b) => (a.createdAt ?? '').localeCompare(b.createdAt ?? ''));
 }
 
-export async function deleteChatSession(sessionId: string): Promise<void> {
+export async function deleteChatSession(uid: string, sessionId: string): Promise<void> {
   const db = getFirebaseDb();
   if (!db) {
     return;
   }
-  await deleteDoc(doc(db, SESSIONS_COLLECTION, sessionId));
+  await deleteDoc(doc(db, USERS_COLLECTION, uid, SESSIONS_SUBCOLLECTION, sessionId));
 }

@@ -13,8 +13,8 @@ import {
 
 const PLAN_CACHE_TTL_MS = 10 * 60 * 1000;
 
-function planCacheKey(uid: string, dateKey: string): string {
-  return `daily_plan:${uid}:${dateKey}`;
+function planCacheKey(uid: string, dateKey: string, locationId: string): string {
+  return `daily_plan:${uid}:${dateKey}:${locationId}`;
 }
 
 export interface UseDailyPlanResult {
@@ -30,7 +30,10 @@ export function useDailyPlan(): UseDailyPlanResult {
   const { user, userProfile } = useAuth();
   const { selectedLocation } = useSelectedLocation();
   const dateKey = getTodayLocalDateKey();
-  const initialHit = user ? getCached<DailyPlanModel | null>(planCacheKey(user.uid, dateKey)) : null;
+  const locationId = selectedLocation.locationId;
+  const initialHit = user
+    ? getCached<DailyPlanModel | null>(planCacheKey(user.uid, dateKey, locationId))
+    : null;
 
   const [plan, setPlan] = useState<DailyPlanModel | null>(initialHit?.value ?? null);
   const [isLoading, setIsLoading] = useState<boolean>(!initialHit);
@@ -46,7 +49,7 @@ export function useDailyPlan(): UseDailyPlanResult {
     }
 
     const uid = user.uid;
-    const key = planCacheKey(uid, dateKey);
+    const key = planCacheKey(uid, dateKey, locationId);
     const memHit = getCached<DailyPlanModel | null>(key);
 
     async function loadPlan() {
@@ -61,7 +64,7 @@ export function useDailyPlan(): UseDailyPlanResult {
         }
       } else {
         setIsLoading(true);
-        const localHit = await getCachedTodayDailyPlan(uid, dateKey);
+        const localHit = await getCachedTodayDailyPlan(uid, dateKey, locationId);
         if (!active) {
           return;
         }
@@ -74,7 +77,9 @@ export function useDailyPlan(): UseDailyPlanResult {
 
       setError(null);
       try {
-        const found = await dedupeFetch(`fetch:${key}`, () => getTodayDailyPlan(uid, dateKey));
+        const found = await dedupeFetch(`fetch:${key}`, () =>
+          getTodayDailyPlan(uid, dateKey, locationId),
+        );
         if (!active) {
           return;
         }
@@ -96,7 +101,7 @@ export function useDailyPlan(): UseDailyPlanResult {
     return () => {
       active = false;
     };
-  }, [user, dateKey, selectedLocation.locationId]);
+  }, [user, dateKey, locationId]);
 
   const generate = useCallback(
     async (forceRefresh = false) => {
@@ -110,7 +115,11 @@ export function useDailyPlan(): UseDailyPlanResult {
         });
         setPlan(nextPlan);
         if (user) {
-          setCached(planCacheKey(user.uid, dateKey), nextPlan, PLAN_CACHE_TTL_MS);
+          setCached(
+            planCacheKey(user.uid, dateKey, selectedLocation.locationId),
+            nextPlan,
+            PLAN_CACHE_TTL_MS,
+          );
         }
       } catch (err) {
         setError(
@@ -127,7 +136,7 @@ export function useDailyPlan(): UseDailyPlanResult {
 
   const toggleItemCompleted = useCallback(
     async (itemId: string) => {
-      if (!plan) {
+      if (!plan || !user) {
         return;
       }
       const prevIds = plan.completedItemIds;
@@ -137,20 +146,17 @@ export function useDailyPlan(): UseDailyPlanResult {
         : [...prevIds, itemId];
 
       const optimistic: DailyPlanModel = { ...plan, completedItemIds: nextIds };
+      const key = planCacheKey(user.uid, dateKey, locationId);
       setPlan(optimistic);
-      if (user) {
-        setCached(planCacheKey(user.uid, dateKey), optimistic, PLAN_CACHE_TTL_MS);
-      }
+      setCached(key, optimistic, PLAN_CACHE_TTL_MS);
       try {
-        await updatePlanCompletedItems(plan.planId, nextIds);
+        await updatePlanCompletedItems(user.uid, plan.planId, nextIds);
       } catch {
         setPlan({ ...plan, completedItemIds: prevIds });
-        if (user) {
-          setCached(planCacheKey(user.uid, dateKey), plan, PLAN_CACHE_TTL_MS);
-        }
+        setCached(key, plan, PLAN_CACHE_TTL_MS);
       }
     },
-    [plan, user, dateKey],
+    [plan, user, dateKey, locationId],
   );
 
   return {

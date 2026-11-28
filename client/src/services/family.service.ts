@@ -8,7 +8,6 @@ import {
   limit,
   query,
   updateDoc,
-  where,
 } from 'firebase/firestore';
 
 import { getFirebaseDb } from '@/lib/firebase';
@@ -26,7 +25,8 @@ import {
   type SaveMemberInput,
 } from '@/models/family.model';
 
-const FAMILIES_COLLECTION = 'families';
+const USERS_COLLECTION = 'users';
+const FAMILIES_SUBCOLLECTION = 'families';
 
 export async function getCachedUserFamily(
   uid: string,
@@ -39,18 +39,16 @@ export async function getCachedUserFamily(
 
   let family: FamilyModel | null = null;
   if (defaultFamilyId) {
-    const directSnap = await getDocFromLocalCache(doc(db, FAMILIES_COLLECTION, defaultFamilyId));
-    if (directSnap && directSnap.exists() && directSnap.data().ownerUserId === uid) {
+    const directSnap = await getDocFromLocalCache(
+      doc(db, USERS_COLLECTION, uid, FAMILIES_SUBCOLLECTION, defaultFamilyId),
+    );
+    if (directSnap && directSnap.exists()) {
       family = mapFirestoreDocToFamilyModel(directSnap.id, directSnap.data());
     }
   }
 
   if (!family) {
-    const q = query(
-      collection(db, FAMILIES_COLLECTION),
-      where('ownerUserId', '==', uid),
-      limit(1),
-    );
+    const q = query(collection(db, USERS_COLLECTION, uid, FAMILIES_SUBCOLLECTION), limit(1));
     const snaps = await getDocsFromLocalCache(q);
     const first = snaps?.docs[0];
     if (first) {
@@ -63,8 +61,7 @@ export async function getCachedUserFamily(
   }
 
   const membersQuery = query(
-    collection(db, FAMILIES_COLLECTION, family.familyId, 'members'),
-    where('ownerUserId', '==', uid),
+    collection(db, USERS_COLLECTION, uid, FAMILIES_SUBCOLLECTION, family.familyId, 'members'),
   );
   const memberSnaps = await getDocsFromLocalCache(membersQuery);
   const members = memberSnaps
@@ -84,17 +81,15 @@ export async function getUserFamily(
   }
 
   if (defaultFamilyId) {
-    const directSnap = await getDoc(doc(db, FAMILIES_COLLECTION, defaultFamilyId));
-    if (directSnap.exists() && directSnap.data().ownerUserId === uid) {
+    const directSnap = await getDoc(
+      doc(db, USERS_COLLECTION, uid, FAMILIES_SUBCOLLECTION, defaultFamilyId),
+    );
+    if (directSnap.exists()) {
       return mapFirestoreDocToFamilyModel(directSnap.id, directSnap.data());
     }
   }
 
-  const q = query(
-    collection(db, FAMILIES_COLLECTION),
-    where('ownerUserId', '==', uid),
-    limit(1),
-  );
+  const q = query(collection(db, USERS_COLLECTION, uid, FAMILIES_SUBCOLLECTION), limit(1));
   const snaps = await getDocs(q);
   const first = snaps.docs[0];
   return first ? mapFirestoreDocToFamilyModel(first.id, first.data()) : null;
@@ -111,7 +106,7 @@ export async function saveFamilyProfile(
   }
 
   if (existingFamilyId) {
-    const ref = doc(db, FAMILIES_COLLECTION, existingFamilyId);
+    const ref = doc(db, USERS_COLLECTION, uid, FAMILIES_SUBCOLLECTION, existingFamilyId);
     await updateDoc(ref, buildFamilyUpdatePayload(input));
     const snap = await getDoc(ref);
     if (snap.exists()) {
@@ -120,7 +115,7 @@ export async function saveFamilyProfile(
   }
 
   const createdRef = await addDoc(
-    collection(db, FAMILIES_COLLECTION),
+    collection(db, USERS_COLLECTION, uid, FAMILIES_SUBCOLLECTION),
     buildFamilyCreatePayload(uid, input),
   );
   const createdSnap = await getDoc(createdRef);
@@ -144,12 +139,9 @@ export async function listFamilyMembers(
   if (!db) {
     return [];
   }
-  // Includes ownerUserId filter so Firestore statically verifies subcollection read rule
-  const q = query(
-    collection(db, FAMILIES_COLLECTION, familyId, 'members'),
-    where('ownerUserId', '==', uid),
+  const snaps = await getDocs(
+    collection(db, USERS_COLLECTION, uid, FAMILIES_SUBCOLLECTION, familyId, 'members'),
   );
-  const snaps = await getDocs(q);
   return snaps.docs.map((d) => mapFirestoreDocToMemberModel(d.id, d.data()));
 }
 
@@ -163,7 +155,7 @@ export async function addFamilyMember(
     throw new Error('Cloud Firestore is not configured.');
   }
   const ref = await addDoc(
-    collection(db, FAMILIES_COLLECTION, familyId, 'members'),
+    collection(db, USERS_COLLECTION, uid, FAMILIES_SUBCOLLECTION, familyId, 'members'),
     buildMemberCreatePayload(uid, input),
   );
   const snap = await getDoc(ref);
@@ -185,6 +177,7 @@ export async function addFamilyMember(
 }
 
 export async function updateFamilyMember(
+  uid: string,
   familyId: string,
   memberId: string,
   input: SaveMemberInput,
@@ -193,7 +186,15 @@ export async function updateFamilyMember(
   if (!db) {
     throw new Error('Cloud Firestore is not configured.');
   }
-  const ref = doc(db, FAMILIES_COLLECTION, familyId, 'members', memberId);
+  const ref = doc(
+    db,
+    USERS_COLLECTION,
+    uid,
+    FAMILIES_SUBCOLLECTION,
+    familyId,
+    'members',
+    memberId,
+  );
   await updateDoc(ref, buildMemberUpdatePayload(input));
   const snap = await getDoc(ref);
   if (!snap.exists()) {
@@ -202,10 +203,16 @@ export async function updateFamilyMember(
   return mapFirestoreDocToMemberModel(snap.id, snap.data());
 }
 
-export async function deleteFamilyMember(familyId: string, memberId: string): Promise<void> {
+export async function deleteFamilyMember(
+  uid: string,
+  familyId: string,
+  memberId: string,
+): Promise<void> {
   const db = getFirebaseDb();
   if (!db) {
     return;
   }
-  await deleteDoc(doc(db, FAMILIES_COLLECTION, familyId, 'members', memberId));
+  await deleteDoc(
+    doc(db, USERS_COLLECTION, uid, FAMILIES_SUBCOLLECTION, familyId, 'members', memberId),
+  );
 }

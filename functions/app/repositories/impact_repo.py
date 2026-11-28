@@ -1,4 +1,4 @@
-"""Firestore repository for `impact_logs/{logId}` sustainability & exposure records (FR-10)."""
+"""Firestore repository for `users/{uid}/impact_logs/{logId}` sustainability & exposure records."""
 
 from __future__ import annotations
 
@@ -14,12 +14,16 @@ from app.utils.logger import log_event
 
 
 class ImpactRepository(BaseFirestoreRepository):
-    """Persists, reads, and deletes user-owned impact logs via Admin SDK."""
+    """Persists, reads, and deletes user-owned impact logs under `users/{uid}/impact_logs`."""
 
+    USERS_COLLECTION = "users"
     COLLECTION = "impact_logs"
 
+    def _logs_col(self, user_id: str) -> Any:
+        return self.db.collection(self.USERS_COLLECTION).document(user_id).collection(self.COLLECTION)
+
     def save_log(self, *, user_id: str, payload: dict[str, Any]) -> dict[str, Any]:
-        """Persist a deterministically calculated impact log document."""
+        """Persist a deterministically calculated impact log under `users/{uid}/impact_logs`."""
         log_id = str(payload.get("logId") or f"imp_{uuid.uuid4().hex[:12]}")
         now_iso = to_iso_utc(utc_now())
         record: dict[str, Any] = {
@@ -31,7 +35,7 @@ class ImpactRepository(BaseFirestoreRepository):
         try:
             doc_to_write = dict(record)
             doc_to_write["createdAt"] = firestore.SERVER_TIMESTAMP
-            self.db.collection(self.COLLECTION).document(log_id).set(doc_to_write)
+            self._logs_col(user_id).document(log_id).set(doc_to_write)
         except Exception as exc:  # noqa: BLE001
             log_event(
                 "impact_log_save_failed",
@@ -42,11 +46,12 @@ class ImpactRepository(BaseFirestoreRepository):
         return record
 
     def list_logs(self, *, user_id: str, start_date: str | None = None) -> list[dict[str, Any]]:
-        """List all impact logs owned by `user_id`, optionally filtered by `loggedDate >= start_date`."""
+        """List all impact logs under `users/{uid}/impact_logs`, optionally filtered by `start_date`."""
         try:
-            snaps = list(
-                self.db.collection(self.COLLECTION).where("userId", "==", user_id).stream()
-            )
+            query_ref: Any = self._logs_col(user_id)
+            if start_date:
+                query_ref = query_ref.where("loggedDate", ">=", start_date)
+            snaps = list(query_ref.stream())
             records: list[dict[str, Any]] = []
             for snap in snaps:
                 if not snap.exists:
@@ -56,9 +61,6 @@ class ImpactRepository(BaseFirestoreRepository):
                 created = data.get("createdAt")
                 if hasattr(created, "isoformat"):
                     data["createdAt"] = to_iso_utc(created)
-                logged_date = str(data.get("loggedDate") or "")
-                if start_date and logged_date and logged_date < start_date:
-                    continue
                 records.append(data)
 
             records.sort(
@@ -78,13 +80,10 @@ class ImpactRepository(BaseFirestoreRepository):
             return []
 
     def delete_log(self, *, user_id: str, log_id: str) -> bool:
-        """Delete a single impact log after verifying strict ownership."""
-        doc_ref = self.db.collection(self.COLLECTION).document(log_id)
+        """Delete a single impact log under `users/{uid}/impact_logs/{logId}`."""
+        doc_ref = self._logs_col(user_id).document(log_id)
         snap = doc_ref.get()
         if not snap.exists:
-            return False
-        data = snap.to_dict() or {}
-        if data.get("userId") != user_id:
             return False
         doc_ref.delete()
         return True

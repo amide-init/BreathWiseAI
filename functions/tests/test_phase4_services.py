@@ -65,11 +65,13 @@ class InMemoryChatRepo:
         }
         return sid
 
-    def get_recent_history(self, *, session_id: str, limit: int = 6) -> list[dict[str, str]]:
+    def get_recent_history(
+        self, *, user_id: str = "", session_id: str, limit: int = 6
+    ) -> list[dict[str, str]]:
         turns = [
             {"role": m["role"], "content": m["content"]}
             for m in self.messages
-            if m["sessionId"] == session_id
+            if m["sessionId"] == session_id and (not user_id or m["userId"] == user_id)
         ]
         return turns[-limit:]
 

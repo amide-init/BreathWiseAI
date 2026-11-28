@@ -164,7 +164,7 @@ export function useFamilyProfile(): UseFamilyProfileResult {
       if (!user || !family) {
         throw new Error('Household profile not found.');
       }
-      const updated = await updateFamilyMember(family.familyId, memberId, input);
+      const updated = await updateFamilyMember(user.uid, family.familyId, memberId, input);
       setMembers((prev) => {
         const next = prev.map((m) => (m.memberId === memberId ? updated : m));
         setCached(familyCacheKey(user.uid), { family, members: next }, FAMILY_CACHE_TTL_MS);
@@ -180,7 +180,7 @@ export function useFamilyProfile(): UseFamilyProfileResult {
       if (!user || !family) {
         return;
       }
-      await deleteFamilyMember(family.familyId, memberId);
+      await deleteFamilyMember(user.uid, family.familyId, memberId);
       setMembers((prev) => {
         const next = prev.filter((m) => m.memberId !== memberId);
         setCached(familyCacheKey(user.uid), { family, members: next }, FAMILY_CACHE_TTL_MS);

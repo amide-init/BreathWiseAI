@@ -1,22 +1,20 @@
-import {
-  collection,
-  doc,
-  getDocs,
-  limit,
-  orderBy,
-  query,
-  updateDoc,
-  where,
-} from 'firebase/firestore';
+import { doc, getDoc, updateDoc } from 'firebase/firestore';
 
 import { callFunction } from '@/lib/callable-client';
 import { getFirebaseDb } from '@/lib/firebase';
-import { getDocsFromLocalCache } from '@/lib/firestore-cache';
+import { getDocFromLocalCache } from '@/lib/firestore-cache';
 import { getCurrentTimeWindow, type TimeWindowKey } from '@/lib/time-window';
 import { getTodayLocalDateKey, type DailyPlanModel } from '@/models/planner.model';
 import type { LocationOption } from '@/types';
 
-const DAILY_PLANS_COLLECTION = 'daily_plans';
+const USERS_COLLECTION = 'users';
+const DAILY_PLANS_SUBCOLLECTION = 'daily_plans';
+
+export function makeDailyPlanDocId(planDate: string, locationId: string): string {
+  const safeDate = planDate.replace(/[^a-zA-Z0-9._-]/g, '').slice(0, 16);
+  const safeLoc = locationId.replace(/[^a-zA-Z0-9._-]/g, '_').slice(0, 80);
+  return `${safeDate}_${safeLoc}`;
+}
 
 interface GenerateDailyPlanPayload {
   locationId: string;
@@ -32,27 +30,23 @@ interface GenerateDailyPlanPayload {
 export async function getCachedTodayDailyPlan(
   uid: string,
   planDate = getTodayLocalDateKey(),
+  locationId?: string,
 ): Promise<DailyPlanModel | null> {
   const db = getFirebaseDb();
-  if (!db) {
+  if (!db || !locationId) {
     return null;
   }
-  const q = query(
-    collection(db, DAILY_PLANS_COLLECTION),
-    where('userId', '==', uid),
-    where('planDate', '==', planDate),
-    orderBy('createdAt', 'desc'),
-    limit(1),
+  const docId = makeDailyPlanDocId(planDate, locationId);
+  const snap = await getDocFromLocalCache(
+    doc(db, USERS_COLLECTION, uid, DAILY_PLANS_SUBCOLLECTION, docId),
   );
-  const snaps = await getDocsFromLocalCache(q);
-  const first = snaps?.docs[0];
-  if (!first) {
+  if (!snap || !snap.exists()) {
     return null;
   }
-  const data = first.data() as DailyPlanModel;
+  const data = snap.data() as DailyPlanModel;
   return {
     ...data,
-    planId: first.id,
+    planId: snap.id,
     completedItemIds: Array.isArray(data.completedItemIds) ? data.completedItemIds : [],
   };
 }
@@ -60,27 +54,22 @@ export async function getCachedTodayDailyPlan(
 export async function getTodayDailyPlan(
   uid: string,
   planDate = getTodayLocalDateKey(),
+  locationId?: string,
 ): Promise<DailyPlanModel | null> {
   const db = getFirebaseDb();
-  if (!db) {
+  if (!db || !locationId) {
     return null;
   }
-  const q = query(
-    collection(db, DAILY_PLANS_COLLECTION),
-    where('userId', '==', uid),
-    where('planDate', '==', planDate),
-    orderBy('createdAt', 'desc'),
-    limit(1),
-  );
-  const snaps = await getDocs(q);
-  const first = snaps.docs[0];
-  if (!first) {
+  // O(1) direct point-read under users/{uid}/daily_plans/{planDate}_{locationId}
+  const docId = makeDailyPlanDocId(planDate, locationId);
+  const snap = await getDoc(doc(db, USERS_COLLECTION, uid, DAILY_PLANS_SUBCOLLECTION, docId));
+  if (!snap.exists()) {
     return null;
   }
-  const data = first.data() as DailyPlanModel;
+  const data = snap.data() as DailyPlanModel;
   return {
     ...data,
-    planId: first.id,
+    planId: snap.id,
     completedItemIds: Array.isArray(data.completedItemIds) ? data.completedItemIds : [],
   };
 }
@@ -107,9 +96,10 @@ export function generateDailyPlanCallable(
 }
 
 /**
- * Updates ONLY `completedItemIds` to strictly comply with `firestore.rules`.
+ * Updates ONLY `completedItemIds` under `users/{uid}/daily_plans/{planId}`.
  */
 export async function updatePlanCompletedItems(
+  uid: string,
   planId: string,
   completedItemIds: string[],
 ): Promise<void> {
@@ -118,7 +108,7 @@ export async function updatePlanCompletedItems(
     return;
   }
   const bounded = Array.from(new Set(completedItemIds)).slice(0, 50);
-  await updateDoc(doc(db, DAILY_PLANS_COLLECTION, planId), {
+  await updateDoc(doc(db, USERS_COLLECTION, uid, DAILY_PLANS_SUBCOLLECTION, planId), {
     completedItemIds: bounded,
   });
 }

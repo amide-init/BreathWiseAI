@@ -45,7 +45,11 @@ class ChatService:
         history = (
             []
             if is_new_session
-            else self._chat_repo.get_recent_history(session_id=active_session_id, limit=6)
+            else self._chat_repo.get_recent_history(
+                user_id=user_id,
+                session_id=active_session_id,
+                limit=6,
+            )
         )
 
         graph_input = {
