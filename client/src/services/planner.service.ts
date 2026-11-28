@@ -1,8 +1,8 @@
-import { doc, getDoc, updateDoc } from 'firebase/firestore';
+import { collection, doc, getDoc, getDocs, query, updateDoc, where } from 'firebase/firestore';
 
 import { callFunction } from '@/lib/callable-client';
 import { getFirebaseDb } from '@/lib/firebase';
-import { getDocFromLocalCache } from '@/lib/firestore-cache';
+import { getDocFromLocalCache, getDocsFromLocalCache } from '@/lib/firestore-cache';
 import { getCurrentTimeWindow, type TimeWindowKey } from '@/lib/time-window';
 import { getTodayLocalDateKey, type DailyPlanModel } from '@/models/planner.model';
 import type { LocationOption } from '@/types';
@@ -93,6 +93,55 @@ export function generateDailyPlanCallable(
     forceRefresh: Boolean(options?.forceRefresh),
     currentTimeWindow: options?.currentTimeWindow ?? getCurrentTimeWindow(),
   });
+}
+
+/**
+ * Lists locationIds under `users/{uid}/daily_plans` that already have a plan for `planDate`.
+ * Uses a single-field equality query on `planDate` (auto-indexed; zero composite indexes needed).
+ */
+export async function listCachedTodayPlannedLocationIds(
+  uid: string,
+  planDate = getTodayLocalDateKey(),
+): Promise<string[] | null> {
+  const db = getFirebaseDb();
+  if (!db) {
+    return null;
+  }
+  const q = query(
+    collection(db, USERS_COLLECTION, uid, DAILY_PLANS_SUBCOLLECTION),
+    where('planDate', '==', planDate),
+  );
+  const snaps = await getDocsFromLocalCache(q);
+  if (!snaps) {
+    return null;
+  }
+  return snaps.docs
+    .map((d) => {
+      const loc = d.data().locationId;
+      return typeof loc === 'string' && loc ? loc : null;
+    })
+    .filter((id): id is string => id !== null);
+}
+
+export async function listTodayPlannedLocationIds(
+  uid: string,
+  planDate = getTodayLocalDateKey(),
+): Promise<string[]> {
+  const db = getFirebaseDb();
+  if (!db) {
+    return [];
+  }
+  const q = query(
+    collection(db, USERS_COLLECTION, uid, DAILY_PLANS_SUBCOLLECTION),
+    where('planDate', '==', planDate),
+  );
+  const snaps = await getDocs(q);
+  return snaps.docs
+    .map((d) => {
+      const loc = d.data().locationId;
+      return typeof loc === 'string' && loc ? loc : null;
+    })
+    .filter((id): id is string => id !== null);
 }
 
 /**

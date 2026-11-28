@@ -137,7 +137,8 @@ function CompactActionCard({
 }
 
 export function PlannerPage() {
-  const { selectedLocation } = useSelectedLocation();
+  const { selectedLocation, selectedLocationNickname, selectedLocationDisplayName } =
+    useSelectedLocation();
   const { plan, isLoading, isGenerating, error, generate, toggleItemCompleted } = useDailyPlan();
   const [searchParams, setSearchParams] = useSearchParams();
 
@@ -180,11 +181,22 @@ export function PlannerPage() {
         <div className="flex items-center gap-3">
           <PlanCalendarIllustration className="hidden h-14 w-20 shrink-0 sm:block" />
           <div>
-            <h1 className="font-display text-2xl font-bold tracking-tight text-[#202124] dark:text-[#E3E3E3]">
-              Plan &amp; Indoor Advisor
-            </h1>
+            <div className="flex flex-wrap items-center gap-2">
+              <h1 className="font-display text-2xl font-bold tracking-tight text-[#202124] dark:text-[#E3E3E3]">
+                Plan &amp; Indoor Advisor
+              </h1>
+              {selectedLocationNickname ? (
+                <span
+                  data-no-translate="true"
+                  className="rounded-full border border-[#4285F4]/30 bg-[#E8F0FE] px-2.5 py-0.5 text-xs font-semibold text-[#174EA6] dark:border-[#8AB4F8]/35 dark:bg-[#4285F4]/20 dark:text-[#D2E3FC]"
+                >
+                  {selectedLocationNickname}
+                </span>
+              ) : null}
+            </div>
             <p className="text-sm text-[#5F6368] dark:text-[#9AA0A6]">
-              Short, realistic clean-air steps for {selectedLocation.city} — starting with right now.
+              Short, realistic clean-air steps for {selectedLocationDisplayName} — starting with
+              right now.
             </p>
           </div>
         </div>
@@ -262,8 +274,8 @@ export function PlannerPage() {
                   Build Your {TIME_WINDOW_META[currentWindow].label} Clean-Air Plan
                 </CardTitle>
                 <CardDescription>
-                  Get short, practical steps tailored to live {selectedLocation.city} air and your
-                  family routine — no clutter, just what helps right now.
+                  Get short, practical steps tailored to live {selectedLocationDisplayName} air and
+                  your family routine — no clutter, just what helps right now.
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -277,7 +289,7 @@ export function PlannerPage() {
             <div className="space-y-5">
               <AgentTracePill
                 trace={plan.agentTrace}
-                cityLabel={plan.locationName ?? selectedLocation.city}
+                cityLabel={selectedLocationNickname ? selectedLocationDisplayName : (plan.locationName ?? selectedLocation.city)}
               />
 
               {/* Compact Status Bar */}

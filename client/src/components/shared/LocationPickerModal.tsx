@@ -1,4 +1,15 @@
-import { Check, Loader2, LocateFixed, MapPin, Pencil, Search, Star, Tag, X } from 'lucide-react';
+import {
+  CalendarCheck2,
+  Check,
+  Loader2,
+  LocateFixed,
+  MapPin,
+  Pencil,
+  Search,
+  Star,
+  Tag,
+  X,
+} from 'lucide-react';
 import { useEffect, useState } from 'react';
 
 import { ModalPortal } from '@/components/ui/modal-portal';
@@ -7,6 +18,10 @@ import { useAuth } from '@/hooks/useAuth';
 import { useSelectedLocation } from '@/hooks/useSelectedLocation';
 import { detectUserGpsLocation } from '@/lib/geolocation';
 import { searchLocations } from '@/services/air-quality.service';
+import {
+  listCachedTodayPlannedLocationIds,
+  listTodayPlannedLocationIds,
+} from '@/services/planner.service';
 import type { LocationOption } from '@/types';
 
 const PRESET_CITY_LABELS = ['My City', 'Home Town', 'Office', 'Parents', 'School'] as const;
@@ -15,6 +30,7 @@ export function LocationPickerModal() {
   const { user } = useAuth();
   const {
     selectedLocation,
+    selectedLocationNickname,
     savedCities,
     isPickerOpen,
     closePicker,
@@ -24,6 +40,7 @@ export function LocationPickerModal() {
   } = useSelectedLocation();
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<LocationOption[]>([...QUICK_PICK_CITIES]);
+  const [plannedLocationIds, setPlannedLocationIds] = useState<Set<string>>(() => new Set());
   const [togglingPinId, setTogglingPinId] = useState<string | null>(null);
   const [editingCity, setEditingCity] = useState<LocationOption | null>(null);
   const [labelDraft, setLabelDraft] = useState('');
@@ -33,14 +50,36 @@ export function LocationPickerModal() {
   const [locatingGps, setLocatingGps] = useState(false);
   const [gpsError, setGpsError] = useState<string | null>(null);
 
-  // Reset inline label editor when modal closes
+  // Reset inline label editor when modal closes; load today's planned locationIds when opened
   useEffect(() => {
     if (!isPickerOpen) {
       setEditingCity(null);
       setLabelDraft('');
       setLabelError(null);
+      return;
     }
-  }, [isPickerOpen]);
+    if (!user) {
+      return;
+    }
+    let cancelled = false;
+    void listCachedTodayPlannedLocationIds(user.uid).then((cached) => {
+      if (!cancelled && cached && cached.length > 0) {
+        setPlannedLocationIds(new Set(cached));
+      }
+    });
+    void listTodayPlannedLocationIds(user.uid)
+      .then((fresh) => {
+        if (!cancelled) {
+          setPlannedLocationIds(new Set(fresh));
+        }
+      })
+      .catch(() => {
+        // Non-blocking: badge is optional UI polish
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [isPickerOpen, user]);
 
   const savedById = new Map(savedCities.map((c) => [c.locationId, c]));
 
@@ -193,6 +232,77 @@ export function LocationPickerModal() {
               ) : null}
             </div>
 
+            {/* Currently Active City Card — always visible so user can label/pin even custom/GPS cities */}
+            <div className="mb-3 rounded-2xl border border-[#4285F4]/35 bg-[#E8F0FE]/60 px-3.5 py-2.5 dark:border-[#8AB4F8]/30 dark:bg-[#4285F4]/12">
+              <div className="flex items-center justify-between gap-2">
+                <div className="min-w-0">
+                  <div className="flex flex-wrap items-center gap-1.5">
+                    <span className="text-[10px] font-semibold uppercase tracking-wide text-[#174EA6] dark:text-[#8AB4F8]">
+                      Current City
+                    </span>
+                    {selectedLocationNickname ? (
+                      <span
+                        data-no-translate="true"
+                        className="rounded-full bg-[#1A73E8] px-2 py-0.5 text-[10px] font-semibold text-white dark:bg-[#8AB4F8] dark:text-[#131314]"
+                      >
+                        {selectedLocationNickname}
+                      </span>
+                    ) : null}
+                    {plannedLocationIds.has(selectedLocation.locationId) ? (
+                      <span className="inline-flex items-center gap-1 rounded-full bg-[#34A853]/15 px-2 py-0.5 text-[10px] font-semibold text-[#137333] dark:bg-[#81C995]/20 dark:text-[#81C995]">
+                        <CalendarCheck2 className="h-2.5 w-2.5" aria-hidden="true" />
+                        Plan ready
+                      </span>
+                    ) : null}
+                  </div>
+                  <p
+                    data-no-translate="true"
+                    className="truncate text-sm font-semibold text-[#202124] dark:text-[#E3E3E3]"
+                  >
+                    {selectedLocation.city}
+                  </p>
+                  <p
+                    data-no-translate="true"
+                    className="truncate text-[11px] text-[#5F6368] dark:text-[#9AA0A6]"
+                  >
+                    {selectedLocation.label}
+                  </p>
+                </div>
+
+                {user ? (
+                  <div className="flex shrink-0 items-center gap-1.5">
+                    <button
+                      type="button"
+                      onClick={() => openLabelEditor(selectedLocation)}
+                      className="inline-flex cursor-pointer items-center gap-1 rounded-full border border-[#4285F4]/40 bg-white px-2.5 py-1 text-[11px] font-semibold text-[#1A73E8] hover:bg-[#F8FAFF] dark:border-[#8AB4F8]/35 dark:bg-[#1E1F20] dark:text-[#8AB4F8] dark:hover:bg-white/10"
+                    >
+                      <Tag className="h-3 w-3" aria-hidden="true" />
+                      {selectedLocationNickname ? 'Edit Label' : 'Set Label'}
+                    </button>
+                    <button
+                      type="button"
+                      disabled={togglingPinId === selectedLocation.locationId}
+                      onClick={() => void handleTogglePin(selectedLocation)}
+                      aria-label={
+                        savedById.has(selectedLocation.locationId)
+                          ? `Remove ${selectedLocation.city} from saved cities`
+                          : `Save ${selectedLocation.city}`
+                      }
+                      className={`flex h-7 w-7 cursor-pointer items-center justify-center rounded-full border border-transparent bg-white/80 transition-colors dark:bg-[#1E1F20] ${
+                        savedById.has(selectedLocation.locationId)
+                          ? 'text-[#FBBC05] hover:bg-white'
+                          : 'text-[#9AA0A6] hover:text-[#FBBC05]'
+                      }`}
+                    >
+                      <Star
+                        className={`h-3.5 w-3.5 ${savedById.has(selectedLocation.locationId) ? 'fill-current' : ''}`}
+                      />
+                    </button>
+                  </div>
+                ) : null}
+              </div>
+            </div>
+
             {/* Inline Custom City Label Editor */}
             {user && editingCity ? (
               <div className="mb-3 rounded-2xl border border-[#4285F4]/35 bg-[#F8FAFF] p-3 dark:border-[#8AB4F8]/30 dark:bg-[#131314]">
@@ -301,9 +411,17 @@ export function LocationPickerModal() {
                         <button
                           type="button"
                           onClick={() => void selectLocation(city)}
-                          className="max-w-[190px] cursor-pointer truncate"
+                          className="inline-flex max-w-[190px] cursor-pointer items-center gap-1 truncate"
                         >
-                          {city.nickname ? `${city.nickname} · ${city.city}` : city.city}
+                          <span className="truncate">
+                            {city.nickname ? `${city.nickname} · ${city.city}` : city.city}
+                          </span>
+                          {plannedLocationIds.has(city.locationId) ? (
+                            <CalendarCheck2
+                              className="h-3 w-3 shrink-0 text-[#1E8E3E] dark:text-[#81C995]"
+                              aria-label="Today's plan ready"
+                            />
+                          ) : null}
                         </button>
                         <button
                           type="button"
@@ -387,6 +505,12 @@ export function LocationPickerModal() {
                             {savedEntry?.nickname ? (
                               <span className="shrink-0 rounded-full bg-[#4285F4]/12 px-2 py-0.5 text-[10px] font-semibold text-[#1A73E8] dark:bg-[#8AB4F8]/18 dark:text-[#8AB4F8]">
                                 {savedEntry.nickname}
+                              </span>
+                            ) : null}
+                            {plannedLocationIds.has(city.locationId) ? (
+                              <span className="inline-flex shrink-0 items-center gap-0.5 rounded-full bg-[#34A853]/12 px-1.5 py-0.5 text-[10px] font-semibold text-[#137333] dark:bg-[#81C995]/18 dark:text-[#81C995]">
+                                <CalendarCheck2 className="h-2.5 w-2.5" aria-hidden="true" />
+                                Plan
                               </span>
                             ) : null}
                           </span>
